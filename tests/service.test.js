@@ -31,6 +31,18 @@ describe("PluginManagerService", () => {
             settings: [],
             paths: { javascript: [], css: [] },
           },
+          {
+            id: "dev-helper",
+            name: "Dev Helper",
+            description: "Loaded directly from disk",
+            enabled: false,
+            version: "0.2.0",
+            url: "https://github.com/example/dev-helper",
+            hooks: [],
+            tasks: [],
+            settings: [],
+            paths: { javascript: ["dev-helper.js"], css: [] },
+          },
         ],
         configuration: {
           general: {
@@ -56,6 +68,16 @@ describe("PluginManagerService", () => {
       status: "update",
       sourceName: "Example",
       githubUrl: "https://github.com/example/alpha",
+    });
+    expect(result.packages[1]).toMatchObject({
+      package_id: "dev-helper",
+      name: "Dev Helper",
+      enabled: false,
+      installed: true,
+      runtimeOnly: true,
+      status: "runtime-only",
+      sourceName: "Runtime-only",
+      githubUrl: "https://github.com/example/dev-helper",
     });
     expect(result.sources).toHaveLength(1);
     expect(result.pluginConfig.alpha).toEqual({ dryRun: true });

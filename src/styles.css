@@ -69,6 +69,7 @@
 .spme-disabled { color:var(--spme-text-muted); }
 .spme-status-update, .spme-trust-community { border-color:var(--spme-warning); color:#ffc376; }
 .spme-status-error, .spme-trust-unverified { border-color:var(--spme-danger); color:#ff9aa4; }
+.spme-runtime-only { border-color:var(--spme-accent); color:#8ed8ff; }
 .spme-package-card dl, .spme-source-card dl { display:flex; flex-wrap:wrap; gap:.6rem 1.5rem; margin:0; }
 .spme-package-card dl div, .spme-source-card dl div { display:grid; }
 .spme-package-card dt, .spme-source-card dt { font-size:.72rem; text-transform:uppercase; color:var(--spme-text-muted); }

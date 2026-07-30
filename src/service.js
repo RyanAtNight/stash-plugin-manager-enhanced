@@ -92,6 +92,24 @@ function mergeInstalled(pkg, runtime, sources) {
   };
 }
 
+function mergeRuntimeOnly(plugin) {
+  return {
+    package_id: plugin.id,
+    name: plugin.name || plugin.id,
+    version: plugin.version,
+    metadata: { description: plugin.description },
+    plugin,
+    enabled: plugin.enabled ?? false,
+    installed: true,
+    runtimeOnly: true,
+    status: "runtime-only",
+    sourceName: "Runtime-only",
+    trust: sourceTrust(),
+    githubUrl: deriveGithubUrl({ pluginUrl: plugin.url }),
+    capabilities: capabilitySummary(plugin),
+  };
+}
+
 export class PluginManagerService {
   constructor(
     client,
@@ -107,9 +125,14 @@ export class PluginManagerService {
     const data = await this.client.request(INSTALLED_QUERY, { checkUpdates });
     const sources = data.configuration.general.pluginPackageSources ?? [];
     const runtime = new Map((data.plugins ?? []).map((plugin) => [plugin.id, plugin]));
-    const packages = (data.installedPackages ?? []).map((pkg) =>
+    const managedPackages = (data.installedPackages ?? []).map((pkg) =>
       mergeInstalled(pkg, runtime, sources)
     );
+    const managedIDs = new Set(managedPackages.map((pkg) => pkg.package_id));
+    const runtimeOnlyPackages = (data.plugins ?? [])
+      .filter((plugin) => !managedIDs.has(plugin.id))
+      .map(mergeRuntimeOnly);
+    const packages = [...managedPackages, ...runtimeOnlyPackages];
     return {
       packages,
       plugins: data.plugins ?? [],

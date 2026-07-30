@@ -369,13 +369,15 @@ export class EnhancedPluginManager {
       ? this.selectedInstalled.has(pkg.package_id)
       : this.selectedAvailable.has(`${pkg.sourceURL}|${pkg.package_id}`);
     const selectKey = installed ? pkg.package_id : `${pkg.sourceURL}|${pkg.package_id}`;
-    const status = pkg.status === "update"
-      ? '<span class="spme-badge spme-status-update">Update available</span>'
-      : pkg.status === "unchecked"
-        ? '<span class="spme-badge">Updates not checked</span>'
-        : installed
-          ? '<span class="spme-badge spme-status-current">Current</span>'
-          : '<span class="spme-badge spme-status-available">Available</span>';
+    const status = pkg.runtimeOnly
+      ? '<span class="spme-badge spme-runtime-only" title="Loaded from the plugins directory without a package-manager record.">Runtime-only</span>'
+      : pkg.status === "update"
+        ? '<span class="spme-badge spme-status-update">Update available</span>'
+        : pkg.status === "unchecked"
+          ? '<span class="spme-badge">Updates not checked</span>'
+          : installed
+            ? '<span class="spme-badge spme-status-current">Current</span>'
+            : '<span class="spme-badge spme-status-available">Available</span>';
     const state = installed
       ? `<span class="spme-badge ${pkg.enabled ? "spme-enabled" : "spme-disabled"}">${pkg.enabled ? "Enabled" : "Disabled"}</span>`
       : "";
@@ -386,12 +388,14 @@ export class EnhancedPluginManager {
       ? `<details class="spme-capabilities"><summary>Capabilities</summary><ul>${pkg.capabilities.map((item) => `<li>${escapeHTML(item)}</li>`).join("")}</ul></details>`
       : "";
     const actions = installed
-      ? `<button type="button" data-action="toggle-enabled" data-id="${escapeHTML(pkg.package_id)}">${pkg.enabled ? "Disable" : "Enable"}</button>
+      ? pkg.runtimeOnly
+        ? `<button type="button" data-action="toggle-enabled" data-id="${escapeHTML(pkg.package_id)}">${pkg.enabled ? "Disable" : "Enable"}</button>`
+        : `<button type="button" data-action="toggle-enabled" data-id="${escapeHTML(pkg.package_id)}">${pkg.enabled ? "Disable" : "Enable"}</button>
          <button type="button" data-action="update-one" data-id="${escapeHTML(pkg.package_id)}" ${pkg.status !== "update" ? "disabled" : ""}>Update</button>
          <button type="button" class="danger subtle" data-action="uninstall-one" data-id="${escapeHTML(pkg.package_id)}">Uninstall</button>`
       : `<button type="button" data-action="install-one" data-key="${escapeHTML(selectKey)}">Install</button>`;
     return `<article class="spme-package-card" data-package-id="${escapeHTML(pkg.package_id)}">
-      <label class="spme-select"><input type="checkbox" data-select-package="${installed ? "installed" : "available"}" data-key="${escapeHTML(selectKey)}" aria-label="Select ${escapeHTML(pkg.name)}" ${selected ? "checked" : ""}></label>
+      <label class="spme-select"><input type="checkbox" data-select-package="${installed ? "installed" : "available"}" data-key="${escapeHTML(selectKey)}" aria-label="Select ${escapeHTML(pkg.name)}" ${selected ? "checked" : ""} ${pkg.runtimeOnly ? 'disabled title="Runtime-only plugins are not available for package operations."' : ""}></label>
       <div class="spme-package-main">
         <div class="spme-package-title"><div><h2>${escapeHTML(pkg.name)}</h2><code>${escapeHTML(pkg.package_id)}</code></div><div class="spme-badges">${status}${state}${trustBadge(pkg.trust)}</div></div>
         <p>${escapeHTML(packageDescription(pkg))}</p>
@@ -420,13 +424,15 @@ export class EnhancedPluginManager {
       ? this.selectedInstalled.has(pkg.package_id)
       : this.selectedAvailable.has(`${pkg.sourceURL}|${pkg.package_id}`);
     const selectKey = installed ? pkg.package_id : `${pkg.sourceURL}|${pkg.package_id}`;
-    const status = pkg.status === "update"
-      ? '<span class="spme-badge spme-status-update">Update available</span>'
-      : pkg.status === "unchecked"
-        ? '<span class="spme-badge">Updates not checked</span>'
-        : installed
-          ? '<span class="spme-badge spme-status-current">Current</span>'
-          : '<span class="spme-badge spme-status-available">Available</span>';
+    const status = pkg.runtimeOnly
+      ? '<span class="spme-badge spme-runtime-only" title="Loaded from the plugins directory without a package-manager record.">Runtime-only</span>'
+      : pkg.status === "update"
+        ? '<span class="spme-badge spme-status-update">Update available</span>'
+        : pkg.status === "unchecked"
+          ? '<span class="spme-badge">Updates not checked</span>'
+          : installed
+            ? '<span class="spme-badge spme-status-current">Current</span>'
+            : '<span class="spme-badge spme-status-available">Available</span>';
     const state = installed
       ? `<span class="spme-badge ${pkg.enabled ? "spme-enabled" : "spme-disabled"}">${pkg.enabled ? "Enabled" : "Disabled"}</span>`
       : "";
@@ -434,7 +440,9 @@ export class EnhancedPluginManager {
       ? `${escapeHTML(pkg.version || "Unknown")} → ${escapeHTML(pkg.source_package.version || "Unknown")}`
       : escapeHTML(pkg.version || "Unknown");
     const actions = installed
-      ? `<button type="button" data-action="toggle-enabled" data-id="${escapeHTML(pkg.package_id)}">${pkg.enabled ? "Disable" : "Enable"}</button>
+      ? pkg.runtimeOnly
+        ? `<button type="button" data-action="toggle-enabled" data-id="${escapeHTML(pkg.package_id)}">${pkg.enabled ? "Disable" : "Enable"}</button>`
+        : `<button type="button" data-action="toggle-enabled" data-id="${escapeHTML(pkg.package_id)}">${pkg.enabled ? "Disable" : "Enable"}</button>
          <button type="button" data-action="update-one" data-id="${escapeHTML(pkg.package_id)}" ${pkg.status !== "update" ? "disabled" : ""}>Update</button>
          <button type="button" class="danger subtle" data-action="uninstall-one" data-id="${escapeHTML(pkg.package_id)}">Uninstall</button>`
       : `<button type="button" data-action="install-one" data-key="${escapeHTML(selectKey)}">Install</button>`;
@@ -442,7 +450,7 @@ export class EnhancedPluginManager {
       ? `<details class="spme-table-capabilities"><summary>Capabilities</summary><ul>${pkg.capabilities.map((item) => `<li>${escapeHTML(item)}</li>`).join("")}</ul></details>`
       : "";
     return `<tr data-package-id="${escapeHTML(pkg.package_id)}">
-      <td class="spme-table-select"><input type="checkbox" data-select-package="${installed ? "installed" : "available"}" data-key="${escapeHTML(selectKey)}" aria-label="Select ${escapeHTML(pkg.name)}" ${selected ? "checked" : ""}></td>
+      <td class="spme-table-select"><input type="checkbox" data-select-package="${installed ? "installed" : "available"}" data-key="${escapeHTML(selectKey)}" aria-label="Select ${escapeHTML(pkg.name)}" ${selected ? "checked" : ""} ${pkg.runtimeOnly ? 'disabled title="Runtime-only plugins are not available for package operations."' : ""}></td>
       <td data-label="Plugin"><div class="spme-table-plugin"><strong>${escapeHTML(pkg.name)}</strong><code>${escapeHTML(pkg.package_id)}</code>${capabilities}</div></td>
       <td data-label="Description" class="spme-table-description">${escapeHTML(packageDescription(pkg))}</td>
       <td data-label="Version">${version}</td>

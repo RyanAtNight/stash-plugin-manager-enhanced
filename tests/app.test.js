@@ -260,6 +260,44 @@ describe("EnhancedPluginManager", () => {
     expect(document.querySelector('input[aria-label="Select Alpha Tool"]')).not.toBeNull();
   });
 
+  it("shows runtime-only plugins only when present and limits them to enable or disable", async () => {
+    const { app, service } = await mountApp();
+    expect(document.querySelector(".spme-runtime-only")).toBeNull();
+    app.inventory.packages.push({
+      package_id: "dev-helper",
+      name: "Dev Helper",
+      version: "0.2.0",
+      sourceName: "Runtime-only",
+      status: "runtime-only",
+      enabled: false,
+      installed: true,
+      runtimeOnly: true,
+      githubUrl: "https://github.com/example/dev-helper",
+      trust: { level: "unverified", label: "Unverified source" },
+      capabilities: ["UI JavaScript"],
+      metadata: { description: "Loaded directly from the plugins directory" },
+      plugin: { id: "dev-helper", name: "Dev Helper", description: "Loaded directly from the plugins directory", enabled: false },
+    });
+    app.render();
+
+    let plugin = document.querySelector('[data-package-id="dev-helper"]');
+    expect(plugin.querySelector(".spme-runtime-only")?.textContent).toBe("Runtime-only");
+    expect(plugin.querySelector('[data-select-package="installed"]').disabled).toBe(true);
+    expect(plugin.querySelector('[data-action="toggle-enabled"]')?.textContent).toBe("Enable");
+    expect(plugin.querySelector('[data-action="update-one"]')).toBeNull();
+    expect(plugin.querySelector('[data-action="uninstall-one"]')).toBeNull();
+
+    document.querySelector('[data-action="set-view"][data-view-mode="table"]').click();
+    plugin = document.querySelector('.spme-package-table [data-package-id="dev-helper"]');
+    expect(plugin.querySelector(".spme-runtime-only")).not.toBeNull();
+    expect(plugin.querySelector('[data-select-package="installed"]').disabled).toBe(true);
+    expect(plugin.querySelector('[data-action="update-one"]')).toBeNull();
+    expect(plugin.querySelector('[data-action="uninstall-one"]')).toBeNull();
+
+    plugin.querySelector('[data-action="toggle-enabled"]').click();
+    await vi.waitFor(() => expect(service.setEnabled).toHaveBeenCalledWith("dev-helper", true));
+  });
+
   it("opens installed and available GitHub repositories in a new tab", async () => {
     const { app } = await mountApp();
 
