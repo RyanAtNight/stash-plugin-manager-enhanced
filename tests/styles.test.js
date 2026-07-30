@@ -31,6 +31,10 @@ describe("package view responsive styles", () => {
     expect(css).toMatch(/data-active-tab="browse"[\s\S]*\.spme-table-actions\s*\{[\s\S]*flex-wrap:\s*nowrap/);
   });
 
+  it("styles the sidebar kill switch", () => {
+    expect(css).toMatch(/#spme-enhancement-control\s*\{[\s\S]*border-top:[\s\S]*padding:/);
+  });
+
   it("styles linked source labels and highlights the anchored source card", () => {
     expect(css).toMatch(/\.spme-source-link\s*\{[\s\S]*text-decoration:\s*underline/);
     expect(css).toMatch(/\.spme-source-card:target,[\s\S]*\.spme-source-card:focus\s*\{[\s\S]*border-color:\s*var\(--spme-accent\)/);
