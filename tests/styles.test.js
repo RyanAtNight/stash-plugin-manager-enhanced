@@ -38,6 +38,20 @@ describe("package view responsive styles", () => {
     expect(css).toMatch(/\.spme-toolbar select\s*\{[\s\S]*padding-right:\s*1\.65rem/);
   });
 
+  it("styles repository links as icon buttons rather than underlined text links", () => {
+    expect(css).toMatch(/#spme-root \.spme-repo-link\s*\{[\s\S]*display:\s*inline-flex[\s\S]*text-decoration:\s*none/);
+    expect(css).toMatch(/\.spme-github-icon\s*\{[\s\S]*fill:\s*currentColor/);
+    expect(css).toMatch(/#spme-root \.spme-repo-link:hover[\s\S]*text-decoration:\s*none/);
+  });
+
+  it("matches Stash primary button hover and mouse-down interaction states", () => {
+    expect(css).toMatch(/#spme-root button,[\s\S]*transition:[^;]*0\.15s ease-in-out/);
+    expect(css).toMatch(/#spme-root button:not\(:disabled\):hover\s*\{[\s\S]*background:\s*#10659a[\s\S]*border-color:\s*#0e5e8f/);
+    expect(css).toMatch(/#spme-root button:not\(:disabled\):active[\s\S]*background:\s*#0e5e8f[\s\S]*box-shadow:\s*0 0 0 \.2rem rgba\(54,144,199,\.5\)/);
+    expect(css).toMatch(/#spme-root button\.danger:not\(:disabled\):hover/);
+    expect(css).toMatch(/#spme-root button\.subtle:not\(:disabled\):active/);
+  });
+
   it("styles the sidebar kill switch without a distracting top border", () => {
     const rule = css.match(/#spme-enhancement-control\s*\{([^}]*)\}/)?.[1] ?? "";
     expect(rule).toContain("padding:");

@@ -81,11 +81,22 @@
 .spme-package-card dt, .spme-source-card dt { font-size:.72rem; text-transform:uppercase; color:var(--spme-text-muted); }
 .spme-package-card dd, .spme-source-card dd { margin:0; }
 .spme-card-actions { grid-column:2; display:flex; flex-direction:row; justify-content:flex-end; align-items:center; flex-wrap:wrap; gap:.4rem; padding-top:.75rem; border-top:1px solid var(--spme-border); }
-#spme-root button, .spme-repo-link { border:1px solid transparent; border-radius:.35rem; padding:.45rem .65rem; background:var(--spme-accent); color:#fff; text-align:center; text-decoration:none; cursor:pointer; }
+#spme-root button, #spme-root .spme-repo-link { display:inline-flex; align-items:center; justify-content:center; gap:.4rem; border:1px solid #137cbd; border-radius:.35rem; padding:.45rem .65rem; background:#137cbd; color:#fff; text-align:center; text-decoration:none; cursor:pointer; transition:color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out; }
 #spme-root button:disabled { opacity:.45; cursor:not-allowed; }
+#spme-root button:not(:disabled):hover { background:#10659a; border-color:#0e5e8f; color:#fff; }
+#spme-root button:not(:disabled):active { background:#0e5e8f; border-color:#0d5683; box-shadow:0 0 0 .2rem rgba(54,144,199,.5); outline:0; }
+#spme-root button:focus-visible, #spme-root .spme-repo-link:focus-visible { box-shadow:0 0 0 .2rem rgba(54,144,199,.5); outline:0; }
 #spme-root button.danger { background:var(--spme-danger); }
+#spme-root button.danger:not(:disabled):hover { background:#b94350; border-color:#ac3e4a; }
+#spme-root button.danger:not(:disabled):active { background:#a33a46; border-color:#963640; box-shadow:0 0 0 .2rem rgba(220,82,96,.5); }
 #spme-root button.subtle { background:transparent; border-color:var(--spme-danger); color:#ff9aa4; }
-.spme-repo-link { background:transparent; border-color:var(--spme-border); }
+#spme-root button.subtle:not(:disabled):hover { background:rgba(220,82,96,.14); border-color:#b94350; color:#ffb0b8; }
+#spme-root button.subtle:not(:disabled):active { background:rgba(220,82,96,.25); border-color:#a33a46; box-shadow:0 0 0 .2rem rgba(220,82,96,.5); }
+#spme-root .spme-repo-link { background:transparent; border-color:var(--spme-border); color:#fff; text-decoration:none; }
+#spme-root .spme-repo-link:hover { background:#10659a; border-color:#0e5e8f; color:#fff; text-decoration:none; }
+#spme-root .spme-repo-link:active { background:#0e5e8f; border-color:#0d5683; color:#fff; text-decoration:none; box-shadow:0 0 0 .2rem rgba(54,144,199,.5); outline:0; }
+.spme-github-icon { flex:0 0 auto; fill:currentColor; }
+.spme-external-icon { flex:0 0 auto; font-size:.95em; line-height:1; }
 .spme-repo-missing { color:var(--spme-text-muted); font-size:.78rem; text-align:center; }
 .spme-capabilities { margin-top:.75rem; }
 .spme-table-scroll { border:1px solid var(--spme-border); border-radius:.6rem; overflow-x:auto; background:var(--spme-panel); }

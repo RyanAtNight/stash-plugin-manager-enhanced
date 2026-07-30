@@ -301,14 +301,30 @@ describe("EnhancedPluginManager", () => {
   it("opens installed and available GitHub repositories in a new tab", async () => {
     const { app } = await mountApp();
 
+    const expectGitHubButton = (link) => {
+      expect(link?.querySelector("svg.spme-github-icon")?.getAttribute("aria-hidden")).toBe("true");
+      expect(link?.querySelector(".spme-github-label")?.textContent).toBe("GitHub");
+      expect(link?.querySelector(".spme-external-icon")?.textContent).toBe("↗");
+    };
+
     let link = document.querySelector('a[aria-label="Open Alpha Tool GitHub repository"]');
     expect(link?.target).toBe("_blank");
     expect(link?.rel).toContain("noopener");
+    expectGitHubButton(link);
+
+    document.querySelector('[data-action="set-view"][data-view-mode="table"]').click();
+    link = document.querySelector('a[aria-label="Open Alpha Tool GitHub repository"]');
+    expectGitHubButton(link);
 
     await app.setTab("browse");
     link = document.querySelector('a[aria-label="Open Beta Helper GitHub repository"]');
     expect(link?.href).toContain("github.com");
     expect(link?.target).toBe("_blank");
+    expectGitHubButton(link);
+
+    document.querySelector('[data-action="set-view"][data-view-mode="cards"]').click();
+    link = document.querySelector('a[aria-label="Open Beta Helper GitHub repository"]');
+    expectGitHubButton(link);
   });
 
   it("links Installed and Browse source labels to stable source anchors in Cards and Table views", async () => {
@@ -387,7 +403,9 @@ describe("EnhancedPluginManager", () => {
     expect(document.body.textContent).toContain("2 packages");
     expect(document.querySelector('a[href$="index.yml"]')).not.toBeNull();
     const repository = document.querySelector('a[aria-label="Open Community (stable) GitHub repository"]');
-    expect(repository?.textContent).toBe("GitHub");
+    expect(repository?.querySelector("svg.spme-github-icon")?.getAttribute("aria-hidden")).toBe("true");
+    expect(repository?.querySelector(".spme-github-label")?.textContent).toBe("GitHub");
+    expect(repository?.querySelector(".spme-external-icon")?.textContent).toBe("↗");
     expect(repository?.href).toBe("https://github.com/stashapp/CommunityScripts");
     expect(repository?.target).toBe("_blank");
     expect(repository?.rel).toContain("noopener");
