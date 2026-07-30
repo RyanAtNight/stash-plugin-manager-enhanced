@@ -112,7 +112,7 @@ describe("deriveGithubUrl", () => {
         sourceUrl: "https://stashapp.github.io/CommunityScripts/stable/index.yml",
       })
     ).toBe(
-      "https://github.com/stashapp/CommunityScripts/tree/stable/plugins/VideoScrollWheel"
+      "https://github.com/stashapp/CommunityScripts/tree/main/plugins/VideoScrollWheel"
     );
   });
 

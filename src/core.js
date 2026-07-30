@@ -107,7 +107,10 @@ export function deriveGithubUrl({ pluginUrl, metadata = {}, sourceUrl, packageId
   const parts = source.pathname.split("/").filter(Boolean);
   const repo = parts[0];
   if (!repo) return undefined;
-  const branch = parts.length > 2 ? parts[1] : "main";
+  const channel = parts.length > 2 ? parts[1] : "main";
+  const branch = owner.toLowerCase() === "stashapp" && repo.toLowerCase() === "communityscripts" && channel === "stable"
+    ? "main"
+    : channel;
   return `https://github.com/${owner}/${repo}/tree/${encodeURIComponent(branch)}/plugins/${encodeURIComponent(packageId)}`;
 }
 
