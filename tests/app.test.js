@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { EnhancedPluginManager } from "../src/app.js";
+import { sourceAnchorID } from "../src/core.js";
 
 function pageFixture() {
   document.body.innerHTML = `
@@ -213,6 +214,58 @@ describe("EnhancedPluginManager", () => {
     link = document.querySelector('a[aria-label="Open Beta Helper GitHub repository"]');
     expect(link?.href).toContain("github.com");
     expect(link?.target).toBe("_blank");
+  });
+
+  it("links Installed and Browse source labels to stable source anchors in Cards and Table views", async () => {
+    const { app } = await mountApp();
+    const sourceURL = "https://stashapp.github.io/CommunityScripts/stable/index.yml";
+    const expectedHash = `#${sourceAnchorID(sourceURL)}`;
+    const expectSourceLink = () => {
+      const link = document.querySelector('.spme-source-link[data-action="open-source"]');
+      expect(link?.textContent).toBe("Community (stable)");
+      expect(new URL(link.href).searchParams.get("pluginManagerTab")).toBe("sources");
+      expect(new URL(link.href).hash).toBe(expectedHash);
+    };
+
+    expectSourceLink();
+    document.querySelector('[data-action="set-view"][data-view-mode="table"]').click();
+    expectSourceLink();
+    document.querySelector('[data-action="set-view"][data-view-mode="cards"]').click();
+    await app.setTab("browse");
+    expectSourceLink();
+    document.querySelector('[data-action="set-view"][data-view-mode="table"]').click();
+    expectSourceLink();
+  });
+
+  it("opens a linked source in the Sources subtab and targets its card", async () => {
+    const scrollIntoView = vi.fn();
+    window.HTMLElement.prototype.scrollIntoView = scrollIntoView;
+    const { app } = await mountApp();
+    const sourceURL = "https://stashapp.github.io/CommunityScripts/stable/index.yml";
+    const anchorID = sourceAnchorID(sourceURL);
+
+    document.querySelector('.spme-source-link[data-action="open-source"]').click();
+
+    await vi.waitFor(() => expect(document.getElementById(anchorID)).not.toBeNull());
+    const target = document.getElementById(anchorID);
+    expect(window.location.hash).toBe(`#${anchorID}`);
+    expect(target?.getAttribute("tabindex")).toBe("-1");
+    expect(scrollIntoView).toHaveBeenCalled();
+    expect(document.activeElement).toBe(target);
+  });
+
+  it("restores and targets a source anchor on direct navigation", async () => {
+    const sourceURL = "https://stashapp.github.io/CommunityScripts/stable/index.yml";
+    const anchorID = sourceAnchorID(sourceURL);
+    const scrollIntoView = vi.fn();
+    window.HTMLElement.prototype.scrollIntoView = scrollIntoView;
+    window.history.replaceState({}, "", `/settings?tab=plugins&pluginManagerTab=sources#${anchorID}`);
+
+    const { app } = await mountApp();
+
+    expect(app.activeTab).toBe("sources");
+    expect(scrollIntoView).toHaveBeenCalled();
+    expect(document.activeElement).toBe(document.getElementById(anchorID));
   });
 
   it("renders source health, trust, URL, and package count separately from browsing", async () => {

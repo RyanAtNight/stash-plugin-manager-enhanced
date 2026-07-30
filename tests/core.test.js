@@ -7,6 +7,8 @@ import {
   pluginManagerTabFromURL,
   packageStatus,
   safeExternalUrl,
+  sourceAnchorHref,
+  sourceAnchorID,
   sourceTrust,
   withPluginManagerTab,
 } from "../src/core.js";
@@ -32,6 +34,24 @@ describe("plugin manager subtab URLs", () => {
   it("adds the subtab while preserving existing query parameters", () => {
     expect(withPluginManagerTab("/settings?foo=1&tab=plugins", "configuration")).toBe(
       "/settings?foo=1&tab=plugins&pluginManagerTab=configuration"
+    );
+  });
+});
+
+describe("source anchors", () => {
+  const sourceURL = "https://stashapp.github.io/CommunityScripts/stable/index.yml";
+
+  it("derives stable URL-safe IDs without exposing the source URL", () => {
+    const id = sourceAnchorID(sourceURL);
+    expect(id).toMatch(/^spme-source-[0-9a-f]{8}$/);
+    expect(sourceAnchorID(sourceURL)).toBe(id);
+    expect(sourceAnchorID("https://example.test/index.yml")).not.toBe(id);
+    expect(id).not.toContain("stashapp");
+  });
+
+  it("builds a Sources-subtab URL while preserving other parameters", () => {
+    expect(sourceAnchorHref("/settings?foo=1&tab=plugins&pluginManagerTab=browse", sourceURL)).toBe(
+      `/settings?foo=1&tab=plugins&pluginManagerTab=sources#${sourceAnchorID(sourceURL)}`
     );
   });
 });

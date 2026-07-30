@@ -2,6 +2,8 @@ import {
   filterPackages,
   pluginManagerTabFromURL,
   safeExternalUrl,
+  sourceAnchorHref,
+  sourceAnchorID,
   withPluginManagerTab,
 } from "./core.js";
 
@@ -123,6 +125,7 @@ export class EnhancedPluginManager {
         await this.loadAvailable();
       }
       this.render();
+      this.scrollToSourceFromURL({ behavior: "auto" });
       return true;
     } catch (error) {
       this.renderFatal(error);
@@ -154,6 +157,25 @@ export class EnhancedPluginManager {
   focusSourceForm() {
     const form = this.root?.querySelector(".spme-source-form-inline");
     form?.querySelector('[name="name"]')?.focus({ preventScroll: true });
+  }
+
+  sourceReferenceHTML(pkg) {
+    const label = pkg.sourceName || pkg.sourceURL || "Unknown";
+    const source = this.inventory?.sources.find((candidate) => candidate.url === pkg.sourceURL);
+    if (!source || !this.window?.location) return escapeHTML(label);
+    const href = sourceAnchorHref(this.window.location.href, source.url);
+    return `<a class="spme-source-link" data-action="open-source" href="${escapeHTML(href)}" aria-label="Open source ${escapeHTML(source.name || source.url)} in Sources">${escapeHTML(label)}</a>`;
+  }
+
+  scrollToSourceFromURL({ behavior = "smooth" } = {}) {
+    if (this.activeTab !== "sources" || !this.window?.location?.hash) return false;
+    const anchorID = this.window.location.hash.slice(1);
+    if (!/^spme-source-[0-9a-f]{8}$/.test(anchorID)) return false;
+    const target = this.document.getElementById(anchorID);
+    if (!target || !this.root?.contains(target)) return false;
+    target.scrollIntoView?.({ behavior, block: "center" });
+    target.focus({ preventScroll: true });
+    return true;
   }
 
   renderLoading(label) {
@@ -221,11 +243,13 @@ export class EnhancedPluginManager {
       }
     }
     this.render();
+    this.scrollToSourceFromURL();
   }
 
   syncFromURL() {
     const tab = pluginManagerTabFromURL(this.window?.location?.href ?? "");
     if (tab !== this.activeTab) return this.setTab(tab, { updateURL: false });
+    this.scrollToSourceFromURL({ behavior: "auto" });
   }
 
   tabsHTML() {
@@ -350,7 +374,7 @@ export class EnhancedPluginManager {
       <div class="spme-package-main">
         <div class="spme-package-title"><div><h2>${escapeHTML(pkg.name)}</h2><code>${escapeHTML(pkg.package_id)}</code></div><div class="spme-badges">${status}${state}${trustBadge(pkg.trust)}</div></div>
         <p>${escapeHTML(packageDescription(pkg))}</p>
-        <dl><div><dt>Version</dt><dd>${version}</dd></div><div><dt>Source</dt><dd>${escapeHTML(pkg.sourceName || pkg.sourceURL)}</dd></div>${installed ? `<div><dt>Installed</dt><dd>${escapeHTML(formatDate(pkg.date))}</dd></div>` : ""}</dl>
+        <dl><div><dt>Version</dt><dd>${version}</dd></div><div><dt>Source</dt><dd>${this.sourceReferenceHTML(pkg)}</dd></div>${installed ? `<div><dt>Installed</dt><dd>${escapeHTML(formatDate(pkg.date))}</dd></div>` : ""}</dl>
         ${capabilities}
       </div>
       <div class="spme-card-actions">${githubLink(pkg)}${actions}</div>
@@ -401,7 +425,7 @@ export class EnhancedPluginManager {
       <td data-label="Plugin"><div class="spme-table-plugin"><strong>${escapeHTML(pkg.name)}</strong><code>${escapeHTML(pkg.package_id)}</code>${capabilities}</div></td>
       <td data-label="Description" class="spme-table-description">${escapeHTML(packageDescription(pkg))}</td>
       <td data-label="Version">${version}</td>
-      <td data-label="Source">${escapeHTML(pkg.sourceName || pkg.sourceURL)}</td>
+      <td data-label="Source">${this.sourceReferenceHTML(pkg)}</td>
       <td data-label="Status"><div class="spme-badges">${status}${state}${trustBadge(pkg.trust)}</div></td>
       <td data-label="Actions"><div class="spme-table-actions">${githubLink(pkg)}${actions}</div></td>
     </tr>`;
@@ -450,7 +474,7 @@ export class EnhancedPluginManager {
         ? `<a href="${escapeHTML(sourceLink)}" target="_blank" rel="noopener noreferrer">${escapeHTML(source.url)} ↗</a>`
         : `<code>${escapeHTML(source.url)}</code>`;
       const editing = this.editingSource === index;
-      return `<article class="spme-source-card${editing ? " spme-source-card-editing" : ""}" data-source-index="${index}">
+      return `<article id="${sourceAnchorID(source.url)}" class="spme-source-card${editing ? " spme-source-card-editing" : ""}" data-source-index="${index}" tabindex="-1">
         <div><h2>${escapeHTML(source.name || "Unnamed source")}</h2>${sourceURL}<div class="spme-badges">${trustBadge(inferredTrust)}<span class="spme-badge ${health?.ok ? "spme-status-current" : "spme-status-error"}">${health?.ok ? "Healthy" : "Error"}</span></div></div>
         <dl><div><dt>Packages</dt><dd>${plural(health?.packageCount ?? 0, "package")}</dd></div><div><dt>Last checked</dt><dd>${escapeHTML(formatDate(health?.checkedAt))}</dd></div><div><dt>Local path</dt><dd>${escapeHTML(source.local_path || "Default")}</dd></div></dl>
         ${health?.error ? `<p class="spme-text-error">${escapeHTML(health.error)}</p>` : ""}
@@ -547,6 +571,14 @@ export class EnhancedPluginManager {
     const button = event.target.closest("[data-action]");
     if (!button) return;
     const action = button.dataset.action;
+    if (action === "open-source") {
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      event.preventDefault();
+      const nextURL = button.getAttribute("href");
+      const currentURL = `${this.window.location.pathname}${this.window.location.search}${this.window.location.hash}`;
+      if (nextURL && nextURL !== currentURL) this.window.history.pushState({}, "", nextURL);
+      return this.setTab("sources", { updateURL: false });
+    }
     if (action === "tab") return this.setTab(button.dataset.tab);
     if (action === "set-view") {
       this.viewMode = button.dataset.viewMode === "table" ? "table" : "cards";

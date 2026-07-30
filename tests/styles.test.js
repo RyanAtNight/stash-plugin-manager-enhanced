@@ -26,6 +26,12 @@ describe("package view responsive styles", () => {
     expect(css).toMatch(/data-active-tab="browse"[\s\S]*\.spme-table-actions\s*\{[\s\S]*flex-wrap:\s*nowrap/);
   });
 
+  it("styles linked source labels and highlights the anchored source card", () => {
+    expect(css).toMatch(/\.spme-source-link\s*\{[\s\S]*text-decoration:\s*underline/);
+    expect(css).toMatch(/\.spme-source-card:target,[\s\S]*\.spme-source-card:focus\s*\{[\s\S]*border-color:\s*var\(--spme-accent\)/);
+    expect(css).toMatch(/\.spme-source-card\s*\{[\s\S]*scroll-margin-top:/);
+  });
+
   it("lays the source editor across its expanded card without a nested panel", () => {
     expect(css).toMatch(/\.spme-source-card-editing\s*\{[\s\S]*border-color:\s*var\(--spme-accent\)/);
     expect(css).toMatch(/\.spme-source-form-inline\s*\{[\s\S]*grid-column:\s*1\s*\/\s*-1[\s\S]*background:\s*transparent[\s\S]*border:\s*0/);
