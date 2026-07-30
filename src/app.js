@@ -467,7 +467,7 @@ export class EnhancedPluginManager {
       <label><span>Name</span><input name="name" required value="${escapeHTML(source.name || "")}"></label>
       <label><span>Index URL</span><input name="url" type="url" required value="${escapeHTML(source.url || "")}"></label>
       <label><span>Local path</span><input name="local_path" value="${escapeHTML(source.local_path || "")}"></label>
-      <div><button type="submit">${editing ? "Save source" : "Add source"}</button><button type="button" data-action="cancel-source">Cancel</button></div>
+      <div class="spme-source-form-actions"><button type="submit">${editing ? "Save source" : "Add source"}</button><button type="button" data-action="cancel-source">Cancel</button></div>
       <p class="spme-help">Duplicate names and URLs are rejected. Custom sources are treated as unverified unless hosted by the official Stash organization.</p>
     </form>`;
   }

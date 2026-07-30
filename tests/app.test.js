@@ -306,6 +306,7 @@ describe("EnhancedPluginManager", () => {
     expect(card).not.toBeNull();
     expect(card?.nextElementSibling).toBe(grid);
     expect(form?.querySelector("h2").textContent).toBe("Add plugin source");
+    expect(form?.querySelector(".spme-source-form-actions")).not.toBeNull();
     expect(document.activeElement).toBe(form?.elements.name);
     expect(document.querySelector('[data-action="add-source"]').disabled).toBe(true);
 
