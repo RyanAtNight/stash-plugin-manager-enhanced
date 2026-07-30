@@ -97,7 +97,7 @@
 .spme-columns-browse .spme-col-actions { width:11.2rem; }
 #spme-root[data-active-tab="browse"] .spme-table-actions { flex-wrap:nowrap; }
 .spme-package-table td strong, .spme-package-table td code { display:block; }
-.spme-table-description { color:var(--spme-text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.spme-table-description { color:var(--spme-text-muted); white-space:normal; overflow:visible; text-overflow:clip; }
 .spme-table-actions { display:flex; justify-content:flex-end; flex-wrap:wrap; gap:.35rem; }
 .spme-package-table .spme-badges,
 .spme-package-table .spme-table-actions { justify-content:flex-start; }

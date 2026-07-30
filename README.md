@@ -15,6 +15,7 @@ The integration is intentionally progressive because Stash's `SettingsPluginsPan
 - Browse renders 50 packages initially with progressive **Load more** controls
 - No nested package-list scroll areas
 - Responsive, wider layout with sticky actions
+- Table descriptions wrap naturally instead of being truncated
 - Search by name, ID, description, version, and source
 - Enabled, disabled, source, and updates-only filters
 - Visible installed/enabled/update counts

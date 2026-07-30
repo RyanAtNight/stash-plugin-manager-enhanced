@@ -16,6 +16,11 @@ describe("package view responsive styles", () => {
     expect(css).toMatch(/#spme-root \.spme-tabs button\.active\s*\{[\s\S]*background:\s*var\(--spme-accent\)/);
   });
 
+  it("wraps table descriptions instead of truncating them", () => {
+    const desktop = css.slice(0, css.indexOf("@media (max-width: 1100px)"));
+    expect(desktop).toMatch(/\.spme-table-description\s*\{[\s\S]*white-space:\s*normal[\s\S]*overflow:\s*visible[\s\S]*text-overflow:\s*clip/);
+  });
+
   it("left-aligns table status and action content with their headers", () => {
     expect(css).toMatch(/\.spme-package-table \.spme-badges,\s*\.spme-package-table \.spme-table-actions\s*\{\s*justify-content:\s*flex-start/);
   });
