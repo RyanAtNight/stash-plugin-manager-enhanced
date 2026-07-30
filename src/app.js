@@ -1,4 +1,5 @@
 import {
+  deriveSourceGithubUrl,
   filterPackages,
   packageLastCommitDate,
   pluginManagerTabFromURL,
@@ -505,6 +506,10 @@ export class EnhancedPluginManager {
       const sourceURL = sourceLink
         ? `<a href="${escapeHTML(sourceLink)}" target="_blank" rel="noopener noreferrer">${escapeHTML(source.url)} ↗</a>`
         : `<code>${escapeHTML(source.url)}</code>`;
+      const githubURL = deriveSourceGithubUrl(source.url);
+      const repository = githubURL
+        ? `<a class="spme-repo-link" href="${escapeHTML(githubURL)}" target="_blank" rel="noopener noreferrer" aria-label="Open ${escapeHTML(source.name || "Unnamed source")} GitHub repository">GitHub</a>`
+        : '<span class="spme-repo-missing">Repository unavailable</span>';
       const editing = this.editingSource === index;
       return `<article id="${sourceAnchorID(source.url)}" class="spme-source-card${editing ? " spme-source-card-editing" : ""}" data-source-index="${index}" tabindex="-1">
         <div><h2>${escapeHTML(source.name || "Unnamed source")}</h2>${sourceURL}<div class="spme-badges">${trustBadge(inferredTrust)}<span class="spme-badge ${health?.ok ? "spme-status-current" : "spme-status-error"}">${health?.ok ? "Healthy" : "Error"}</span></div></div>
@@ -512,7 +517,7 @@ export class EnhancedPluginManager {
         ${health?.error ? `<p class="spme-text-error">${escapeHTML(health.error)}</p>` : ""}
         ${editing
           ? this.sourceFormHTML(source, { editing: true })
-          : `<div class="spme-card-actions"><button type="button" data-action="edit-source" data-index="${index}">Edit</button><button type="button" class="danger subtle" data-action="delete-source" data-index="${index}">Delete</button></div>`}
+          : `<div class="spme-card-actions">${repository}<button type="button" data-action="edit-source" data-index="${index}">Edit</button><button type="button" class="danger subtle" data-action="delete-source" data-index="${index}">Delete</button></div>`}
       </article>`;
     }).join("");
     const addCard = this.addingSource

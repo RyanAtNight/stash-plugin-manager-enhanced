@@ -386,6 +386,11 @@ describe("EnhancedPluginManager", () => {
     expect(document.body.textContent).toContain("Official Stash source");
     expect(document.body.textContent).toContain("2 packages");
     expect(document.querySelector('a[href$="index.yml"]')).not.toBeNull();
+    const repository = document.querySelector('a[aria-label="Open Community (stable) GitHub repository"]');
+    expect(repository?.textContent).toBe("GitHub");
+    expect(repository?.href).toBe("https://github.com/stashapp/CommunityScripts");
+    expect(repository?.target).toBe("_blank");
+    expect(repository?.rel).toContain("noopener");
   });
 
   it("shows installed and enabled plugin counts for each source", async () => {

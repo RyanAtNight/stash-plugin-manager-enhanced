@@ -23,7 +23,7 @@ The integration is intentionally progressive because Stash's `SettingsPluginsPan
 - Individual and bulk installation, updating, and uninstalling
 - Per-plugin enable/disable controls
 - Runtime-only plugins appear only when present, with enable/disable controls and package operations safely unavailable
-- Source health, package counts, trust labels, and last-check time
+- Source health, package counts, trust labels, last-check time, and repository-root GitHub links
 - Temporary top-of-list source creation, source deletion, and in-place card editing with duplicate checks
 - Installed and Browse source labels link to stable, URL-addressable cards in **Sources**, including refresh and browser-history restoration
 - Collapsed-by-default plugin configuration with expand/collapse all

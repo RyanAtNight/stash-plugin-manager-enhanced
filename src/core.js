@@ -56,6 +56,28 @@ function normaliseGithubUrl(value) {
   return `https://github.com/${match[1]}/${match[2].replace(/\.git$/i, "")}`;
 }
 
+export function deriveSourceGithubUrl(value) {
+  const direct = normaliseGithubUrl(value);
+  if (direct) return direct;
+
+  let source;
+  try {
+    source = new URL(value);
+  } catch {
+    return undefined;
+  }
+
+  const parts = source.pathname.split("/").filter(Boolean);
+  if (source.hostname.toLowerCase() === "raw.githubusercontent.com" && parts.length >= 2) {
+    return `https://github.com/${parts[0]}/${parts[1].replace(/\.git$/i, "")}`;
+  }
+
+  const pages = source.hostname.match(/^([^.]+)\.github\.io$/i);
+  const repo = parts[0];
+  if (!pages || !repo || /\.ya?ml$/i.test(repo)) return undefined;
+  return `https://github.com/${pages[1]}/${repo.replace(/\.git$/i, "")}`;
+}
+
 export function deriveGithubUrl({ pluginUrl, metadata = {}, sourceUrl, packageId } = {}) {
   const candidates = [
     pluginUrl,

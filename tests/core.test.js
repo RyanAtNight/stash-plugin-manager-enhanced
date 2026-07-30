@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   capabilitySummary,
   deriveGithubUrl,
+  deriveSourceGithubUrl,
   filterPackages,
   isPluginsSettingsRoute,
   pluginManagerTabFromURL,
@@ -132,6 +133,31 @@ describe("deriveGithubUrl", () => {
         sourceUrl: "http://localhost:9999/local/index.yml",
       })
     ).toBeUndefined();
+  });
+});
+
+describe("deriveSourceGithubUrl", () => {
+  it("derives repository roots from GitHub Pages package indexes", () => {
+    expect(deriveSourceGithubUrl("https://stashapp.github.io/CommunityScripts/stable/index.yml")).toBe(
+      "https://github.com/stashapp/CommunityScripts"
+    );
+    expect(deriveSourceGithubUrl("https://f4bio.github.io/stash-plugins/main/index.yml")).toBe(
+      "https://github.com/f4bio/stash-plugins"
+    );
+  });
+
+  it("derives repository roots from raw and direct GitHub URLs", () => {
+    expect(deriveSourceGithubUrl("https://raw.githubusercontent.com/example/plugins/refs/heads/main/index.yml")).toBe(
+      "https://github.com/example/plugins"
+    );
+    expect(deriveSourceGithubUrl("https://github.com/example/plugins/raw/main/index.yml")).toBe(
+      "https://github.com/example/plugins"
+    );
+  });
+
+  it("does not invent repositories for local or unrelated sources", () => {
+    expect(deriveSourceGithubUrl("file:///C:/plugins/index.yml")).toBeUndefined();
+    expect(deriveSourceGithubUrl("https://plugins.example.com/index.yml")).toBeUndefined();
   });
 });
 
