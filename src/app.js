@@ -105,6 +105,7 @@ export class EnhancedPluginManager {
     this.root.id = "spme-root";
     this.root.className = "spme-shell";
     this.root.dataset.viewMode = this.viewMode;
+    this.root.dataset.activeTab = this.activeTab;
     this.root.setAttribute("aria-label", "Enhanced plugin manager");
     this.coreSections[0].before(this.root);
     this.coreSections.forEach((section) => section.classList.add("spme-core-hidden"));
@@ -143,7 +144,9 @@ export class EnhancedPluginManager {
 
   updateLayoutWidth() {
     if (!this.root || !this.window) return;
-    const left = this.root.getBoundingClientRect().left;
+    const settingsContainer = this.document.querySelector("#settings-container");
+    const left = settingsContainer?.getBoundingClientRect().left
+      ?? this.root.getBoundingClientRect().left;
     const available = Math.max(320, this.window.innerWidth - left - 16);
     this.root.style.setProperty("--spme-available-width", `${available}px`);
   }
@@ -194,6 +197,7 @@ export class EnhancedPluginManager {
   async setTab(tab, { updateURL = true } = {}) {
     if (!TAB_DEFINITIONS.some(([id]) => id === tab)) return;
     this.activeTab = tab;
+    if (this.root) this.root.dataset.activeTab = tab;
     this.message = undefined;
     if (updateURL && this.window?.history && this.window?.location) {
       const nextURL = withPluginManagerTab(this.window.location.href, tab);
@@ -304,7 +308,9 @@ export class EnhancedPluginManager {
         <button type="button" data-action="reload">Reload plugin definitions</button>
       </div>
       ${this.toolbarHTML({ kind: "installed", count: packages.length, selectedCount: selected.length, extra: filterExtras })}
-      <div class="spme-list">${packages.map((pkg) => this.packageCard(pkg, true)).join("") || '<p class="spme-empty">No installed plugins match these filters.</p>'}</div>
+      ${this.viewMode === "table"
+        ? this.packageTable(packages, true)
+        : `<div class="spme-list">${packages.map((pkg) => this.packageCard(pkg, true)).join("") || '<p class="spme-empty">No installed plugins match these filters.</p>'}</div>`}
     </section>`;
   }
 
@@ -346,6 +352,53 @@ export class EnhancedPluginManager {
     </article>`;
   }
 
+  packageTable(packages, installed) {
+    if (!packages.length) return `<p class="spme-empty">No ${installed ? "installed" : "available"} plugins match these filters.</p>`;
+    return `<div class="spme-table-scroll" tabindex="0" aria-label="${installed ? "Installed" : "Available"} plugin table">
+      <table class="spme-package-table">
+        <thead><tr><th scope="col"><span class="visually-hidden">Select</span></th><th scope="col">Plugin</th><th scope="col">Description</th><th scope="col">Version</th><th scope="col">Source</th><th scope="col">Status</th><th scope="col">Actions</th></tr></thead>
+        <tbody>${packages.map((pkg) => this.packageTableRow(pkg, installed)).join("")}</tbody>
+      </table>
+    </div>`;
+  }
+
+  packageTableRow(pkg, installed) {
+    const selected = installed
+      ? this.selectedInstalled.has(pkg.package_id)
+      : this.selectedAvailable.has(`${pkg.sourceURL}|${pkg.package_id}`);
+    const selectKey = installed ? pkg.package_id : `${pkg.sourceURL}|${pkg.package_id}`;
+    const status = pkg.status === "update"
+      ? '<span class="spme-badge spme-status-update">Update available</span>'
+      : pkg.status === "unchecked"
+        ? '<span class="spme-badge">Updates not checked</span>'
+        : installed
+          ? '<span class="spme-badge spme-status-current">Current</span>'
+          : '<span class="spme-badge spme-status-available">Available</span>';
+    const state = installed
+      ? `<span class="spme-badge ${pkg.enabled ? "spme-enabled" : "spme-disabled"}">${pkg.enabled ? "Enabled" : "Disabled"}</span>`
+      : "";
+    const version = installed && pkg.source_package
+      ? `${escapeHTML(pkg.version || "Unknown")} → ${escapeHTML(pkg.source_package.version || "Unknown")}`
+      : escapeHTML(pkg.version || "Unknown");
+    const actions = installed
+      ? `<button type="button" data-action="toggle-enabled" data-id="${escapeHTML(pkg.package_id)}">${pkg.enabled ? "Disable" : "Enable"}</button>
+         <button type="button" data-action="update-one" data-id="${escapeHTML(pkg.package_id)}" ${pkg.status !== "update" ? "disabled" : ""}>Update</button>
+         <button type="button" class="danger subtle" data-action="uninstall-one" data-id="${escapeHTML(pkg.package_id)}">Uninstall</button>`
+      : `<button type="button" data-action="install-one" data-key="${escapeHTML(selectKey)}">Install</button>`;
+    const capabilities = installed && pkg.capabilities?.length
+      ? `<details class="spme-table-capabilities"><summary>Capabilities</summary><ul>${pkg.capabilities.map((item) => `<li>${escapeHTML(item)}</li>`).join("")}</ul></details>`
+      : "";
+    return `<tr data-package-id="${escapeHTML(pkg.package_id)}">
+      <td class="spme-table-select"><input type="checkbox" data-select-package="${installed ? "installed" : "available"}" data-key="${escapeHTML(selectKey)}" aria-label="Select ${escapeHTML(pkg.name)}" ${selected ? "checked" : ""}></td>
+      <td data-label="Plugin"><div class="spme-table-plugin"><strong>${escapeHTML(pkg.name)}</strong><code>${escapeHTML(pkg.package_id)}</code>${capabilities}</div></td>
+      <td data-label="Description" class="spme-table-description">${escapeHTML(packageDescription(pkg))}</td>
+      <td data-label="Version">${version}</td>
+      <td data-label="Source">${escapeHTML(pkg.sourceName || pkg.sourceURL)}</td>
+      <td data-label="Status"><div class="spme-badges">${status}${state}${trustBadge(pkg.trust)}</div></td>
+      <td data-label="Actions"><div class="spme-table-actions">${githubLink(pkg)}${actions}</div></td>
+    </tr>`;
+  }
+
   browseHTML() {
     if (!this.available) return '<div class="spme-loading" role="status">Loading available plugins…</div>';
     const packages = filterPackages(this.available.packages, this.filters.browse);
@@ -356,7 +409,9 @@ export class EnhancedPluginManager {
     return `<section class="spme-panel" role="tabpanel">
       <div class="spme-actions spme-sticky"><button type="button" data-action="install-selected" ${!selected.length || this.busy ? "disabled" : ""}>Install selected (${selected.length})</button><button type="button" data-action="refresh-sources">Refresh catalog</button></div>
       ${this.toolbarHTML({ kind: "browse", count: packages.length, selectedCount: selected.length, extra })}
-      <div class="spme-list">${visiblePackages.map((pkg) => this.packageCard(pkg, false)).join("") || '<p class="spme-empty">No available plugins match these filters.</p>'}</div>
+      ${this.viewMode === "table"
+        ? this.packageTable(visiblePackages, false)
+        : `<div class="spme-list">${visiblePackages.map((pkg) => this.packageCard(pkg, false)).join("") || '<p class="spme-empty">No available plugins match these filters.</p>'}</div>`}
       ${visiblePackages.length < packages.length ? `<div class="spme-load-more"><button type="button" data-action="load-more">Load ${Math.min(50, packages.length - visiblePackages.length)} more (${packages.length - visiblePackages.length} remaining)</button></div>` : ""}
     </section>`;
   }

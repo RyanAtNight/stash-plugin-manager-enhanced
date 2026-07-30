@@ -4,7 +4,7 @@ import { EnhancedPluginManager } from "../src/app.js";
 
 function pageFixture() {
   document.body.innerHTML = `
-    <main id="settings-content">
+    <main id="settings-container">
       <section class="setting-section"><h1>Installed Plugins</h1><div>core installed</div></section>
       <section class="setting-section"><h1>Available Plugins</h1><div>core available</div></section>
       <section class="setting-section"><h1>Plugins</h1><div>core configuration</div></section>
@@ -133,6 +133,47 @@ describe("EnhancedPluginManager", () => {
     expect(document.querySelector('[data-action="set-view"][data-view-mode="table"]').getAttribute("aria-pressed")).toBe("true");
   });
 
+  it("renders installed plugins as a semantic table when Table view is selected", async () => {
+    await mountApp();
+    document.querySelector('[data-action="set-view"][data-view-mode="table"]').click();
+
+    const table = document.querySelector(".spme-package-table");
+    expect(table).not.toBeNull();
+    expect([...table.querySelectorAll("th")].map((cell) => cell.textContent.trim())).toEqual([
+      "Select",
+      "Plugin",
+      "Description",
+      "Version",
+      "Source",
+      "Status",
+      "Actions",
+    ]);
+    expect(table.querySelector('[data-package-id="alpha"]')).not.toBeNull();
+    expect(table.querySelector('[data-package-id="alpha"] [data-label="Plugin"] > .spme-table-plugin')).not.toBeNull();
+    expect(table.querySelector('a[aria-label="Open Alpha Tool GitHub repository"]')).not.toBeNull();
+    expect(document.querySelectorAll(".spme-package-card")).toHaveLength(0);
+  });
+
+  it("uses Table view for available packages while retaining install controls", async () => {
+    const { app } = await mountApp();
+    document.querySelector('[data-action="set-view"][data-view-mode="table"]').click();
+    await app.setTab("browse");
+
+    const row = document.querySelector('.spme-package-table [data-package-id="beta"]');
+    expect(row).not.toBeNull();
+    expect(row.querySelector('[data-action="install-one"]')).not.toBeNull();
+    expect(row.querySelector('a[aria-label="Open Beta Helper GitHub repository"]')).not.toBeNull();
+  });
+
+  it("keeps non-package tabs on the centered layout after Table view is selected", async () => {
+    const { app } = await mountApp();
+    document.querySelector('[data-action="set-view"][data-view-mode="table"]').click();
+    await app.setTab("configuration");
+
+    expect(document.querySelector("#spme-root").dataset.activeTab).toBe("configuration");
+    expect(document.querySelector(".spme-view-toggle")).toBeNull();
+  });
+
   it("persists the selected plugin-manager subtab in the URL and restores it on mount", async () => {
     window.history.replaceState({}, "", "/settings?tab=plugins&pluginManagerTab=configuration");
     const { app } = await mountApp();
@@ -233,9 +274,16 @@ describe("EnhancedPluginManager", () => {
     expect(document.querySelectorAll(".spme-package-card")).toHaveLength(60);
   });
 
-  it("uses the horizontal space remaining to the right of the settings navigation", async () => {
-    await mountApp();
-    expect(document.querySelector("#spme-root").style.getPropertyValue("--spme-available-width")).toBeTruthy();
+  it("uses the horizontal space remaining beside the settings navigation", async () => {
+    const { app } = await mountApp();
+    document.querySelector("#settings-container").getBoundingClientRect = () => ({ left: 240 });
+    document.querySelector("#spme-root").getBoundingClientRect = () => ({ left: 700 });
+
+    app.updateLayoutWidth();
+
+    expect(document.querySelector("#spme-root").style.getPropertyValue("--spme-available-width")).toBe(
+      `${window.innerWidth - 240 - 16}px`
+    );
   });
 
   it("restores the untouched core page when unmounted", async () => {
