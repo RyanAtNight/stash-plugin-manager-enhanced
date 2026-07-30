@@ -83,6 +83,7 @@ describe("package commit dates and sorting", () => {
   it("sorts by name ascending or last commit descending with unknown dates last", () => {
     expect(sortPackages(packages, "name").map((pkg) => pkg.package_id)).toEqual(["alpha", "unknown", "zulu"]);
     expect(sortPackages(packages, "last-commit").map((pkg) => pkg.package_id)).toEqual(["zulu", "alpha", "unknown"]);
+    expect(sortPackages(packages, "last-commit-oldest").map((pkg) => pkg.package_id)).toEqual(["alpha", "zulu", "unknown"]);
   });
 });
 

@@ -192,13 +192,16 @@ export function sortPackages(packages, sort = "name") {
       { sensitivity: "base" }
     );
   return [...packages].sort((left, right) => {
-    if (sort !== "last-commit") return byName(left, right);
+    if (sort !== "last-commit" && sort !== "last-commit-oldest") return byName(left, right);
     const leftDate = packageLastCommitDate(left);
     const rightDate = packageLastCommitDate(right);
     if (!leftDate && !rightDate) return byName(left, right);
     if (!leftDate) return 1;
     if (!rightDate) return -1;
-    return Date.parse(rightDate) - Date.parse(leftDate) || byName(left, right);
+    const dateOrder = sort === "last-commit-oldest"
+      ? Date.parse(leftDate) - Date.parse(rightDate)
+      : Date.parse(rightDate) - Date.parse(leftDate);
+    return dateOrder || byName(left, right);
   });
 }
 

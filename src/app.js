@@ -331,7 +331,7 @@ export class EnhancedPluginManager {
 
   sortControlHTML(kind) {
     const selected = this.filters[kind].sort;
-    return `<label><span>Sort</span><select data-filter-select="${kind}-sort" aria-label="Sort ${kind === "installed" ? "installed" : "available"} plugins"><option value="name" ${selected === "name" ? "selected" : ""}>Plugin name (A–Z)</option><option value="last-commit" ${selected === "last-commit" ? "selected" : ""}>Last commit (newest)</option></select></label>`;
+    return `<label><span>Sort</span><select data-filter-select="${kind}-sort" aria-label="Sort ${kind === "installed" ? "installed" : "available"} plugins"><option value="name" ${selected === "name" ? "selected" : ""}>Plugin name (A–Z)</option><option value="last-commit" ${selected === "last-commit" ? "selected" : ""}>Last commit (newest)</option><option value="last-commit-oldest" ${selected === "last-commit-oldest" ? "selected" : ""}>Last commit (oldest)</option></select></label>`;
   }
 
   installedHTML() {
@@ -741,7 +741,7 @@ export class EnhancedPluginManager {
     }
     if (target.dataset.filterSelect === "installed-sort" || target.dataset.filterSelect === "browse-sort") {
       const kind = target.dataset.filterSelect.startsWith("installed") ? "installed" : "browse";
-      this.filters[kind].sort = target.value === "last-commit" ? "last-commit" : "name";
+      this.filters[kind].sort = ["last-commit", "last-commit-oldest"].includes(target.value) ? target.value : "name";
       if (kind === "browse") this.browseLimit = 50;
       return this.render();
     }

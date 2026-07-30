@@ -209,6 +209,11 @@ describe("EnhancedPluginManager", () => {
     document.querySelector('[data-action="set-view"][data-view-mode="table"]').click();
     expect(rowOrder()).toEqual(["zulu", "alpha"]);
     expect(document.querySelector('[data-package-id="alpha"] [data-label="Last commit"] time[data-last-commit]')).not.toBeNull();
+    sort = document.querySelector('[data-filter-select="installed-sort"]');
+    expect([...sort.options].map((option) => option.value)).toContain("last-commit-oldest");
+    sort.value = "last-commit-oldest";
+    sort.dispatchEvent(new Event("change", { bubbles: true }));
+    expect(rowOrder()).toEqual(["alpha", "zulu"]);
 
     await app.setTab("browse");
     const availableTemplate = app.available.packages[0];
@@ -227,8 +232,13 @@ describe("EnhancedPluginManager", () => {
     sort.value = "last-commit";
     sort.dispatchEvent(new Event("change", { bubbles: true }));
     expect(cardOrder()).toEqual(["beta", "aardvark"]);
+    sort = document.querySelector('[data-filter-select="browse-sort"]');
+    expect([...sort.options].map((option) => option.value)).toContain("last-commit-oldest");
+    sort.value = "last-commit-oldest";
+    sort.dispatchEvent(new Event("change", { bubbles: true }));
+    expect(cardOrder()).toEqual(["aardvark", "beta"]);
     document.querySelector('[data-action="set-view"][data-view-mode="table"]').click();
-    expect(rowOrder()).toEqual(["beta", "aardvark"]);
+    expect(rowOrder()).toEqual(["aardvark", "beta"]);
     expect(document.querySelector('[data-package-id="beta"] [data-label="Last commit"] time[data-last-commit]')).not.toBeNull();
   });
 
