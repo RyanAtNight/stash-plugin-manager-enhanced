@@ -293,7 +293,7 @@ export class EnhancedPluginManager {
         </div>`
       : "";
     return `<header class="spme-header">
-      <div><h1>Plugin Manager</h1><p>Install, update, inspect, configure, and verify plugins without nested scrolling.</p></div>
+      <div><h1>Plugin Manager Enhanced</h1><p>Install, update, inspect, configure, and verify plugins without nested scrolling.</p></div>
       <div class="spme-header-tools">
         <div class="spme-summary" aria-label="Plugin summary">
           <span><strong>${this.inventory.packages.length}</strong> installed</span>

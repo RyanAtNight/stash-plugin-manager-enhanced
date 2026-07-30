@@ -106,6 +106,11 @@ beforeEach(() => {
 });
 
 describe("EnhancedPluginManager", () => {
+  it("identifies the page as Plugin Manager Enhanced", async () => {
+    await mountApp();
+    expect(document.querySelector("#spme-root h1")?.textContent).toBe("Plugin Manager Enhanced");
+  });
+
   it("replaces the three core sections with four focused tabs", async () => {
     await mountApp();
 
