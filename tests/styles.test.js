@@ -31,8 +31,10 @@ describe("package view responsive styles", () => {
     expect(css).toMatch(/data-active-tab="browse"[\s\S]*\.spme-table-actions\s*\{[\s\S]*flex-wrap:\s*nowrap/);
   });
 
-  it("styles the sidebar kill switch", () => {
-    expect(css).toMatch(/#spme-enhancement-control\s*\{[\s\S]*border-top:[\s\S]*padding:/);
+  it("styles the sidebar kill switch without a distracting top border", () => {
+    const rule = css.match(/#spme-enhancement-control\s*\{([^}]*)\}/)?.[1] ?? "";
+    expect(rule).toContain("padding:");
+    expect(rule).not.toContain("border-top:");
   });
 
   it("spaces source form action buttons", () => {
