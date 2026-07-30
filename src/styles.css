@@ -108,6 +108,7 @@
 .spme-source-card:target,
 .spme-source-card:focus { border-color:var(--spme-accent); box-shadow:0 0 0 2px rgba(25,153,214,.3); outline:none; }
 .spme-source-card-editing { border-color:var(--spme-accent); box-shadow:0 0 0 1px rgba(25,153,214,.18); }
+.spme-source-card-adding { margin:.75rem 0; border-color:var(--spme-accent); }
 .spme-source-link { color:#59c8ff; text-decoration:underline; text-decoration-color:rgba(89,200,255,.55); text-underline-offset:.15em; }
 .spme-source-link:hover { color:#8bdcff; text-decoration-color:currentColor; }
 .spme-source-card a { overflow-wrap:anywhere; }

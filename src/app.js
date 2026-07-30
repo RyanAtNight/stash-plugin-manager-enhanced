@@ -90,6 +90,7 @@ export class EnhancedPluginManager {
     this.message = undefined;
     this.busy = false;
     this.editingSource = undefined;
+    this.addingSource = false;
     this.browseLimit = 50;
     this.onClick = this.onClick.bind(this);
     this.onInput = this.onInput.bind(this);
@@ -224,6 +225,10 @@ export class EnhancedPluginManager {
   async setTab(tab, { updateURL = true } = {}) {
     if (!TAB_DEFINITIONS.some(([id]) => id === tab)) return;
     this.activeTab = tab;
+    if (tab !== "sources") {
+      this.editingSource = undefined;
+      this.addingSource = false;
+    }
     if (this.root) this.root.dataset.activeTab = tab;
     this.message = undefined;
     if (updateURL && this.window?.history && this.window?.location) {
@@ -448,13 +453,13 @@ export class EnhancedPluginManager {
     </section>`;
   }
 
-  sourceFormHTML(source = {}, { inline = false } = {}) {
-    return `<form class="spme-source-form${inline ? " spme-source-form-inline" : ""}" data-source-form>
-      <h2>${inline ? "Edit plugin source" : "Add plugin source"}</h2>
+  sourceFormHTML(source = {}, { editing = false } = {}) {
+    return `<form class="spme-source-form spme-source-form-inline" data-source-form>
+      <h2>${editing ? "Edit plugin source" : "Add plugin source"}</h2>
       <label><span>Name</span><input name="name" required value="${escapeHTML(source.name || "")}"></label>
       <label><span>Index URL</span><input name="url" type="url" required value="${escapeHTML(source.url || "")}"></label>
       <label><span>Local path</span><input name="local_path" value="${escapeHTML(source.local_path || "")}"></label>
-      <div><button type="submit">${inline ? "Save source" : "Add source"}</button>${inline ? '<button type="button" data-action="cancel-source">Cancel</button>' : ""}</div>
+      <div><button type="submit">${editing ? "Save source" : "Add source"}</button><button type="button" data-action="cancel-source">Cancel</button></div>
       <p class="spme-help">Duplicate names and URLs are rejected. Custom sources are treated as unverified unless hosted by the official Stash organization.</p>
     </form>`;
   }
@@ -479,14 +484,17 @@ export class EnhancedPluginManager {
         <dl><div><dt>Packages</dt><dd>${plural(health?.packageCount ?? 0, "package")}</dd></div><div><dt>Last checked</dt><dd>${escapeHTML(formatDate(health?.checkedAt))}</dd></div><div><dt>Local path</dt><dd>${escapeHTML(source.local_path || "Default")}</dd></div></dl>
         ${health?.error ? `<p class="spme-text-error">${escapeHTML(health.error)}</p>` : ""}
         ${editing
-          ? this.sourceFormHTML(source, { inline: true })
+          ? this.sourceFormHTML(source, { editing: true })
           : `<div class="spme-card-actions"><button type="button" data-action="edit-source" data-index="${index}">Edit</button><button type="button" class="danger subtle" data-action="delete-source" data-index="${index}">Delete</button></div>`}
       </article>`;
     }).join("");
+    const addCard = this.addingSource
+      ? `<article class="spme-source-card spme-source-card-adding" data-add-source-card>${this.sourceFormHTML()}</article>`
+      : "";
     return `<section class="spme-panel" role="tabpanel">
-      <div class="spme-actions spme-sticky"><button type="button" data-action="refresh-sources">Check all sources</button></div>
+      <div class="spme-actions spme-sticky"><button type="button" data-action="refresh-sources">Check all sources</button><button type="button" data-action="add-source" aria-expanded="${this.addingSource}" ${this.addingSource ? "disabled" : ""}>Add plugin source</button></div>
+      ${addCard}
       <div class="spme-source-grid">${rows || '<p class="spme-empty">No plugin sources configured.</p>'}</div>
-      ${this.editingSource === undefined ? this.sourceFormHTML() : ""}
     </section>`;
   }
 
@@ -547,6 +555,7 @@ export class EnhancedPluginManager {
     this.busy = true;
     this.message = { type: "info", text: `${label}…` };
     this.render();
+    let succeeded = false;
     try {
       const result = await fn();
       if (typeof result === "string" && this.service.waitForJob) {
@@ -559,12 +568,14 @@ export class EnhancedPluginManager {
         await this.loadAvailable(true);
       }
       this.message = { type: "success", text: `${label} completed.` };
+      succeeded = true;
     } catch (error) {
       this.message = { type: "error", text: error instanceof Error ? error.message : String(error) };
     } finally {
       this.busy = false;
       this.render();
     }
+    return succeeded;
   }
 
   async onClick(event) {
@@ -633,13 +644,22 @@ export class EnhancedPluginManager {
       if (!this.confirm?.(`Uninstall ${names}? Stash will remove the package files. Review dependencies before continuing.`)) return;
       return this.runOperation(`Uninstalling ${plural(packages.length, "plugin")}`, () => this.service.uninstall(packages));
     }
+    if (action === "add-source") {
+      this.addingSource = true;
+      this.editingSource = undefined;
+      this.render();
+      this.focusSourceForm();
+      return;
+    }
     if (action === "edit-source") {
+      this.addingSource = false;
       this.editingSource = Number(button.dataset.index);
       this.render();
       this.focusSourceForm();
       return;
     }
     if (action === "cancel-source") {
+      this.addingSource = false;
       this.editingSource = undefined;
       return this.render();
     }
@@ -736,11 +756,13 @@ export class EnhancedPluginManager {
       return this.render();
     }
     const sources = this.inventory.sources.slice();
-    if (this.editingSource === undefined) sources.push(source);
+    const editing = this.editingSource !== undefined;
+    if (!editing) sources.push(source);
     else sources[this.editingSource] = source;
-    await this.runOperation(`${this.editingSource === undefined ? "Adding" : "Updating"} source ${source.name}`, () => this.service.saveSources(sources));
+    const saved = await this.runOperation(`${editing ? "Updating" : "Adding"} source ${source.name}`, () => this.service.saveSources(sources));
+    if (!saved) return;
     this.inventory.sources = sources;
-    this.available = undefined;
+    this.addingSource = false;
     this.editingSource = undefined;
     this.render();
   }

@@ -278,6 +278,27 @@ describe("EnhancedPluginManager", () => {
     expect(document.querySelector('a[href$="index.yml"]')).not.toBeNull();
   });
 
+  it("creates a temporary add-source card above the source grid", async () => {
+    const { app } = await mountApp();
+    await app.setTab("sources");
+    expect(document.querySelector("[data-source-form]")).toBeNull();
+
+    document.querySelector('[data-action="add-source"]').click();
+
+    const card = document.querySelector(".spme-source-card-adding");
+    const grid = document.querySelector(".spme-source-grid");
+    const form = card?.querySelector("[data-source-form]");
+    expect(card).not.toBeNull();
+    expect(card?.nextElementSibling).toBe(grid);
+    expect(form?.querySelector("h2").textContent).toBe("Add plugin source");
+    expect(document.activeElement).toBe(form?.elements.name);
+    expect(document.querySelector('[data-action="add-source"]').disabled).toBe(true);
+
+    form.querySelector('[data-action="cancel-source"]').click();
+    expect(document.querySelector(".spme-source-card-adding")).toBeNull();
+    expect(document.querySelector("[data-source-form]")).toBeNull();
+  });
+
   it("expands the selected source card into an inline editor without scrolling", async () => {
     const scrollIntoView = vi.fn();
     window.HTMLElement.prototype.scrollIntoView = scrollIntoView;
@@ -297,7 +318,8 @@ describe("EnhancedPluginManager", () => {
 
     form.querySelector('[data-action="cancel-source"]').click();
     expect(document.querySelector(".spme-source-card-editing")).toBeNull();
-    expect(document.querySelector(".spme-source-form h2").textContent).toBe("Add plugin source");
+    expect(document.querySelector("[data-source-form]")).toBeNull();
+    expect(document.querySelector('[data-action="add-source"]')).not.toBeNull();
   });
 
   it("saves an edited source from its expanded card without adding a duplicate", async () => {
@@ -337,9 +359,11 @@ describe("EnhancedPluginManager", () => {
     expect(service.configurePlugin).toHaveBeenCalledWith("alpha", { dryRun: true });
   });
 
-  it("adds a unique source from the dedicated source form", async () => {
+  it("adds a unique source from the temporary source card and closes it after saving", async () => {
     const { app, service } = await mountApp();
     await app.setTab("sources");
+    expect(document.querySelector("[data-source-form]")).toBeNull();
+    document.querySelector('[data-action="add-source"]').click();
     const form = document.querySelector("[data-source-form]");
     form.elements.name.value = "Example";
     form.elements.url.value = "https://example.github.io/plugins/main/index.yml";
@@ -350,6 +374,23 @@ describe("EnhancedPluginManager", () => {
         expect.objectContaining({ name: "Example", url: "https://example.github.io/plugins/main/index.yml" }),
       ])
     );
+    await vi.waitFor(() => expect(document.querySelector(".spme-source-card-adding")).toBeNull());
+    expect(document.querySelector("[data-source-form]")).toBeNull();
+  });
+
+  it("keeps the temporary source card open when saving fails", async () => {
+    const { app, service } = await mountApp();
+    service.saveSources.mockRejectedValueOnce(new Error("Source save failed"));
+    await app.setTab("sources");
+    document.querySelector('[data-action="add-source"]').click();
+    const form = document.querySelector("[data-source-form]");
+    form.elements.name.value = "Example";
+    form.elements.url.value = "https://example.github.io/plugins/main/index.yml";
+
+    form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+
+    await vi.waitFor(() => expect(document.body.textContent).toContain("Source save failed"));
+    expect(document.querySelector(".spme-source-card-adding")).not.toBeNull();
   });
 
   it("limits the initial Browse render and progressively loads more packages", async () => {
