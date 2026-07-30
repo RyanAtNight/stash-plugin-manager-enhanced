@@ -50,7 +50,7 @@ export class PluginPageController {
       control = this.document.createElement("div");
       control.id = "spme-enhancement-control";
       control.className = "nav-item";
-      control.innerHTML = `<div class="spme-enhancement-switch"><label for="spme-enhancement-enabled">Enhanced Plugins UI</label><input id="spme-enhancement-enabled" type="checkbox" role="switch" aria-describedby="spme-enhancement-help"></div><small id="spme-enhancement-help">Turn off to restore the stock Plugins page.</small>`;
+      control.innerHTML = `<div class="spme-enhancement-switch"><label class="form-label" for="spme-enhancement-enabled">Enhanced Plugins UI</label><div class="custom-control custom-switch"><input id="spme-enhancement-enabled" class="custom-control-input" type="checkbox" role="switch" aria-describedby="spme-enhancement-help"><label class="custom-control-label" for="spme-enhancement-enabled" title="Toggle Plugin Manager Enhanced"></label></div></div><small id="spme-enhancement-help">Turn off to restore the stock Plugins page.</small>`;
       pluginItem.after(control);
       control.querySelector("input")?.addEventListener("change", this.onEnhancementChange);
     }

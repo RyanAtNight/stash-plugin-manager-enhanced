@@ -62,6 +62,9 @@ describe("PluginPageController", () => {
     const input = control?.querySelector("#spme-enhancement-enabled");
     expect(control?.previousElementSibling?.id).toBe("plugins-nav");
     expect(input?.checked).toBe(true);
+    expect(input?.classList.contains("custom-control-input")).toBe(true);
+    expect(control?.querySelector(".custom-control.custom-switch")).not.toBeNull();
+    expect(control?.querySelector('label.custom-control-label[for="spme-enhancement-enabled"]')).not.toBeNull();
     expect(control?.textContent).toContain("Enhanced Plugins UI");
     expect(app.mount).toHaveBeenCalledOnce();
   });
