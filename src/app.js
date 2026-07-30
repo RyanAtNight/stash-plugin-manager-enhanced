@@ -485,6 +485,8 @@ export class EnhancedPluginManager {
     if (!this.available) return '<div class="spme-loading" role="status">Checking plugin sources…</div>';
     const rows = this.inventory.sources.map((source, index) => {
       const health = this.available.health.find((item) => item.source.url === source.url);
+      const installed = this.inventory.packages.filter((pkg) => pkg.sourceURL === source.url);
+      const enabled = installed.filter((pkg) => pkg.enabled).length;
       const trust = health?.source ? this.available.packages.find((pkg) => pkg.sourceURL === source.url)?.trust : undefined;
       const inferredTrust = trust ?? (source.url.includes("stashapp.github.io/CommunityScripts")
         ? { level: "official", label: "Official Stash source" }
@@ -498,7 +500,7 @@ export class EnhancedPluginManager {
       const editing = this.editingSource === index;
       return `<article id="${sourceAnchorID(source.url)}" class="spme-source-card${editing ? " spme-source-card-editing" : ""}" data-source-index="${index}" tabindex="-1">
         <div><h2>${escapeHTML(source.name || "Unnamed source")}</h2>${sourceURL}<div class="spme-badges">${trustBadge(inferredTrust)}<span class="spme-badge ${health?.ok ? "spme-status-current" : "spme-status-error"}">${health?.ok ? "Healthy" : "Error"}</span></div></div>
-        <dl><div><dt>Packages</dt><dd>${plural(health?.packageCount ?? 0, "package")}</dd></div><div><dt>Last checked</dt><dd>${escapeHTML(formatDate(health?.checkedAt))}</dd></div><div><dt>Local path</dt><dd>${escapeHTML(source.local_path || "Default")}</dd></div></dl>
+        <dl><div><dt>Packages</dt><dd>${plural(health?.packageCount ?? 0, "package")}</dd></div><div><dt>Installed</dt><dd>${plural(installed.length, "plugin")}</dd></div><div><dt>Enabled</dt><dd>${plural(enabled, "plugin")}</dd></div><div><dt>Last checked</dt><dd>${escapeHTML(formatDate(health?.checkedAt))}</dd></div><div><dt>Local path</dt><dd>${escapeHTML(source.local_path || "Default")}</dd></div></dl>
         ${health?.error ? `<p class="spme-text-error">${escapeHTML(health.error)}</p>` : ""}
         ${editing
           ? this.sourceFormHTML(source, { editing: true })

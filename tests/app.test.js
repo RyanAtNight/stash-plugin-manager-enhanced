@@ -350,6 +350,27 @@ describe("EnhancedPluginManager", () => {
     expect(document.querySelector('a[href$="index.yml"]')).not.toBeNull();
   });
 
+  it("shows installed and enabled plugin counts for each source", async () => {
+    const { app } = await mountApp();
+    app.inventory.packages.push({
+      ...app.inventory.packages[0],
+      package_id: "disabled-from-source",
+      name: "Disabled Source Plugin",
+      enabled: false,
+    });
+    await app.setTab("sources");
+    app.render();
+
+    const values = Object.fromEntries(
+      [...document.querySelectorAll('.spme-source-card[data-source-index="0"] dl > div')].map((item) => [
+        item.querySelector("dt")?.textContent,
+        item.querySelector("dd")?.textContent,
+      ])
+    );
+    expect(values.Installed).toBe("2 plugins");
+    expect(values.Enabled).toBe("1 plugin");
+  });
+
   it("creates a temporary add-source card above the source grid", async () => {
     const { app } = await mountApp();
     await app.setTab("sources");
