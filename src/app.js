@@ -266,18 +266,12 @@ export class EnhancedPluginManager {
   }
 
   tabsHTML() {
-    const counts = {
-      installed: this.inventory.packages.length,
-      browse: this.available?.packages.length,
-      sources: this.inventory.sources.length,
-      configuration: this.inventory.packages.filter((pkg) => pkg.plugin).length,
-    };
     return `<div class="spme-tabs" role="tablist" aria-label="Plugin manager sections">
       ${TAB_DEFINITIONS.map(
         ([id, label]) => `<button type="button" role="tab" data-action="tab" data-tab="${id}"
           aria-selected="${this.activeTab === id}" class="${
             this.activeTab === id ? "active" : ""
-          }">${label}${counts[id] === undefined ? "" : ` <span>${counts[id]}</span>`}</button>`
+          }">${label}</button>`
       ).join("")}
     </div>`;
   }

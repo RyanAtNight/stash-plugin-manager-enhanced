@@ -44,7 +44,7 @@
 #spme-root .spme-tabs button:hover { background:var(--spme-panel); border-color:rgba(255,255,255,.28); }
 #spme-root .spme-tabs button.active { background:var(--spme-accent); border-color:var(--spme-accent); color:#fff; }
 #spme-root .spme-tabs button.active:hover { background:var(--spme-accent); }
-.spme-tabs button span { opacity:.75; margin-left:.25rem; }
+
 .spme-panel { min-width:0; }
 .spme-sticky { position:sticky; top:3.25rem; z-index:8; background:rgba(29,44,54,.96); backdrop-filter:blur(8px); padding:.65rem; border:1px solid var(--spme-border); border-radius:.5rem; }
 .spme-toolbar, .spme-actions { display:flex; align-items:flex-end; flex-wrap:wrap; gap:.5rem; }

@@ -111,11 +111,12 @@ describe("EnhancedPluginManager", () => {
 
     expect(document.querySelectorAll('[role="tab"]')).toHaveLength(4);
     expect([...document.querySelectorAll('[role="tab"]')].map((node) => node.textContent)).toEqual([
-      expect.stringContaining("Installed"),
-      expect.stringContaining("Browse"),
-      expect.stringContaining("Sources"),
-      expect.stringContaining("Configuration"),
+      "Installed",
+      "Browse",
+      "Sources",
+      "Configuration",
     ]);
+    expect(document.querySelectorAll(".spme-tabs button span")).toHaveLength(0);
     expect(document.querySelectorAll(".spme-core-hidden")).toHaveLength(3);
   });
 
