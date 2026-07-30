@@ -4,9 +4,9 @@ import { describe, expect, it } from "vitest";
 const css = await readFile(new URL("../src/styles.css", import.meta.url), "utf8");
 
 describe("package view responsive styles", () => {
-  it("centers the default Cards view and lets Table view use the available settings width", () => {
-    expect(css).toMatch(/#spme-root\s*\{[\s\S]*width:\s*min\(1180px,\s*var\(--spme-available-width/);
-    expect(css).toMatch(/#spme-root\[data-view-mode="table"\][\s\S]*width:\s*var\(--spme-available-width/);
+  it("keeps every subtab and view at the same available settings width", () => {
+    expect(css).toMatch(/#spme-root\s*\{[\s\S]*width:\s*var\(--spme-available-width,\s*100%\)/);
+    expect(css).not.toMatch(/#spme-root\[data-view-mode="table"\][\s\S]*width:/);
     expect(css).toMatch(/left:\s*50%[\s\S]*translateX\(-50%\)/);
   });
 

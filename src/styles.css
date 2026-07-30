@@ -19,16 +19,12 @@
   position: relative;
   left: 50%;
   transform: translateX(-50%);
-  width: min(1180px, var(--spme-available-width, 100%));
+  width: var(--spme-available-width, 100%);
   max-width: none;
   margin: 0 0 4rem;
   padding: 0 1rem;
 }
 
-#spme-root[data-view-mode="table"][data-active-tab="installed"],
-#spme-root[data-view-mode="table"][data-active-tab="browse"] {
-  width: var(--spme-available-width, 100%);
-}
 
 .spme-header { display:flex; justify-content:space-between; align-items:flex-start; gap:2rem; margin-bottom:1rem; }
 .spme-header h1 { margin:0; font-size:2rem; }
