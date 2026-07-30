@@ -105,8 +105,10 @@
 .spme-table-capabilities { margin-top:.45rem; font-size:.8rem; }
 .spme-table-capabilities ul { margin:.4rem 0 0; padding-left:1.1rem; }
 .spme-source-card { display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:1rem; align-items:center; padding:1rem; }
+.spme-source-card-editing { border-color:var(--spme-accent); box-shadow:0 0 0 1px rgba(25,153,214,.18); }
 .spme-source-card a { overflow-wrap:anywhere; }
 .spme-source-form { display:grid; grid-template-columns:1fr 2fr 1fr; gap:.75rem; margin-top:1rem; padding:1rem; }
+.spme-source-form-inline { grid-column:1/-1; width:100%; margin:0; padding:1rem 0 0; background:transparent; border:0; border-top:1px solid var(--spme-border); border-radius:0; }
 .spme-source-form h2, .spme-source-form .spme-help, .spme-source-form > div { grid-column:1/-1; }
 .spme-plugin-config > summary { display:flex; justify-content:space-between; align-items:center; gap:1rem; cursor:pointer; padding:1rem; }
 .spme-config-body { border-top:1px solid var(--spme-border); padding:1rem; }

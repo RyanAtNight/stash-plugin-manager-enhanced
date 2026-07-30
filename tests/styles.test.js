@@ -26,6 +26,11 @@ describe("package view responsive styles", () => {
     expect(css).toMatch(/data-active-tab="browse"[\s\S]*\.spme-table-actions\s*\{[\s\S]*flex-wrap:\s*nowrap/);
   });
 
+  it("lays the source editor across its expanded card without a nested panel", () => {
+    expect(css).toMatch(/\.spme-source-card-editing\s*\{[\s\S]*border-color:\s*var\(--spme-accent\)/);
+    expect(css).toMatch(/\.spme-source-form-inline\s*\{[\s\S]*grid-column:\s*1\s*\/\s*-1[\s\S]*background:\s*transparent[\s\S]*border:\s*0/);
+  });
+
   it("turns Table rows into labeled stacked cards on narrow windows", () => {
     const mobile = css.slice(css.indexOf("@media (max-width: 1100px)"));
     expect(mobile).toMatch(/\.spme-package-table thead\s*\{\s*display:\s*none/);

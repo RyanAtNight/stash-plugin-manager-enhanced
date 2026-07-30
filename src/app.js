@@ -151,12 +151,9 @@ export class EnhancedPluginManager {
     this.root.style.setProperty("--spme-available-width", `${available}px`);
   }
 
-  revealSourceForm() {
-    const form = this.root?.querySelector(".spme-source-form");
-    if (!form) return;
-    const reduceMotion = this.window?.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
-    form.scrollIntoView?.({ behavior: reduceMotion ? "auto" : "smooth", block: "center" });
-    form.querySelector('[name="name"]')?.focus({ preventScroll: true });
+  focusSourceForm() {
+    const form = this.root?.querySelector(".spme-source-form-inline");
+    form?.querySelector('[name="name"]')?.focus({ preventScroll: true });
   }
 
   renderLoading(label) {
@@ -427,6 +424,17 @@ export class EnhancedPluginManager {
     </section>`;
   }
 
+  sourceFormHTML(source = {}, { inline = false } = {}) {
+    return `<form class="spme-source-form${inline ? " spme-source-form-inline" : ""}" data-source-form>
+      <h2>${inline ? "Edit plugin source" : "Add plugin source"}</h2>
+      <label><span>Name</span><input name="name" required value="${escapeHTML(source.name || "")}"></label>
+      <label><span>Index URL</span><input name="url" type="url" required value="${escapeHTML(source.url || "")}"></label>
+      <label><span>Local path</span><input name="local_path" value="${escapeHTML(source.local_path || "")}"></label>
+      <div><button type="submit">${inline ? "Save source" : "Add source"}</button>${inline ? '<button type="button" data-action="cancel-source">Cancel</button>' : ""}</div>
+      <p class="spme-help">Duplicate names and URLs are rejected. Custom sources are treated as unverified unless hosted by the official Stash organization.</p>
+    </form>`;
+  }
+
   sourcesHTML() {
     if (!this.available) return '<div class="spme-loading" role="status">Checking plugin sources…</div>';
     const rows = this.inventory.sources.map((source, index) => {
@@ -441,25 +449,20 @@ export class EnhancedPluginManager {
       const sourceURL = sourceLink
         ? `<a href="${escapeHTML(sourceLink)}" target="_blank" rel="noopener noreferrer">${escapeHTML(source.url)} ↗</a>`
         : `<code>${escapeHTML(source.url)}</code>`;
-      return `<article class="spme-source-card">
+      const editing = this.editingSource === index;
+      return `<article class="spme-source-card${editing ? " spme-source-card-editing" : ""}" data-source-index="${index}">
         <div><h2>${escapeHTML(source.name || "Unnamed source")}</h2>${sourceURL}<div class="spme-badges">${trustBadge(inferredTrust)}<span class="spme-badge ${health?.ok ? "spme-status-current" : "spme-status-error"}">${health?.ok ? "Healthy" : "Error"}</span></div></div>
         <dl><div><dt>Packages</dt><dd>${plural(health?.packageCount ?? 0, "package")}</dd></div><div><dt>Last checked</dt><dd>${escapeHTML(formatDate(health?.checkedAt))}</dd></div><div><dt>Local path</dt><dd>${escapeHTML(source.local_path || "Default")}</dd></div></dl>
         ${health?.error ? `<p class="spme-text-error">${escapeHTML(health.error)}</p>` : ""}
-        <div class="spme-card-actions"><button type="button" data-action="edit-source" data-index="${index}">Edit</button><button type="button" class="danger subtle" data-action="delete-source" data-index="${index}">Delete</button></div>
+        ${editing
+          ? this.sourceFormHTML(source, { inline: true })
+          : `<div class="spme-card-actions"><button type="button" data-action="edit-source" data-index="${index}">Edit</button><button type="button" class="danger subtle" data-action="delete-source" data-index="${index}">Delete</button></div>`}
       </article>`;
     }).join("");
-    const editing = this.editingSource === undefined ? {} : this.inventory.sources[this.editingSource];
     return `<section class="spme-panel" role="tabpanel">
       <div class="spme-actions spme-sticky"><button type="button" data-action="refresh-sources">Check all sources</button></div>
       <div class="spme-source-grid">${rows || '<p class="spme-empty">No plugin sources configured.</p>'}</div>
-      <form class="spme-source-form" data-source-form>
-        <h2>${this.editingSource === undefined ? "Add plugin source" : "Edit plugin source"}</h2>
-        <label><span>Name</span><input name="name" required value="${escapeHTML(editing?.name || "")}"></label>
-        <label><span>Index URL</span><input name="url" type="url" required value="${escapeHTML(editing?.url || "")}"></label>
-        <label><span>Local path</span><input name="local_path" value="${escapeHTML(editing?.local_path || "")}"></label>
-        <div><button type="submit">${this.editingSource === undefined ? "Add source" : "Save source"}</button>${this.editingSource === undefined ? "" : '<button type="button" data-action="cancel-source">Cancel</button>'}</div>
-        <p class="spme-help">Duplicate names and URLs are rejected. Custom sources are treated as unverified unless hosted by the official Stash organization.</p>
-      </form>
+      ${this.editingSource === undefined ? this.sourceFormHTML() : ""}
     </section>`;
   }
 
@@ -601,7 +604,7 @@ export class EnhancedPluginManager {
     if (action === "edit-source") {
       this.editingSource = Number(button.dataset.index);
       this.render();
-      this.revealSourceForm();
+      this.focusSourceForm();
       return;
     }
     if (action === "cancel-source") {

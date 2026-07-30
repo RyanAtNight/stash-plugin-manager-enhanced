@@ -225,7 +225,7 @@ describe("EnhancedPluginManager", () => {
     expect(document.querySelector('a[href$="index.yml"]')).not.toBeNull();
   });
 
-  it("reveals and focuses the populated source form when Edit is clicked", async () => {
+  it("expands the selected source card into an inline editor without scrolling", async () => {
     const scrollIntoView = vi.fn();
     window.HTMLElement.prototype.scrollIntoView = scrollIntoView;
     const { app } = await mountApp();
@@ -233,10 +233,32 @@ describe("EnhancedPluginManager", () => {
 
     document.querySelector('[data-action="edit-source"]').click();
 
-    expect(document.querySelector(".spme-source-form h2").textContent).toBe("Edit plugin source");
-    expect(document.querySelector('.spme-source-form [name="name"]').value).toBe("Community (stable)");
-    expect(scrollIntoView).toHaveBeenCalledWith({ behavior: "smooth", block: "center" });
-    expect(document.activeElement).toBe(document.querySelector('.spme-source-form [name="name"]'));
+    const card = document.querySelector('.spme-source-card-editing[data-source-index="0"]');
+    const form = card?.querySelector(".spme-source-form-inline");
+    expect(card).not.toBeNull();
+    expect(form?.querySelector("h2").textContent).toBe("Edit plugin source");
+    expect(form?.elements.name.value).toBe("Community (stable)");
+    expect(document.querySelector('.spme-source-grid + .spme-source-form')).toBeNull();
+    expect(scrollIntoView).not.toHaveBeenCalled();
+    expect(document.activeElement).toBe(form?.elements.name);
+
+    form.querySelector('[data-action="cancel-source"]').click();
+    expect(document.querySelector(".spme-source-card-editing")).toBeNull();
+    expect(document.querySelector(".spme-source-form h2").textContent).toBe("Add plugin source");
+  });
+
+  it("saves an edited source from its expanded card without adding a duplicate", async () => {
+    const { app, service } = await mountApp();
+    await app.setTab("sources");
+    document.querySelector('[data-action="edit-source"]').click();
+    const form = document.querySelector(".spme-source-form-inline");
+    form.elements.name.value = "Community edited";
+
+    form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+
+    await vi.waitFor(() => expect(service.saveSources).toHaveBeenCalled());
+    expect(service.saveSources.mock.calls[0][0]).toHaveLength(1);
+    expect(service.saveSources.mock.calls[0][0][0]).toEqual(expect.objectContaining({ name: "Community edited" }));
   });
 
   it("collapses configuration by plugin and shows hooks and settings on demand", async () => {
