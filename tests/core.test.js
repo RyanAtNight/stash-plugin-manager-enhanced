@@ -5,12 +5,14 @@ import {
   filterPackages,
   isPluginsSettingsRoute,
   pluginManagerTabFromURL,
+  packageLastCommitDate,
   packageStatus,
   safeExternalUrl,
   sourceAnchorHref,
   sourceAnchorID,
   withoutPluginManagerSourceAnchor,
   sourceTrust,
+  sortPackages,
   withPluginManagerTab,
 } from "../src/core.js";
 
@@ -63,6 +65,23 @@ describe("source anchors", () => {
     expect(withoutPluginManagerSourceAnchor("/settings?tab=plugins#other-anchor")).toBe(
       "/settings?tab=plugins#other-anchor"
     );
+  });
+});
+
+describe("package commit dates and sorting", () => {
+  const packages = [
+    { package_id: "zulu", name: "Zulu", date: "2026-01-01T00:00:00Z" },
+    { package_id: "alpha", name: "Alpha", date: "2024-01-01T00:00:00Z", source_package: { date: "2025-01-01T00:00:00Z" } },
+    { package_id: "unknown", name: "Unknown" },
+  ];
+
+  it("uses checked source metadata when it has a newer package commit date", () => {
+    expect(packageLastCommitDate(packages[1])).toBe("2025-01-01T00:00:00Z");
+  });
+
+  it("sorts by name ascending or last commit descending with unknown dates last", () => {
+    expect(sortPackages(packages, "name").map((pkg) => pkg.package_id)).toEqual(["alpha", "unknown", "zulu"]);
+    expect(sortPackages(packages, "last-commit").map((pkg) => pkg.package_id)).toEqual(["zulu", "alpha", "unknown"]);
   });
 });
 

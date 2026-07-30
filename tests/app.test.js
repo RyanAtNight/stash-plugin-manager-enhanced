@@ -29,7 +29,7 @@ function serviceFixture() {
           trust: { level: "official", label: "Official Stash source" },
           capabilities: ["1 hook", "UI JavaScript"],
           metadata: { description: "Improves things" },
-          source_package: { version: "1.1.0" },
+          source_package: { version: "1.1.0", date: "2025-03-01T00:00:00Z" },
           plugin: {
             id: "alpha",
             name: "Alpha Tool",
@@ -61,6 +61,7 @@ function serviceFixture() {
           package_id: "beta",
           name: "Beta Helper",
           version: "2.0.0",
+          date: "2025-02-01T00:00:00Z",
           sourceURL: "https://stashapp.github.io/CommunityScripts/stable/index.yml",
           sourceName: "Community (stable)",
           githubUrl: "https://github.com/stashapp/CommunityScripts/tree/stable/plugins/beta",
@@ -151,6 +152,7 @@ describe("EnhancedPluginManager", () => {
       "Plugin",
       "Description",
       "Version",
+      "Last commit",
       "Source",
       "Status",
       "Actions",
@@ -173,12 +175,61 @@ describe("EnhancedPluginManager", () => {
       "spme-col-plugin",
       "spme-col-description",
       "spme-col-version",
+      "spme-col-last-commit",
       "spme-col-source",
       "spme-col-status",
       "spme-col-actions",
     ]);
     expect(row.querySelector('[data-action="install-one"]')).not.toBeNull();
     expect(row.querySelector('a[aria-label="Open Beta Helper GitHub repository"]')).not.toBeNull();
+  });
+
+  it("shows and sorts last commit dates in Installed and Browse Cards and Table views", async () => {
+    const { app } = await mountApp();
+    const installedTemplate = app.inventory.packages[0];
+    app.inventory.packages.push({
+      ...installedTemplate,
+      package_id: "zulu",
+      name: "Zulu Plugin",
+      date: "2026-01-01T00:00:00Z",
+      source_package: undefined,
+      plugin: { ...installedTemplate.plugin, id: "zulu", name: "Zulu Plugin" },
+    });
+    app.render();
+
+    const cardOrder = () => [...document.querySelectorAll(".spme-package-card")].map((card) => card.dataset.packageId);
+    const rowOrder = () => [...document.querySelectorAll(".spme-package-table tbody tr")].map((row) => row.dataset.packageId);
+    expect(cardOrder()).toEqual(["alpha", "zulu"]);
+    expect(document.querySelector('[data-package-id="alpha"] time[data-last-commit]')?.dateTime).toBe("2025-03-01T00:00:00.000Z");
+
+    let sort = document.querySelector('[data-filter-select="installed-sort"]');
+    sort.value = "last-commit";
+    sort.dispatchEvent(new Event("change", { bubbles: true }));
+    expect(cardOrder()).toEqual(["zulu", "alpha"]);
+    document.querySelector('[data-action="set-view"][data-view-mode="table"]').click();
+    expect(rowOrder()).toEqual(["zulu", "alpha"]);
+    expect(document.querySelector('[data-package-id="alpha"] [data-label="Last commit"] time[data-last-commit]')).not.toBeNull();
+
+    await app.setTab("browse");
+    const availableTemplate = app.available.packages[0];
+    app.available.packages.push({
+      ...availableTemplate,
+      package_id: "aardvark",
+      name: "Aardvark Plugin",
+      date: "2024-01-01T00:00:00Z",
+    });
+    app.viewMode = "cards";
+    app.render();
+    expect(cardOrder()).toEqual(["aardvark", "beta"]);
+    expect(document.querySelector('[data-package-id="beta"] time[data-last-commit]')?.dateTime).toBe("2025-02-01T00:00:00.000Z");
+
+    sort = document.querySelector('[data-filter-select="browse-sort"]');
+    sort.value = "last-commit";
+    sort.dispatchEvent(new Event("change", { bubbles: true }));
+    expect(cardOrder()).toEqual(["beta", "aardvark"]);
+    document.querySelector('[data-action="set-view"][data-view-mode="table"]').click();
+    expect(rowOrder()).toEqual(["beta", "aardvark"]);
+    expect(document.querySelector('[data-package-id="beta"] [data-label="Last commit"] time[data-last-commit]')).not.toBeNull();
   });
 
   it("keeps non-package tabs on the centered layout after Table view is selected", async () => {

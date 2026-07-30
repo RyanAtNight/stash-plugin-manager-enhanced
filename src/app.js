@@ -1,9 +1,11 @@
 import {
   filterPackages,
+  packageLastCommitDate,
   pluginManagerTabFromURL,
   safeExternalUrl,
   sourceAnchorHref,
   sourceAnchorID,
+  sortPackages,
   withoutPluginManagerSourceAnchor,
   withPluginManagerTab,
 } from "./core.js";
@@ -32,6 +34,13 @@ function formatDate(value) {
   if (!value) return "Unknown";
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString();
+}
+
+function packageCommitDateHTML(pkg) {
+  const value = packageLastCommitDate(pkg);
+  if (!value) return '<span data-last-commit>Unknown</span>';
+  const date = new Date(value);
+  return `<time data-last-commit datetime="${date.toISOString()}">${escapeHTML(formatDate(value))}</time>`;
 }
 
 function findCoreSections(documentRef) {
@@ -84,8 +93,8 @@ export class EnhancedPluginManager {
     this.selectedInstalled = new Set();
     this.selectedAvailable = new Set();
     this.filters = {
-      installed: { query: "", enabled: undefined, updatesOnly: false },
-      browse: { query: "", source: "" },
+      installed: { query: "", enabled: undefined, updatesOnly: false, sort: "name" },
+      browse: { query: "", source: "", sort: "name" },
       configuration: { query: "", enabled: undefined },
     };
     this.message = undefined;
@@ -317,11 +326,16 @@ export class EnhancedPluginManager {
     </div>`;
   }
 
+  sortControlHTML(kind) {
+    const selected = this.filters[kind].sort;
+    return `<label><span>Sort</span><select data-filter-select="${kind}-sort" aria-label="Sort ${kind === "installed" ? "installed" : "available"} plugins"><option value="name" ${selected === "name" ? "selected" : ""}>Plugin name (A–Z)</option><option value="last-commit" ${selected === "last-commit" ? "selected" : ""}>Last commit (newest)</option></select></label>`;
+  }
+
   installedHTML() {
-    const packages = filterPackages(this.inventory.packages, this.filters.installed);
+    const packages = sortPackages(filterPackages(this.inventory.packages, this.filters.installed), this.filters.installed.sort);
     const selected = packages.filter((pkg) => this.selectedInstalled.has(pkg.package_id));
     const updates = this.inventory.packages.filter((pkg) => pkg.status === "update");
-    const filterExtras = `<label><span>Status</span><select data-filter-select="installed-enabled" aria-label="Filter installed plugins by enabled status"><option value="">All states</option><option value="true" ${
+    const filterExtras = `${this.sortControlHTML("installed")}<label><span>Status</span><select data-filter-select="installed-enabled" aria-label="Filter installed plugins by enabled status"><option value="">All states</option><option value="true" ${
       this.filters.installed.enabled === true ? "selected" : ""
     }>Enabled</option><option value="false" ${
       this.filters.installed.enabled === false ? "selected" : ""
@@ -381,7 +395,7 @@ export class EnhancedPluginManager {
       <div class="spme-package-main">
         <div class="spme-package-title"><div><h2>${escapeHTML(pkg.name)}</h2><code>${escapeHTML(pkg.package_id)}</code></div><div class="spme-badges">${status}${state}${trustBadge(pkg.trust)}</div></div>
         <p>${escapeHTML(packageDescription(pkg))}</p>
-        <dl><div><dt>Version</dt><dd>${version}</dd></div><div><dt>Source</dt><dd>${this.sourceReferenceHTML(pkg)}</dd></div>${installed ? `<div><dt>Installed</dt><dd>${escapeHTML(formatDate(pkg.date))}</dd></div>` : ""}</dl>
+        <dl><div><dt>Version</dt><dd>${version}</dd></div><div><dt>Last commit</dt><dd>${packageCommitDateHTML(pkg)}</dd></div><div><dt>Source</dt><dd>${this.sourceReferenceHTML(pkg)}</dd></div></dl>
         ${capabilities}
       </div>
       <div class="spme-card-actions">${githubLink(pkg)}${actions}</div>
@@ -393,9 +407,9 @@ export class EnhancedPluginManager {
     return `<div class="spme-table-scroll" tabindex="0" aria-label="${installed ? "Installed" : "Available"} plugin table">
       <table class="spme-package-table">
         <colgroup class="spme-columns-${installed ? "installed" : "browse"}">
-          <col class="spme-col-select"><col class="spme-col-plugin"><col class="spme-col-description"><col class="spme-col-version"><col class="spme-col-source"><col class="spme-col-status"><col class="spme-col-actions">
+          <col class="spme-col-select"><col class="spme-col-plugin"><col class="spme-col-description"><col class="spme-col-version"><col class="spme-col-last-commit"><col class="spme-col-source"><col class="spme-col-status"><col class="spme-col-actions">
         </colgroup>
-        <thead><tr><th scope="col"><span class="visually-hidden">Select</span></th><th scope="col">Plugin</th><th scope="col">Description</th><th scope="col">Version</th><th scope="col">Source</th><th scope="col">Status</th><th scope="col">Actions</th></tr></thead>
+        <thead><tr><th scope="col"><span class="visually-hidden">Select</span></th><th scope="col">Plugin</th><th scope="col">Description</th><th scope="col">Version</th><th scope="col">Last commit</th><th scope="col">Source</th><th scope="col">Status</th><th scope="col">Actions</th></tr></thead>
         <tbody>${packages.map((pkg) => this.packageTableRow(pkg, installed)).join("")}</tbody>
       </table>
     </div>`;
@@ -432,6 +446,7 @@ export class EnhancedPluginManager {
       <td data-label="Plugin"><div class="spme-table-plugin"><strong>${escapeHTML(pkg.name)}</strong><code>${escapeHTML(pkg.package_id)}</code>${capabilities}</div></td>
       <td data-label="Description" class="spme-table-description">${escapeHTML(packageDescription(pkg))}</td>
       <td data-label="Version">${version}</td>
+      <td data-label="Last commit">${packageCommitDateHTML(pkg)}</td>
       <td data-label="Source">${this.sourceReferenceHTML(pkg)}</td>
       <td data-label="Status"><div class="spme-badges">${status}${state}${trustBadge(pkg.trust)}</div></td>
       <td data-label="Actions"><div class="spme-table-actions">${githubLink(pkg)}${actions}</div></td>
@@ -440,11 +455,11 @@ export class EnhancedPluginManager {
 
   browseHTML() {
     if (!this.available) return '<div class="spme-loading" role="status">Loading available plugins…</div>';
-    const packages = filterPackages(this.available.packages, this.filters.browse);
+    const packages = sortPackages(filterPackages(this.available.packages, this.filters.browse), this.filters.browse.sort);
     const visiblePackages = packages.slice(0, this.browseLimit);
     const selected = packages.filter((pkg) => this.selectedAvailable.has(`${pkg.sourceURL}|${pkg.package_id}`));
     const sourceOptions = this.inventory.sources.map((source) => `<option value="${escapeHTML(source.url)}" ${this.filters.browse.source === source.url ? "selected" : ""}>${escapeHTML(source.name || source.url)}</option>`).join("");
-    const extra = `<label><span>Source</span><select data-filter-select="browse-source" aria-label="Filter available plugins by source"><option value="">All sources</option>${sourceOptions}</select></label>`;
+    const extra = `${this.sortControlHTML("browse")}<label><span>Source</span><select data-filter-select="browse-source" aria-label="Filter available plugins by source"><option value="">All sources</option>${sourceOptions}</select></label>`;
     return `<section class="spme-panel" role="tabpanel">
       <div class="spme-actions spme-sticky"><button type="button" data-action="install-selected" ${!selected.length || this.busy ? "disabled" : ""}>Install selected (${selected.length})</button><button type="button" data-action="refresh-sources">Refresh catalog</button></div>
       ${this.toolbarHTML({ kind: "browse", count: packages.length, selectedCount: selected.length, extra })}
@@ -705,6 +720,12 @@ export class EnhancedPluginManager {
     }
     if (target.dataset.filterCheck === "updates") {
       this.filters.installed.updatesOnly = target.checked;
+      return this.render();
+    }
+    if (target.dataset.filterSelect === "installed-sort" || target.dataset.filterSelect === "browse-sort") {
+      const kind = target.dataset.filterSelect.startsWith("installed") ? "installed" : "browse";
+      this.filters[kind].sort = target.value === "last-commit" ? "last-commit" : "name";
+      if (kind === "browse") this.browseLimit = 50;
       return this.render();
     }
     if (target.dataset.filterSelect === "installed-enabled" || target.dataset.filterSelect === "configuration-enabled") {

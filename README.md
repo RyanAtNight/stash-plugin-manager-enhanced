@@ -17,6 +17,7 @@ The integration is intentionally progressive because Stash's `SettingsPluginsPan
 - Responsive, wider layout with sticky actions
 - Table descriptions wrap naturally instead of being truncated
 - Search by name, ID, description, version, and source
+- Per-plugin last-commit dates with name or newest-commit sorting
 - Enabled, disabled, source, and updates-only filters
 - Visible installed/enabled/update counts
 - Individual and bulk installation, updating, and uninstalling

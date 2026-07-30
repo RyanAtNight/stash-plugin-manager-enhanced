@@ -158,6 +158,28 @@ export function filterPackages(
   });
 }
 
+export function packageLastCommitDate(pkg = {}) {
+  return [pkg.source_package?.date, pkg.date].find((value) => value && !Number.isNaN(Date.parse(value)));
+}
+
+export function sortPackages(packages, sort = "name") {
+  const byName = (left, right) =>
+    String(left.name || left.package_id || "").localeCompare(
+      String(right.name || right.package_id || ""),
+      undefined,
+      { sensitivity: "base" }
+    );
+  return [...packages].sort((left, right) => {
+    if (sort !== "last-commit") return byName(left, right);
+    const leftDate = packageLastCommitDate(left);
+    const rightDate = packageLastCommitDate(right);
+    if (!leftDate && !rightDate) return byName(left, right);
+    if (!leftDate) return 1;
+    if (!rightDate) return -1;
+    return Date.parse(rightDate) - Date.parse(leftDate) || byName(left, right);
+  });
+}
+
 function countLabel(count, singular, plural = `${singular}s`) {
   return `${count} ${count === 1 ? singular : plural}`;
 }
