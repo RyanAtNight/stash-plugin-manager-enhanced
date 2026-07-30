@@ -6,6 +6,7 @@
   "description": "Progressive enhancement for Stash's core Settings > Plugins page.",
   "scripts": {
     "build": "node scripts/build.mjs",
+    "deploy:local": "npm run build && node scripts/deploy-local.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "check": "npm test && npm run build"
