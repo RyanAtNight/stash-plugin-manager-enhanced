@@ -1,0 +1,616 @@
+import {
+  filterPackages,
+  pluginManagerTabFromURL,
+  safeExternalUrl,
+  withPluginManagerTab,
+} from "./core.js";
+
+const TAB_DEFINITIONS = [
+  ["installed", "Installed"],
+  ["browse", "Browse"],
+  ["sources", "Sources"],
+  ["configuration", "Configuration"],
+];
+
+function escapeHTML(value = "") {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function plural(count, singular, pluralValue = `${singular}s`) {
+  return `${count} ${count === 1 ? singular : pluralValue}`;
+}
+
+function formatDate(value) {
+  if (!value) return "Unknown";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString();
+}
+
+function findCoreSections(documentRef) {
+  const wanted = new Set(["Installed Plugins", "Available Plugins", "Plugins"]);
+  return [...documentRef.querySelectorAll(".setting-section")].filter((section) =>
+    wanted.has(section.querySelector(":scope > h1")?.textContent?.trim())
+  );
+}
+
+function githubLink(pkg) {
+  if (!pkg.githubUrl) {
+    return `<span class="spme-repo-missing" title="This package does not declare a GitHub repository and its source is not a conventional GitHub Pages index.">Repository unavailable</span>`;
+  }
+  return `<a class="spme-repo-link" href="${escapeHTML(
+    pkg.githubUrl
+  )}" target="_blank" rel="noopener noreferrer" aria-label="Open ${escapeHTML(
+    pkg.name
+  )} GitHub repository">GitHub ↗</a>`;
+}
+
+function trustBadge(trust = { level: "unverified", label: "Unverified source" }) {
+  return `<span class="spme-badge spme-trust-${escapeHTML(
+    trust.level
+  )}" title="${escapeHTML(trust.label)}">${escapeHTML(trust.label)}</span>`;
+}
+
+function packageDescription(pkg) {
+  return pkg.plugin?.description || pkg.metadata?.description || "No description provided.";
+}
+
+export class EnhancedPluginManager {
+  constructor(service, options = {}) {
+    this.service = service;
+    this.document = options.document ?? globalThis.document;
+    this.window = options.window ?? globalThis.window;
+    this.confirm = options.confirm ?? globalThis.confirm?.bind(globalThis);
+    this.setTimeout = options.setTimeout ?? globalThis.setTimeout?.bind(globalThis);
+    this.activeTab = pluginManagerTabFromURL(this.window?.location?.href ?? "/settings?tab=plugins");
+    this.inventory = undefined;
+    this.available = undefined;
+    this.coreSections = [];
+    this.selectedInstalled = new Set();
+    this.selectedAvailable = new Set();
+    this.filters = {
+      installed: { query: "", enabled: undefined, updatesOnly: false },
+      browse: { query: "", source: "" },
+      configuration: { query: "", enabled: undefined },
+    };
+    this.message = undefined;
+    this.busy = false;
+    this.editingSource = undefined;
+    this.browseLimit = 50;
+    this.onClick = this.onClick.bind(this);
+    this.onInput = this.onInput.bind(this);
+    this.onChange = this.onChange.bind(this);
+    this.onSubmit = this.onSubmit.bind(this);
+    this.updateLayoutWidth = this.updateLayoutWidth.bind(this);
+  }
+
+  async mount() {
+    if (this.document.querySelector("#spme-root")) return true;
+    this.coreSections = findCoreSections(this.document);
+    if (this.coreSections.length < 3) return false;
+
+    this.root = this.document.createElement("section");
+    this.root.id = "spme-root";
+    this.root.className = "spme-shell";
+    this.root.setAttribute("aria-label", "Enhanced plugin manager");
+    this.coreSections[0].before(this.root);
+    this.coreSections.forEach((section) => section.classList.add("spme-core-hidden"));
+    this.root.addEventListener("click", this.onClick);
+    this.root.addEventListener("input", this.onInput);
+    this.root.addEventListener("change", this.onChange);
+    this.root.addEventListener("submit", this.onSubmit);
+    this.window?.addEventListener?.("resize", this.updateLayoutWidth);
+    this.updateLayoutWidth();
+    this.renderLoading("Loading installed plugins…");
+
+    try {
+      this.inventory = await this.service.loadInstalled({ checkUpdates: false });
+      if (this.activeTab === "browse" || this.activeTab === "sources") {
+        await this.loadAvailable();
+      }
+      this.render();
+      return true;
+    } catch (error) {
+      this.renderFatal(error);
+      return false;
+    }
+  }
+
+  unmount() {
+    this.root?.removeEventListener("click", this.onClick);
+    this.root?.removeEventListener("input", this.onInput);
+    this.root?.removeEventListener("change", this.onChange);
+    this.root?.removeEventListener("submit", this.onSubmit);
+    this.window?.removeEventListener?.("resize", this.updateLayoutWidth);
+    this.root?.remove();
+    this.root = undefined;
+    this.coreSections.forEach((section) => section.classList.remove("spme-core-hidden"));
+    this.coreSections = [];
+  }
+
+  updateLayoutWidth() {
+    if (!this.root || !this.window) return;
+    const left = this.root.getBoundingClientRect().left;
+    const available = Math.max(320, this.window.innerWidth - left - 16);
+    this.root.style.setProperty("--spme-available-width", `${available}px`);
+  }
+
+  renderLoading(label) {
+    if (this.root) {
+      this.root.innerHTML = `<div class="spme-loading" role="status">${escapeHTML(
+        label
+      )}</div>`;
+    }
+  }
+
+  renderFatal(error) {
+    if (!this.root) return;
+    this.root.innerHTML = `<div class="spme-alert spme-alert-error" role="alert"><strong>Enhanced plugin manager could not load.</strong><br>${escapeHTML(
+      error instanceof Error ? error.message : String(error)
+    )}<br><button type="button" data-action="retry">Retry</button> <button type="button" data-action="show-core">Use core page</button></div>`;
+  }
+
+  async refresh({ checkUpdates = this.inventory?.checkedUpdates ?? false } = {}) {
+    this.busy = true;
+    this.render();
+    try {
+      this.inventory = await this.service.loadInstalled({ checkUpdates });
+      if (this.activeTab === "browse" || this.activeTab === "sources") {
+        await this.loadAvailable(true);
+      }
+      this.message = { type: "success", text: "Plugin information refreshed." };
+    } catch (error) {
+      this.message = {
+        type: "error",
+        text: error instanceof Error ? error.message : String(error),
+      };
+    } finally {
+      this.busy = false;
+      this.render();
+    }
+  }
+
+  async loadAvailable(force = false) {
+    if (this.available && !force) return;
+    this.available = await this.service.loadAvailable(
+      this.inventory.sources,
+      new Set(this.inventory.packages.map((pkg) => pkg.package_id))
+    );
+  }
+
+  async setTab(tab, { updateURL = true } = {}) {
+    if (!TAB_DEFINITIONS.some(([id]) => id === tab)) return;
+    this.activeTab = tab;
+    this.message = undefined;
+    if (updateURL && this.window?.history && this.window?.location) {
+      const nextURL = withPluginManagerTab(this.window.location.href, tab);
+      const currentURL = `${this.window.location.pathname}${this.window.location.search}${this.window.location.hash}`;
+      if (nextURL !== currentURL) this.window.history.pushState({}, "", nextURL);
+    }
+    if ((tab === "browse" || tab === "sources") && !this.available) {
+      this.render();
+      try {
+        await this.loadAvailable();
+      } catch (error) {
+        this.message = {
+          type: "error",
+          text: error instanceof Error ? error.message : String(error),
+        };
+      }
+    }
+    this.render();
+  }
+
+  syncFromURL() {
+    const tab = pluginManagerTabFromURL(this.window?.location?.href ?? "");
+    if (tab !== this.activeTab) return this.setTab(tab, { updateURL: false });
+  }
+
+  tabsHTML() {
+    const counts = {
+      installed: this.inventory.packages.length,
+      browse: this.available?.packages.length,
+      sources: this.inventory.sources.length,
+      configuration: this.inventory.packages.filter((pkg) => pkg.plugin).length,
+    };
+    return `<div class="spme-tabs" role="tablist" aria-label="Plugin manager sections">
+      ${TAB_DEFINITIONS.map(
+        ([id, label]) => `<button type="button" role="tab" data-action="tab" data-tab="${id}"
+          aria-selected="${this.activeTab === id}" class="${
+            this.activeTab === id ? "active" : ""
+          }">${label}${counts[id] === undefined ? "" : ` <span>${counts[id]}</span>`}</button>`
+      ).join("")}
+    </div>`;
+  }
+
+  messageHTML() {
+    if (!this.message) return "";
+    return `<div class="spme-alert spme-alert-${escapeHTML(
+      this.message.type
+    )}" role="status">${escapeHTML(this.message.text)}</div>`;
+  }
+
+  headerHTML() {
+    const updates = this.inventory.packages.filter((pkg) => pkg.status === "update").length;
+    const enabled = this.inventory.packages.filter((pkg) => pkg.enabled).length;
+    return `<header class="spme-header">
+      <div><h1>Plugin Manager</h1><p>Install, update, inspect, configure, and verify plugins without nested scrolling.</p></div>
+      <div class="spme-summary" aria-label="Plugin summary">
+        <span><strong>${this.inventory.packages.length}</strong> installed</span>
+        <span><strong>${enabled}</strong> enabled</span>
+        <span class="${updates ? "spme-text-warning" : ""}"><strong>${updates}</strong> updates</span>
+      </div>
+    </header>`;
+  }
+
+  toolbarHTML({ kind, count, selectedCount = 0, extra = "" }) {
+    const label = kind === "installed" ? "installed plugins" : "available plugins";
+    return `<div class="spme-toolbar">
+      <label class="spme-search"><span>Search ${label}</span><input type="search" data-filter="${kind}" aria-label="Search ${label}" placeholder="Name, ID, description, or source" value="${escapeHTML(
+        this.filters[kind].query
+      )}"></label>
+      ${extra}
+      <span class="spme-result-count" aria-live="polite">${plural(count, "result")}</span>
+      ${selectedCount ? `<span>${plural(selectedCount, "selected plugin")}</span>` : ""}
+    </div>`;
+  }
+
+  installedHTML() {
+    const packages = filterPackages(this.inventory.packages, this.filters.installed);
+    const selected = packages.filter((pkg) => this.selectedInstalled.has(pkg.package_id));
+    const updates = this.inventory.packages.filter((pkg) => pkg.status === "update");
+    const filterExtras = `<label><span>Status</span><select data-filter-select="installed-enabled" aria-label="Filter installed plugins by enabled status"><option value="">All states</option><option value="true" ${
+      this.filters.installed.enabled === true ? "selected" : ""
+    }>Enabled</option><option value="false" ${
+      this.filters.installed.enabled === false ? "selected" : ""
+    }>Disabled</option></select></label>
+      <label class="spme-check"><input type="checkbox" data-filter-check="updates" ${
+        this.filters.installed.updatesOnly ? "checked" : ""
+      }> Updates only</label>`;
+    return `<section class="spme-panel" role="tabpanel">
+      <div class="spme-actions spme-sticky">
+        <button type="button" data-action="check-updates" ${this.busy ? "disabled" : ""}>Check for updates</button>
+        <button type="button" data-action="update-all" ${
+          !updates.length || this.busy ? "disabled" : ""
+        }>Update all (${updates.length})</button>
+        <button type="button" data-action="update-selected" ${
+          !selected.length || this.busy ? "disabled" : ""
+        }>Update selected (${selected.length})</button>
+        <button type="button" class="danger" data-action="uninstall-selected" ${
+          !selected.length || this.busy ? "disabled" : ""
+        }>Uninstall selected (${selected.length})</button>
+        <button type="button" data-action="reload">Reload plugin definitions</button>
+      </div>
+      ${this.toolbarHTML({ kind: "installed", count: packages.length, selectedCount: selected.length, extra: filterExtras })}
+      <div class="spme-list">${packages.map((pkg) => this.packageCard(pkg, true)).join("") || '<p class="spme-empty">No installed plugins match these filters.</p>'}</div>
+    </section>`;
+  }
+
+  packageCard(pkg, installed) {
+    const selected = installed
+      ? this.selectedInstalled.has(pkg.package_id)
+      : this.selectedAvailable.has(`${pkg.sourceURL}|${pkg.package_id}`);
+    const selectKey = installed ? pkg.package_id : `${pkg.sourceURL}|${pkg.package_id}`;
+    const status = pkg.status === "update"
+      ? '<span class="spme-badge spme-status-update">Update available</span>'
+      : pkg.status === "unchecked"
+        ? '<span class="spme-badge">Updates not checked</span>'
+        : installed
+          ? '<span class="spme-badge spme-status-current">Current</span>'
+          : '<span class="spme-badge spme-status-available">Available</span>';
+    const state = installed
+      ? `<span class="spme-badge ${pkg.enabled ? "spme-enabled" : "spme-disabled"}">${pkg.enabled ? "Enabled" : "Disabled"}</span>`
+      : "";
+    const version = installed && pkg.source_package
+      ? `${escapeHTML(pkg.version || "Unknown")} → ${escapeHTML(pkg.source_package.version || "Unknown")}`
+      : escapeHTML(pkg.version || "Unknown");
+    const capabilities = installed && pkg.capabilities?.length
+      ? `<details class="spme-capabilities"><summary>Capabilities</summary><ul>${pkg.capabilities.map((item) => `<li>${escapeHTML(item)}</li>`).join("")}</ul></details>`
+      : "";
+    const actions = installed
+      ? `<button type="button" data-action="toggle-enabled" data-id="${escapeHTML(pkg.package_id)}">${pkg.enabled ? "Disable" : "Enable"}</button>
+         <button type="button" data-action="update-one" data-id="${escapeHTML(pkg.package_id)}" ${pkg.status !== "update" ? "disabled" : ""}>Update</button>
+         <button type="button" class="danger subtle" data-action="uninstall-one" data-id="${escapeHTML(pkg.package_id)}">Uninstall</button>`
+      : `<button type="button" data-action="install-one" data-key="${escapeHTML(selectKey)}">Install</button>`;
+    return `<article class="spme-package-card" data-package-id="${escapeHTML(pkg.package_id)}">
+      <label class="spme-select"><input type="checkbox" data-select-package="${installed ? "installed" : "available"}" data-key="${escapeHTML(selectKey)}" aria-label="Select ${escapeHTML(pkg.name)}" ${selected ? "checked" : ""}></label>
+      <div class="spme-package-main">
+        <div class="spme-package-title"><div><h2>${escapeHTML(pkg.name)}</h2><code>${escapeHTML(pkg.package_id)}</code></div><div class="spme-badges">${status}${state}${trustBadge(pkg.trust)}</div></div>
+        <p>${escapeHTML(packageDescription(pkg))}</p>
+        <dl><div><dt>Version</dt><dd>${version}</dd></div><div><dt>Source</dt><dd>${escapeHTML(pkg.sourceName || pkg.sourceURL)}</dd></div>${installed ? `<div><dt>Installed</dt><dd>${escapeHTML(formatDate(pkg.date))}</dd></div>` : ""}</dl>
+        ${capabilities}
+      </div>
+      <div class="spme-card-actions">${githubLink(pkg)}${actions}</div>
+    </article>`;
+  }
+
+  browseHTML() {
+    if (!this.available) return '<div class="spme-loading" role="status">Loading available plugins…</div>';
+    const packages = filterPackages(this.available.packages, this.filters.browse);
+    const visiblePackages = packages.slice(0, this.browseLimit);
+    const selected = packages.filter((pkg) => this.selectedAvailable.has(`${pkg.sourceURL}|${pkg.package_id}`));
+    const sourceOptions = this.inventory.sources.map((source) => `<option value="${escapeHTML(source.url)}" ${this.filters.browse.source === source.url ? "selected" : ""}>${escapeHTML(source.name || source.url)}</option>`).join("");
+    const extra = `<label><span>Source</span><select data-filter-select="browse-source" aria-label="Filter available plugins by source"><option value="">All sources</option>${sourceOptions}</select></label>`;
+    return `<section class="spme-panel" role="tabpanel">
+      <div class="spme-actions spme-sticky"><button type="button" data-action="install-selected" ${!selected.length || this.busy ? "disabled" : ""}>Install selected (${selected.length})</button><button type="button" data-action="refresh-sources">Refresh catalog</button></div>
+      ${this.toolbarHTML({ kind: "browse", count: packages.length, selectedCount: selected.length, extra })}
+      <div class="spme-list">${visiblePackages.map((pkg) => this.packageCard(pkg, false)).join("") || '<p class="spme-empty">No available plugins match these filters.</p>'}</div>
+      ${visiblePackages.length < packages.length ? `<div class="spme-load-more"><button type="button" data-action="load-more">Load ${Math.min(50, packages.length - visiblePackages.length)} more (${packages.length - visiblePackages.length} remaining)</button></div>` : ""}
+    </section>`;
+  }
+
+  sourcesHTML() {
+    if (!this.available) return '<div class="spme-loading" role="status">Checking plugin sources…</div>';
+    const rows = this.inventory.sources.map((source, index) => {
+      const health = this.available.health.find((item) => item.source.url === source.url);
+      const trust = health?.source ? this.available.packages.find((pkg) => pkg.sourceURL === source.url)?.trust : undefined;
+      const inferredTrust = trust ?? (source.url.includes("stashapp.github.io/CommunityScripts")
+        ? { level: "official", label: "Official Stash source" }
+        : source.url.includes("github")
+          ? { level: "community", label: "Community GitHub source" }
+          : { level: "unverified", label: "Unverified source" });
+      const sourceLink = safeExternalUrl(source.url);
+      const sourceURL = sourceLink
+        ? `<a href="${escapeHTML(sourceLink)}" target="_blank" rel="noopener noreferrer">${escapeHTML(source.url)} ↗</a>`
+        : `<code>${escapeHTML(source.url)}</code>`;
+      return `<article class="spme-source-card">
+        <div><h2>${escapeHTML(source.name || "Unnamed source")}</h2>${sourceURL}<div class="spme-badges">${trustBadge(inferredTrust)}<span class="spme-badge ${health?.ok ? "spme-status-current" : "spme-status-error"}">${health?.ok ? "Healthy" : "Error"}</span></div></div>
+        <dl><div><dt>Packages</dt><dd>${plural(health?.packageCount ?? 0, "package")}</dd></div><div><dt>Last checked</dt><dd>${escapeHTML(formatDate(health?.checkedAt))}</dd></div><div><dt>Local path</dt><dd>${escapeHTML(source.local_path || "Default")}</dd></div></dl>
+        ${health?.error ? `<p class="spme-text-error">${escapeHTML(health.error)}</p>` : ""}
+        <div class="spme-card-actions"><button type="button" data-action="edit-source" data-index="${index}">Edit</button><button type="button" class="danger subtle" data-action="delete-source" data-index="${index}">Delete</button></div>
+      </article>`;
+    }).join("");
+    const editing = this.editingSource === undefined ? {} : this.inventory.sources[this.editingSource];
+    return `<section class="spme-panel" role="tabpanel">
+      <div class="spme-actions spme-sticky"><button type="button" data-action="refresh-sources">Check all sources</button></div>
+      <div class="spme-source-grid">${rows || '<p class="spme-empty">No plugin sources configured.</p>'}</div>
+      <form class="spme-source-form" data-source-form>
+        <h2>${this.editingSource === undefined ? "Add plugin source" : "Edit plugin source"}</h2>
+        <label><span>Name</span><input name="name" required value="${escapeHTML(editing?.name || "")}"></label>
+        <label><span>Index URL</span><input name="url" type="url" required value="${escapeHTML(editing?.url || "")}"></label>
+        <label><span>Local path</span><input name="local_path" value="${escapeHTML(editing?.local_path || "")}"></label>
+        <div><button type="submit">${this.editingSource === undefined ? "Add source" : "Save source"}</button>${this.editingSource === undefined ? "" : '<button type="button" data-action="cancel-source">Cancel</button>'}</div>
+        <p class="spme-help">Duplicate names and URLs are rejected. Custom sources are treated as unverified unless hosted by the official Stash organization.</p>
+      </form>
+    </section>`;
+  }
+
+  configurationHTML() {
+    const query = this.filters.configuration.query.trim().toLowerCase();
+    const packages = this.inventory.packages.filter((pkg) => {
+      if (!pkg.plugin) return false;
+      if (typeof this.filters.configuration.enabled === "boolean" && pkg.enabled !== this.filters.configuration.enabled) return false;
+      const text = [pkg.name, pkg.package_id, packageDescription(pkg), ...(pkg.plugin.settings ?? []).map((setting) => `${setting.name} ${setting.display_name} ${setting.description}`)].join(" ").toLowerCase();
+      return !query || text.includes(query);
+    });
+    const extra = `<label><span>Status</span><select data-filter-select="configuration-enabled" aria-label="Filter plugin configuration by enabled status"><option value="">All states</option><option value="true" ${this.filters.configuration.enabled === true ? "selected" : ""}>Enabled</option><option value="false" ${this.filters.configuration.enabled === false ? "selected" : ""}>Disabled</option></select></label>`;
+    return `<section class="spme-panel" role="tabpanel">
+      <div class="spme-actions spme-sticky"><button type="button" data-action="expand-config">Expand all</button><button type="button" data-action="collapse-config">Collapse all</button></div>
+      ${this.toolbarHTML({ kind: "configuration", count: packages.length, extra })}
+      <div class="spme-config-list">${packages.map((pkg) => this.pluginConfigCard(pkg)).join("") || '<p class="spme-empty">No plugin configuration matches these filters.</p>'}</div>
+    </section>`;
+  }
+
+  pluginConfigCard(pkg) {
+    const plugin = pkg.plugin;
+    const config = this.inventory.pluginConfig[plugin.id] ?? {};
+    const hooks = (plugin.hooks ?? []).map((hook) => `<div class="spme-hook"><strong>${escapeHTML(hook.name)}</strong><p>${escapeHTML(hook.description || "")}</p><ul>${(hook.hooks ?? []).map((event) => `<li><code>${escapeHTML(event)}</code></li>`).join("")}</ul></div>`).join("");
+    const settings = (plugin.settings ?? []).map((setting) => {
+      const value = config[setting.name];
+      const label = setting.display_name || setting.name;
+      let input;
+      if (setting.type === "BOOLEAN") {
+        input = `<input type="checkbox" data-config-input data-plugin="${escapeHTML(plugin.id)}" data-setting="${escapeHTML(setting.name)}" aria-label="${escapeHTML(label)}" ${value ? "checked" : ""}>`;
+      } else {
+        input = `<input data-config-input data-plugin="${escapeHTML(plugin.id)}" data-setting="${escapeHTML(setting.name)}" data-setting-type="${escapeHTML(setting.type)}" aria-label="${escapeHTML(label)}" type="${setting.type === "NUMBER" ? "number" : "text"}" value="${escapeHTML(value ?? "")}">`;
+      }
+      return `<label class="spme-setting"><span><strong>${escapeHTML(label)}</strong><small>${escapeHTML(setting.description || setting.name)}</small></span>${input}</label>`;
+    }).join("");
+    return `<details class="spme-plugin-config" data-plugin-id="${escapeHTML(plugin.id)}"><summary><span><strong>${escapeHTML(plugin.name)}</strong> <code>${escapeHTML(plugin.id)}</code></span><span class="spme-badges"><span class="spme-badge ${pkg.enabled ? "spme-enabled" : "spme-disabled"}">${pkg.enabled ? "Enabled" : "Disabled"}</span>${githubLink(pkg)}</span></summary><div class="spme-config-body">${plugin.description ? `<p>${escapeHTML(plugin.description)}</p>` : ""}${hooks ? `<section><h3>Hooks</h3>${hooks}</section>` : ""}${settings ? `<section><h3>Settings</h3>${settings}</section>` : '<p>No configurable settings.</p>'}<div class="spme-actions"><button type="button" data-action="save-config" data-id="${escapeHTML(plugin.id)}">Save changes</button><button type="button" data-action="reset-config" data-id="${escapeHTML(plugin.id)}">Reset stored settings</button></div><p class="spme-help">Stash plugin manifests do not declare filesystem or network permissions, compatibility ranges, or setting defaults. This page does not infer them.</p></div></details>`;
+  }
+
+  render() {
+    if (!this.root || !this.inventory) return;
+    const panels = {
+      installed: () => this.installedHTML(),
+      browse: () => this.browseHTML(),
+      sources: () => this.sourcesHTML(),
+      configuration: () => this.configurationHTML(),
+    };
+    this.root.innerHTML = `${this.headerHTML()}${this.tabsHTML()}${this.messageHTML()}${panels[this.activeTab]()}`;
+  }
+
+  packageByID(id) {
+    return this.inventory.packages.find((pkg) => pkg.package_id === id);
+  }
+
+  availableByKey(key) {
+    return this.available?.packages.find((pkg) => `${pkg.sourceURL}|${pkg.package_id}` === key);
+  }
+
+  async runOperation(label, fn) {
+    this.busy = true;
+    this.message = { type: "info", text: `${label}…` };
+    this.render();
+    try {
+      const result = await fn();
+      if (typeof result === "string" && this.service.waitForJob) {
+        this.message = { type: "info", text: `${label}… waiting for job ${result}` };
+        this.render();
+        await this.service.waitForJob(result);
+      }
+      this.inventory = await this.service.loadInstalled({ checkUpdates: true });
+      if (this.activeTab === "browse" || this.activeTab === "sources") {
+        await this.loadAvailable(true);
+      }
+      this.message = { type: "success", text: `${label} completed.` };
+    } catch (error) {
+      this.message = { type: "error", text: error instanceof Error ? error.message : String(error) };
+    } finally {
+      this.busy = false;
+      this.render();
+    }
+  }
+
+  async onClick(event) {
+    const button = event.target.closest("[data-action]");
+    if (!button) return;
+    const action = button.dataset.action;
+    if (action === "tab") return this.setTab(button.dataset.tab);
+    if (action === "retry") return this.mount();
+    if (action === "show-core") return this.unmount();
+    if (action === "check-updates") return this.refresh({ checkUpdates: true });
+    if (action === "refresh-sources") {
+      this.available = undefined;
+      this.browseLimit = 50;
+      return this.setTab(this.activeTab);
+    }
+    if (action === "reload") return this.runOperation("Reloading plugin definitions", () => this.service.reloadPlugins());
+    if (action === "expand-config" || action === "collapse-config") {
+      this.root.querySelectorAll("details.spme-plugin-config").forEach((details) => { details.open = action === "expand-config"; });
+      return;
+    }
+    if (action === "load-more") {
+      this.browseLimit += 50;
+      return this.render();
+    }
+    if (action === "toggle-enabled") {
+      const pkg = this.packageByID(button.dataset.id);
+      if (!pkg) return;
+      await this.runOperation(`${pkg.enabled ? "Disabling" : "Enabling"} ${pkg.name}`, () => this.service.setEnabled(pkg.package_id, !pkg.enabled));
+      return;
+    }
+
+    const installedSelected = this.inventory.packages.filter((pkg) => this.selectedInstalled.has(pkg.package_id));
+    const availableSelected = this.available?.packages.filter((pkg) => this.selectedAvailable.has(`${pkg.sourceURL}|${pkg.package_id}`)) ?? [];
+    if (action === "update-all") return this.runOperation("Updating all available plugins", () => this.service.update(this.inventory.packages.filter((pkg) => pkg.status === "update")));
+    if (action === "update-selected") return this.runOperation("Updating selected plugins", () => this.service.update(installedSelected));
+    if (action === "install-selected") return this.runOperation("Installing selected plugins", () => this.service.install(availableSelected));
+    if (action === "update-one") {
+      const pkg = this.packageByID(button.dataset.id);
+      return this.runOperation(`Updating ${pkg.name}`, () => this.service.update([pkg]));
+    }
+    if (action === "install-one") {
+      const pkg = this.availableByKey(button.dataset.key);
+      return this.runOperation(`Installing ${pkg.name}`, () => this.service.install([pkg]));
+    }
+    if (action === "uninstall-one" || action === "uninstall-selected") {
+      const packages = action === "uninstall-one" ? [this.packageByID(button.dataset.id)] : installedSelected;
+      const names = packages.map((pkg) => pkg.name).join(", ");
+      if (!this.confirm?.(`Uninstall ${names}? Stash will remove the package files. Review dependencies before continuing.`)) return;
+      return this.runOperation(`Uninstalling ${plural(packages.length, "plugin")}`, () => this.service.uninstall(packages));
+    }
+    if (action === "edit-source") {
+      this.editingSource = Number(button.dataset.index);
+      return this.render();
+    }
+    if (action === "cancel-source") {
+      this.editingSource = undefined;
+      return this.render();
+    }
+    if (action === "delete-source") {
+      const index = Number(button.dataset.index);
+      const source = this.inventory.sources[index];
+      if (!this.confirm?.(`Delete plugin source “${source.name || source.url}”? Installed plugins will remain installed.`)) return;
+      const sources = this.inventory.sources.filter((_, i) => i !== index);
+      await this.runOperation(`Deleting source ${source.name || source.url}`, () => this.service.saveSources(sources));
+      this.inventory.sources = sources;
+      this.available = undefined;
+      return;
+    }
+    if (action === "save-config") return this.savePluginConfig(button.dataset.id);
+    if (action === "reset-config") {
+      const pkg = this.packageByID(button.dataset.id);
+      if (!this.confirm?.(`Reset all stored settings for ${pkg.name}? Plugin defaults will apply after reload.`)) return;
+      await this.runOperation(`Resetting ${pkg.name} settings`, () => this.service.configurePlugin(pkg.package_id, {}));
+    }
+  }
+
+  onInput(event) {
+    const kind = event.target.dataset.filter;
+    if (!kind) return;
+    this.filters[kind].query = event.target.value;
+    if (kind === "browse") this.browseLimit = 50;
+    this.render();
+    const input = this.root.querySelector(`[data-filter="${kind}"]`);
+    input?.focus();
+    input?.setSelectionRange?.(input.value.length, input.value.length);
+  }
+
+  onChange(event) {
+    const target = event.target;
+    if (target.dataset.selectPackage) {
+      const set = target.dataset.selectPackage === "installed" ? this.selectedInstalled : this.selectedAvailable;
+      target.checked ? set.add(target.dataset.key) : set.delete(target.dataset.key);
+      return this.render();
+    }
+    if (target.dataset.filterCheck === "updates") {
+      this.filters.installed.updatesOnly = target.checked;
+      return this.render();
+    }
+    if (target.dataset.filterSelect === "installed-enabled" || target.dataset.filterSelect === "configuration-enabled") {
+      const value = target.value === "" ? undefined : target.value === "true";
+      const kind = target.dataset.filterSelect.startsWith("installed") ? "installed" : "configuration";
+      this.filters[kind].enabled = value;
+      return this.render();
+    }
+    if (target.dataset.filterSelect === "browse-source") {
+      this.filters.browse.source = target.value;
+      this.browseLimit = 50;
+      return this.render();
+    }
+  }
+
+  onSubmit(event) {
+    if (!event.target.matches("[data-source-form]")) return;
+    event.preventDefault();
+    this.submitSourceForm(event.target);
+  }
+
+  async savePluginConfig(pluginID) {
+    const current = { ...(this.inventory.pluginConfig[pluginID] ?? {}) };
+    [...this.root.querySelectorAll("[data-config-input]")]
+      .filter((input) => input.dataset.plugin === pluginID)
+      .forEach((input) => {
+        const type = input.dataset.settingType;
+        if (type === "NUMBER" && input.value.trim() === "") {
+          delete current[input.dataset.setting];
+          return;
+        }
+        current[input.dataset.setting] = input.type === "checkbox"
+          ? input.checked
+          : type === "NUMBER"
+            ? Number(input.value)
+            : input.value;
+      });
+    await this.runOperation(`Saving ${this.packageByID(pluginID).name} settings`, () => this.service.configurePlugin(pluginID, current));
+    this.inventory.pluginConfig[pluginID] = current;
+  }
+
+  async submitSourceForm(form) {
+    const values = Object.fromEntries(new FormData(form));
+    const sourceURL = safeExternalUrl(values.url.trim());
+    if (!sourceURL) {
+      this.message = { type: "error", text: "Source URLs must use HTTP or HTTPS." };
+      return this.render();
+    }
+    const source = { name: values.name.trim(), url: sourceURL, local_path: values.local_path.trim() || null };
+    const duplicate = this.inventory.sources.some((item, index) => index !== this.editingSource && (item.name === source.name || item.url === source.url));
+    if (duplicate) {
+      this.message = { type: "error", text: "A source with that name or URL already exists." };
+      return this.render();
+    }
+    const sources = this.inventory.sources.slice();
+    if (this.editingSource === undefined) sources.push(source);
+    else sources[this.editingSource] = source;
+    await this.runOperation(`${this.editingSource === undefined ? "Adding" : "Updating"} source ${source.name}`, () => this.service.saveSources(sources));
+    this.inventory.sources = sources;
+    this.available = undefined;
+    this.editingSource = undefined;
+    this.render();
+  }
+}
