@@ -151,6 +151,14 @@ export class EnhancedPluginManager {
     this.root.style.setProperty("--spme-available-width", `${available}px`);
   }
 
+  revealSourceForm() {
+    const form = this.root?.querySelector(".spme-source-form");
+    if (!form) return;
+    const reduceMotion = this.window?.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+    form.scrollIntoView?.({ behavior: reduceMotion ? "auto" : "smooth", block: "center" });
+    form.querySelector('[name="name"]')?.focus({ preventScroll: true });
+  }
+
   renderLoading(label) {
     if (this.root) {
       this.root.innerHTML = `<div class="spme-loading" role="status">${escapeHTML(
@@ -592,7 +600,9 @@ export class EnhancedPluginManager {
     }
     if (action === "edit-source") {
       this.editingSource = Number(button.dataset.index);
-      return this.render();
+      this.render();
+      this.revealSourceForm();
+      return;
     }
     if (action === "cancel-source") {
       this.editingSource = undefined;

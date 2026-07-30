@@ -225,6 +225,20 @@ describe("EnhancedPluginManager", () => {
     expect(document.querySelector('a[href$="index.yml"]')).not.toBeNull();
   });
 
+  it("reveals and focuses the populated source form when Edit is clicked", async () => {
+    const scrollIntoView = vi.fn();
+    window.HTMLElement.prototype.scrollIntoView = scrollIntoView;
+    const { app } = await mountApp();
+    await app.setTab("sources");
+
+    document.querySelector('[data-action="edit-source"]').click();
+
+    expect(document.querySelector(".spme-source-form h2").textContent).toBe("Edit plugin source");
+    expect(document.querySelector('.spme-source-form [name="name"]').value).toBe("Community (stable)");
+    expect(scrollIntoView).toHaveBeenCalledWith({ behavior: "smooth", block: "center" });
+    expect(document.activeElement).toBe(document.querySelector('.spme-source-form [name="name"]'));
+  });
+
   it("collapses configuration by plugin and shows hooks and settings on demand", async () => {
     const { app } = await mountApp();
     await app.setTab("configuration");
