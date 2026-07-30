@@ -243,6 +243,11 @@ describe("EnhancedPluginManager", () => {
     const { app } = await mountApp();
     const sourceURL = "https://stashapp.github.io/CommunityScripts/stable/index.yml";
     const anchorID = sourceAnchorID(sourceURL);
+    app.inventory.sources.push({
+      name: "Second source",
+      url: "https://example.github.io/plugins/main/index.yml",
+      local_path: null,
+    });
 
     document.querySelector('.spme-source-link[data-action="open-source"]').click();
 
@@ -252,6 +257,13 @@ describe("EnhancedPluginManager", () => {
     expect(target?.getAttribute("tabindex")).toBe("-1");
     expect(scrollIntoView).toHaveBeenCalled();
     expect(document.activeElement).toBe(target);
+
+    scrollIntoView.mockClear();
+    document.querySelector('[data-action="edit-source"][data-index="1"]').click();
+    expect(window.location.hash).toBe("");
+    expect(document.querySelector('.spme-source-card-editing[data-source-index="1"]')).not.toBeNull();
+    expect(document.activeElement).toBe(document.querySelector('.spme-source-card-editing [name="name"]'));
+    expect(scrollIntoView).not.toHaveBeenCalled();
   });
 
   it("restores and targets a source anchor on direct navigation", async () => {
@@ -266,6 +278,9 @@ describe("EnhancedPluginManager", () => {
     expect(app.activeTab).toBe("sources");
     expect(scrollIntoView).toHaveBeenCalled();
     expect(document.activeElement).toBe(document.getElementById(anchorID));
+
+    document.querySelector('[data-tab="installed"]').click();
+    expect(window.location.hash).toBe("");
   });
 
   it("renders source health, trust, URL, and package count separately from browsing", async () => {

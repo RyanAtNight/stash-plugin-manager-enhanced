@@ -43,6 +43,12 @@ export function sourceAnchorHref(value, sourceURL) {
   return `${url.pathname}${url.search}${url.hash}`;
 }
 
+export function withoutPluginManagerSourceAnchor(value) {
+  const url = new URL(value, "http://stash.local");
+  if (/^#spme-source-[0-9a-f]{8}$/.test(url.hash)) url.hash = "";
+  return `${url.pathname}${url.search}${url.hash}`;
+}
+
 function normaliseGithubUrl(value) {
   if (typeof value !== "string") return undefined;
   const match = value.trim().match(GITHUB_URL);

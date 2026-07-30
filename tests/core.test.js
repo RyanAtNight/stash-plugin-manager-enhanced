@@ -9,6 +9,7 @@ import {
   safeExternalUrl,
   sourceAnchorHref,
   sourceAnchorID,
+  withoutPluginManagerSourceAnchor,
   sourceTrust,
   withPluginManagerTab,
 } from "../src/core.js";
@@ -52,6 +53,15 @@ describe("source anchors", () => {
   it("builds a Sources-subtab URL while preserving other parameters", () => {
     expect(sourceAnchorHref("/settings?foo=1&tab=plugins&pluginManagerTab=browse", sourceURL)).toBe(
       `/settings?foo=1&tab=plugins&pluginManagerTab=sources#${sourceAnchorID(sourceURL)}`
+    );
+  });
+
+  it("removes only plugin-owned source anchors", () => {
+    expect(withoutPluginManagerSourceAnchor(`/settings?tab=plugins&pluginManagerTab=sources#${sourceAnchorID(sourceURL)}`)).toBe(
+      "/settings?tab=plugins&pluginManagerTab=sources"
+    );
+    expect(withoutPluginManagerSourceAnchor("/settings?tab=plugins#other-anchor")).toBe(
+      "/settings?tab=plugins#other-anchor"
     );
   });
 });

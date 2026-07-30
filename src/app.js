@@ -4,6 +4,7 @@ import {
   safeExternalUrl,
   sourceAnchorHref,
   sourceAnchorID,
+  withoutPluginManagerSourceAnchor,
   withPluginManagerTab,
 } from "./core.js";
 
@@ -160,6 +161,13 @@ export class EnhancedPluginManager {
     form?.querySelector('[name="name"]')?.focus({ preventScroll: true });
   }
 
+  clearSourceAnchor() {
+    if (!this.window?.history || !this.window?.location) return;
+    const currentURL = `${this.window.location.pathname}${this.window.location.search}${this.window.location.hash}`;
+    const nextURL = withoutPluginManagerSourceAnchor(currentURL);
+    if (nextURL !== currentURL) this.window.history.replaceState({}, "", nextURL);
+  }
+
   sourceReferenceHTML(pkg) {
     const label = pkg.sourceName || pkg.sourceURL || "Unknown";
     const source = this.inventory?.sources.find((candidate) => candidate.url === pkg.sourceURL);
@@ -232,7 +240,7 @@ export class EnhancedPluginManager {
     if (this.root) this.root.dataset.activeTab = tab;
     this.message = undefined;
     if (updateURL && this.window?.history && this.window?.location) {
-      const nextURL = withPluginManagerTab(this.window.location.href, tab);
+      const nextURL = withoutPluginManagerSourceAnchor(withPluginManagerTab(this.window.location.href, tab));
       const currentURL = `${this.window.location.pathname}${this.window.location.search}${this.window.location.hash}`;
       if (nextURL !== currentURL) this.window.history.pushState({}, "", nextURL);
     }
@@ -645,6 +653,7 @@ export class EnhancedPluginManager {
       return this.runOperation(`Uninstalling ${plural(packages.length, "plugin")}`, () => this.service.uninstall(packages));
     }
     if (action === "add-source") {
+      this.clearSourceAnchor();
       this.addingSource = true;
       this.editingSource = undefined;
       this.render();
@@ -652,6 +661,7 @@ export class EnhancedPluginManager {
       return;
     }
     if (action === "edit-source") {
+      this.clearSourceAnchor();
       this.addingSource = false;
       this.editingSource = Number(button.dataset.index);
       this.render();
