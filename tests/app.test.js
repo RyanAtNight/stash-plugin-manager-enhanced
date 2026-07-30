@@ -161,6 +161,15 @@ describe("EnhancedPluginManager", () => {
 
     const row = document.querySelector('.spme-package-table [data-package-id="beta"]');
     expect(row).not.toBeNull();
+    expect([...document.querySelectorAll(".spme-columns-browse col")].map((col) => col.className)).toEqual([
+      "spme-col-select",
+      "spme-col-plugin",
+      "spme-col-description",
+      "spme-col-version",
+      "spme-col-source",
+      "spme-col-status",
+      "spme-col-actions",
+    ]);
     expect(row.querySelector('[data-action="install-one"]')).not.toBeNull();
     expect(row.querySelector('a[aria-label="Open Beta Helper GitHub repository"]')).not.toBeNull();
   });

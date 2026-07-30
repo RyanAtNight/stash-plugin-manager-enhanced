@@ -356,6 +356,9 @@ export class EnhancedPluginManager {
     if (!packages.length) return `<p class="spme-empty">No ${installed ? "installed" : "available"} plugins match these filters.</p>`;
     return `<div class="spme-table-scroll" tabindex="0" aria-label="${installed ? "Installed" : "Available"} plugin table">
       <table class="spme-package-table">
+        <colgroup class="spme-columns-${installed ? "installed" : "browse"}">
+          <col class="spme-col-select"><col class="spme-col-plugin"><col class="spme-col-description"><col class="spme-col-version"><col class="spme-col-source"><col class="spme-col-status"><col class="spme-col-actions">
+        </colgroup>
         <thead><tr><th scope="col"><span class="visually-hidden">Select</span></th><th scope="col">Plugin</th><th scope="col">Description</th><th scope="col">Version</th><th scope="col">Source</th><th scope="col">Status</th><th scope="col">Actions</th></tr></thead>
         <tbody>${packages.map((pkg) => this.packageTableRow(pkg, installed)).join("")}</tbody>
       </table>
