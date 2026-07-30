@@ -10,6 +10,12 @@ describe("package view responsive styles", () => {
     expect(css).toMatch(/left:\s*50%[\s\S]*translateX\(-50%\)/);
   });
 
+  it("gives inactive and active subtabs distinct surfaces with space before the separator", () => {
+    expect(css).toMatch(/\.spme-tabs\s*\{[\s\S]*padding-bottom:\s*\.8(?:rem|5rem)/);
+    expect(css).toMatch(/#spme-root \.spme-tabs button\s*\{[\s\S]*background:\s*var\(--spme-panel-2\)[\s\S]*border:\s*1px solid var\(--spme-border\)/);
+    expect(css).toMatch(/#spme-root \.spme-tabs button\.active\s*\{[\s\S]*background:\s*var\(--spme-accent\)/);
+  });
+
   it("turns Table rows into labeled stacked cards on narrow windows", () => {
     const mobile = css.slice(css.indexOf("@media (max-width: 1100px)"));
     expect(mobile).toMatch(/\.spme-package-table thead\s*\{\s*display:\s*none/);
