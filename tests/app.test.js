@@ -270,6 +270,21 @@ describe("EnhancedPluginManager", () => {
     expect(document.querySelector('input[aria-label="Select Alpha Tool"]')).not.toBeNull();
   });
 
+  it("dismisses alert messages from an accessible close button", async () => {
+    const { app } = await mountApp();
+    app.message = { type: "success", text: "Plugin operation completed." };
+    app.render();
+
+    const alert = document.querySelector(".spme-alert");
+    const dismiss = alert?.querySelector('[data-action="dismiss-message"]');
+    expect(alert?.querySelector(".spme-alert-content")?.textContent).toBe("Plugin operation completed.");
+    expect(dismiss?.getAttribute("aria-label")).toBe("Dismiss notification");
+
+    dismiss.click();
+    expect(app.message).toBeUndefined();
+    expect(document.querySelector(".spme-alert")).toBeNull();
+  });
+
   it("shows runtime-only plugins only when present and limits them to enable or disable", async () => {
     const { app, service } = await mountApp();
     expect(document.querySelector(".spme-runtime-only")).toBeNull();

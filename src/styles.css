@@ -149,6 +149,11 @@
 .spme-setting small { color:var(--spme-text-muted); }
 .spme-hook { background:var(--spme-panel-2); border-radius:.4rem; padding:.75rem; margin:.5rem 0; }
 .spme-alert, .spme-loading, .spme-empty { padding:1rem; border:1px solid var(--spme-border); border-radius:.5rem; margin:1rem 0; }
+.spme-alert { display:flex; align-items:center; gap:.75rem; }
+.spme-alert-content { flex:1 1 auto; min-width:0; }
+#spme-root .spme-alert-dismiss { flex:0 0 auto; width:2rem; height:2rem; margin-left:auto; padding:0; border-color:transparent; border-radius:50%; background:transparent; color:inherit; font-size:1.35rem; line-height:1; }
+#spme-root .spme-alert-dismiss:not(:disabled):hover { background:rgba(255,255,255,.1); border-color:rgba(255,255,255,.18); color:inherit; }
+#spme-root .spme-alert-dismiss:not(:disabled):active { background:rgba(255,255,255,.18); border-color:rgba(255,255,255,.28); color:inherit; box-shadow:0 0 0 .2rem rgba(54,144,199,.5); }
 .spme-alert-success { border-color:var(--spme-success); }
 .spme-alert-error, .spme-text-error { border-color:var(--spme-danger); color:#ff9aa4; }
 .spme-alert-info { border-color:var(--spme-accent); }

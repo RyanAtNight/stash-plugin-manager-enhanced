@@ -52,6 +52,14 @@ describe("package view responsive styles", () => {
     expect(css).toMatch(/#spme-root button\.subtle:not\(:disabled\):active/);
   });
 
+  it("places a compact interactive dismiss button at the far right of alerts", () => {
+    expect(css).toMatch(/\.spme-alert\s*\{[\s\S]*display:\s*flex[\s\S]*align-items:\s*center/);
+    expect(css).toMatch(/\.spme-alert-content\s*\{[\s\S]*flex:\s*1\s+1\s+auto/);
+    expect(css).toMatch(/#spme-root \.spme-alert-dismiss\s*\{[\s\S]*margin-left:\s*auto[\s\S]*background:\s*transparent/);
+    expect(css).toMatch(/#spme-root \.spme-alert-dismiss:not\(:disabled\):hover/);
+    expect(css).toMatch(/#spme-root \.spme-alert-dismiss:not\(:disabled\):active[\s\S]*box-shadow:/);
+  });
+
   it("styles the sidebar kill switch without a distracting top border", () => {
     const rule = css.match(/#spme-enhancement-control\s*\{([^}]*)\}/)?.[1] ?? "";
     expect(rule).toContain("padding:");

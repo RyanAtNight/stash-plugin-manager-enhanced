@@ -292,7 +292,7 @@ export class EnhancedPluginManager {
     if (!this.message) return "";
     return `<div class="spme-alert spme-alert-${escapeHTML(
       this.message.type
-    )}" role="status">${escapeHTML(this.message.text)}</div>`;
+    )}" role="status"><span class="spme-alert-content">${escapeHTML(this.message.text)}</span><button type="button" class="spme-alert-dismiss" data-action="dismiss-message" aria-label="Dismiss notification" title="Dismiss"><span aria-hidden="true">×</span></button></div>`;
   }
 
   headerHTML() {
@@ -625,6 +625,10 @@ export class EnhancedPluginManager {
       return this.setTab("sources", { updateURL: false });
     }
     if (action === "tab") return this.setTab(button.dataset.tab);
+    if (action === "dismiss-message") {
+      this.message = undefined;
+      return this.render();
+    }
     if (action === "set-view") {
       this.viewMode = button.dataset.viewMode === "table" ? "table" : "cards";
       this.root.dataset.viewMode = this.viewMode;
