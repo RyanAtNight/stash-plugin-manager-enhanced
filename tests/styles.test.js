@@ -31,6 +31,13 @@ describe("package view responsive styles", () => {
     expect(css).toMatch(/data-active-tab="browse"[\s\S]*\.spme-table-actions\s*\{[\s\S]*flex-wrap:\s*nowrap/);
   });
 
+  it("gives toolbar dropdowns the same visible indicator as Stash's Language select", () => {
+    expect(css).toMatch(/\.spme-toolbar select\s*\{[\s\S]*appearance:\s*none/);
+    expect(css).toMatch(/\.spme-toolbar select\s*\{[\s\S]*background-image:\s*url\([^)]*svg[\s\S]*polygon/);
+    expect(css).toMatch(/\.spme-toolbar select\s*\{[\s\S]*background-position:\s*calc\(100%\s*-\s*\.45rem\)\s*50%/);
+    expect(css).toMatch(/\.spme-toolbar select\s*\{[\s\S]*padding-right:\s*1\.65rem/);
+  });
+
   it("styles the sidebar kill switch without a distracting top border", () => {
     const rule = css.match(/#spme-enhancement-control\s*\{([^}]*)\}/)?.[1] ?? "";
     expect(rule).toContain("padding:");
