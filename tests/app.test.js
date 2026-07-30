@@ -100,6 +100,7 @@ async function mountApp() {
 
 beforeEach(() => {
   window.history.replaceState({}, "", "/settings?tab=plugins");
+  window.localStorage.clear();
   pageFixture();
 });
 
@@ -115,6 +116,21 @@ describe("EnhancedPluginManager", () => {
       expect.stringContaining("Configuration"),
     ]);
     expect(document.querySelectorAll(".spme-core-hidden")).toHaveLength(3);
+  });
+
+  it("defaults to Cards view and persists the user's Table view choice", async () => {
+    let { app } = await mountApp();
+    expect(document.querySelector("#spme-root").dataset.viewMode).toBe("cards");
+    expect(document.querySelector('[data-action="set-view"][data-view-mode="cards"]').getAttribute("aria-pressed")).toBe("true");
+
+    document.querySelector('[data-action="set-view"][data-view-mode="table"]').click();
+    expect(document.querySelector("#spme-root").dataset.viewMode).toBe("table");
+    expect(window.localStorage.getItem("spme.viewMode")).toBe("table");
+
+    app.unmount();
+    ({ app } = await mountApp());
+    expect(app.viewMode).toBe("table");
+    expect(document.querySelector('[data-action="set-view"][data-view-mode="table"]').getAttribute("aria-pressed")).toBe("true");
   });
 
   it("persists the selected plugin-manager subtab in the URL and restores it on mount", async () => {

@@ -64,9 +64,17 @@ export class EnhancedPluginManager {
     this.service = service;
     this.document = options.document ?? globalThis.document;
     this.window = options.window ?? globalThis.window;
+    this.storage = options.storage ?? this.window?.localStorage;
     this.confirm = options.confirm ?? globalThis.confirm?.bind(globalThis);
     this.setTimeout = options.setTimeout ?? globalThis.setTimeout?.bind(globalThis);
     this.activeTab = pluginManagerTabFromURL(this.window?.location?.href ?? "/settings?tab=plugins");
+    let storedViewMode;
+    try {
+      storedViewMode = this.storage?.getItem("spme.viewMode");
+    } catch {
+      storedViewMode = undefined;
+    }
+    this.viewMode = storedViewMode === "table" ? "table" : "cards";
     this.inventory = undefined;
     this.available = undefined;
     this.coreSections = [];
@@ -96,6 +104,7 @@ export class EnhancedPluginManager {
     this.root = this.document.createElement("section");
     this.root.id = "spme-root";
     this.root.className = "spme-shell";
+    this.root.dataset.viewMode = this.viewMode;
     this.root.setAttribute("aria-label", "Enhanced plugin manager");
     this.coreSections[0].before(this.root);
     this.coreSections.forEach((section) => section.classList.add("spme-core-hidden"));
@@ -237,12 +246,21 @@ export class EnhancedPluginManager {
   headerHTML() {
     const updates = this.inventory.packages.filter((pkg) => pkg.status === "update").length;
     const enabled = this.inventory.packages.filter((pkg) => pkg.enabled).length;
+    const viewToggle = this.activeTab === "installed" || this.activeTab === "browse"
+      ? `<div class="spme-view-toggle" role="group" aria-label="Package display mode">
+          <button type="button" data-action="set-view" data-view-mode="cards" aria-pressed="${this.viewMode === "cards"}">Cards</button>
+          <button type="button" data-action="set-view" data-view-mode="table" aria-pressed="${this.viewMode === "table"}">Table</button>
+        </div>`
+      : "";
     return `<header class="spme-header">
       <div><h1>Plugin Manager</h1><p>Install, update, inspect, configure, and verify plugins without nested scrolling.</p></div>
-      <div class="spme-summary" aria-label="Plugin summary">
-        <span><strong>${this.inventory.packages.length}</strong> installed</span>
-        <span><strong>${enabled}</strong> enabled</span>
-        <span class="${updates ? "spme-text-warning" : ""}"><strong>${updates}</strong> updates</span>
+      <div class="spme-header-tools">
+        <div class="spme-summary" aria-label="Plugin summary">
+          <span><strong>${this.inventory.packages.length}</strong> installed</span>
+          <span><strong>${enabled}</strong> enabled</span>
+          <span class="${updates ? "spme-text-warning" : ""}"><strong>${updates}</strong> updates</span>
+        </div>
+        ${viewToggle}
       </div>
     </header>`;
   }
@@ -461,6 +479,16 @@ export class EnhancedPluginManager {
     if (!button) return;
     const action = button.dataset.action;
     if (action === "tab") return this.setTab(button.dataset.tab);
+    if (action === "set-view") {
+      this.viewMode = button.dataset.viewMode === "table" ? "table" : "cards";
+      this.root.dataset.viewMode = this.viewMode;
+      try {
+        this.storage?.setItem("spme.viewMode", this.viewMode);
+      } catch {
+        // Storage may be unavailable in privacy-restricted browser contexts.
+      }
+      return this.render();
+    }
     if (action === "retry") return this.mount();
     if (action === "show-core") return this.unmount();
     if (action === "check-updates") return this.refresh({ checkUpdates: true });
