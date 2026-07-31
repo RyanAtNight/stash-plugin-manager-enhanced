@@ -228,7 +228,11 @@ describe("EnhancedPluginManager", () => {
       expect(document.querySelector('[data-package-id="unchecked-plugin"] [data-action="update-one"]')).toBeNull();
       const uninstall = document.querySelector('[data-package-id="current-plugin"] [data-action="uninstall-one"]');
       expect(uninstall?.textContent.trim()).toBe("");
-      expect(uninstall?.querySelector("svg.spme-trash-icon")?.getAttribute("aria-hidden")).toBe("true");
+      const trashIcon = uninstall?.querySelector("svg.spme-trash-icon");
+      expect(trashIcon?.getAttribute("aria-hidden")).toBe("true");
+      expect(trashIcon?.getAttribute("width")).toBe("19");
+      expect(trashIcon?.getAttribute("height")).toBe("19");
+      expect(trashIcon?.getAttribute("viewBox")).toBe("3 3 18 18");
       expect(uninstall?.getAttribute("aria-label")).toBe("Uninstall Current Plugin");
       expect(uninstall?.getAttribute("title")).toBe("Uninstall Current Plugin");
       expect(uninstall?.classList.contains("spme-uninstall-action")).toBe(true);
