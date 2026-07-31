@@ -136,9 +136,17 @@
 .spme-package-table th:nth-child(7) { width:13%; }
 .spme-package-table th:nth-child(8) { width:15%; }
 #spme-root[data-active-tab="browse"] .spme-package-table th { width:auto; }
+#spme-root[data-active-tab="installed"] .spme-package-table th { width:auto; }
 #spme-root[data-active-tab="installed"] .spme-package-table th:nth-child(3) { width:auto; }
-#spme-root[data-active-tab="installed"] .spme-package-table th:nth-child(9) { width:13.5rem; }
-.spme-columns-installed .spme-col-installed { width:12%; }
+.spme-columns-installed .spme-col-select { width:3%; }
+.spme-columns-installed .spme-col-plugin { width:14%; }
+.spme-columns-installed .spme-col-description { width:auto; }
+.spme-columns-installed .spme-col-version { width:9%; }
+.spme-columns-installed .spme-col-last-commit,
+.spme-columns-installed .spme-col-installed { width:8%; }
+.spme-columns-installed .spme-col-source { width:11%; }
+.spme-columns-installed .spme-col-status { width:10%; }
+.spme-columns-installed .spme-col-actions { width:13.5rem; }
 .spme-columns-browse .spme-col-select { width:3%; }
 .spme-columns-browse .spme-col-plugin { width:15%; }
 .spme-columns-browse .spme-col-description { width:auto; }
