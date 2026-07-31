@@ -191,6 +191,9 @@
 .spme-source-form h2, .spme-source-form .spme-help, .spme-source-form > div { grid-column:1/-1; }
 .spme-source-form-actions { display:flex; flex-wrap:wrap; gap:.5rem; }
 .spme-plugin-config > summary { display:flex; justify-content:space-between; align-items:center; gap:1rem; cursor:pointer; padding:1rem; }
+.spme-plugin-config > summary > .spme-badges { align-items:center; }
+.spme-plugin-config > summary .spme-repo-link,
+.spme-plugin-config > summary .spme-manage-link { height:2.15rem; }
 .spme-plugin-config { scroll-margin-top:5rem; }
 .spme-plugin-config:target,
 .spme-plugin-config:focus { border-color:var(--spme-accent); box-shadow:0 0 0 2px rgba(25,153,214,.3); outline:none; }

@@ -74,6 +74,12 @@ describe("package view responsive styles", () => {
     expect(css).toMatch(/\.spme-plugin-config:target,[\s\S]*\.spme-plugin-config:focus\s*\{[^}]*border-color:\s*var\(--spme-accent\)/);
   });
 
+  it("aligns Configuration GitHub and Manage controls without changing Installed actions", () => {
+    expect(css).toMatch(/\.spme-plugin-config > summary > \.spme-badges\s*\{[^}]*align-items:\s*center/);
+    expect(css).toMatch(/\.spme-plugin-config > summary \.spme-repo-link,[\s\S]*\.spme-plugin-config > summary \.spme-manage-link\s*\{\s*height:\s*2\.15rem/);
+    expect(css).not.toMatch(/data-active-tab="installed"[^{]*spme-manage-link/);
+  });
+
   it("highlights Installed cards and rows reached from Manage links", () => {
     expect(css).toMatch(/\.spme-installed-target:target,[\s\S]*\.spme-installed-target:focus\s*\{[^}]*border-color:\s*var\(--spme-accent\)/);
   });
