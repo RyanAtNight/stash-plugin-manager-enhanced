@@ -166,9 +166,9 @@ describe("package view responsive styles", () => {
     expect(mobile).toMatch(/\.spme-source-table\s*\{\s*min-width:\s*0/);
   });
 
-  it("matches Sources GitHub action height to the other action buttons", () => {
+  it("keeps Sources GitHub actions square while the neighboring controls stretch", () => {
     expect(css).toMatch(/#spme-root\[data-active-tab="sources"\] \.spme-card-actions,[\s\S]*#spme-root\[data-active-tab="sources"\] \.spme-table-actions\s*\{\s*align-items:\s*stretch/);
-    expect(css).toMatch(/#spme-root\[data-active-tab="sources"\] \.spme-repo-link\s*\{\s*height:\s*auto/);
+    expect(css).toMatch(/#spme-root\[data-active-tab="sources"\] \.spme-repo-link\s*\{[^}]*width:\s*2\.15rem[^}]*height:\s*2\.15rem/);
   });
 
   it("stretches the Sources trash action to match its neighboring buttons", () => {
