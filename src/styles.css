@@ -52,11 +52,11 @@
 .spme-toolbar select {
   appearance:none;
   background-color:#182831;
-  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4.95 10' fill='%23fff'><polygon points='1.41 4.67 2.48 3.18 3.54 4.67 1.41 4.67'/><polygon points='3.54 5.33 2.48 6.82 1.41 5.33 3.54 5.33'/></svg>");
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 14' fill='%23fff'><polygon points='1 5 5 1 9 5'/><polygon points='1 9 5 13 9 9'/></svg>");
   background-position:calc(100% - .45rem) 50%;
   background-repeat:no-repeat;
-  background-size:auto 1rem;
-  padding-right:1.65rem;
+  background-size:.65rem .9rem;
+  padding-right:1.8rem;
   cursor:pointer;
 }
 .spme-check { flex-direction:row !important; align-items:center; padding-bottom:.55rem; }

@@ -41,7 +41,8 @@ describe("package view responsive styles", () => {
     expect(css).toMatch(/\.spme-toolbar select\s*\{[\s\S]*appearance:\s*none/);
     expect(css).toMatch(/\.spme-toolbar select\s*\{[\s\S]*background-image:\s*url\([^)]*svg[\s\S]*polygon/);
     expect(css).toMatch(/\.spme-toolbar select\s*\{[\s\S]*background-position:\s*calc\(100%\s*-\s*\.45rem\)\s*50%/);
-    expect(css).toMatch(/\.spme-toolbar select\s*\{[\s\S]*padding-right:\s*1\.65rem/);
+    expect(css).toMatch(/\.spme-toolbar select\s*\{[\s\S]*background-size:\s*\.65rem\s+\.9rem/);
+    expect(css).toMatch(/\.spme-toolbar select\s*\{[\s\S]*padding-right:\s*1\.8rem/);
   });
 
   it("styles repository links as icon buttons rather than underlined text links", () => {
