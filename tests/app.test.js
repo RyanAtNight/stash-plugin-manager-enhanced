@@ -188,6 +188,7 @@ describe("EnhancedPluginManager", () => {
       "Description",
       "Version",
       "Last commit",
+      "Installed",
       "Source",
       "Status",
       "Actions",
@@ -196,6 +197,55 @@ describe("EnhancedPluginManager", () => {
     expect(table.querySelector('[data-package-id="alpha"] [data-label="Plugin"] > .spme-table-plugin')).not.toBeNull();
     expect(table.querySelector('a[aria-label="Open Alpha Tool GitHub repository"]')).not.toBeNull();
     expect(document.querySelectorAll(".spme-package-card")).toHaveLength(0);
+  });
+
+  it("records the first observed install time and shows it only in Installed Cards and Table", async () => {
+    const now = Date.UTC(2026, 6, 30, 22, 29, 11);
+    const installed = new Date(now);
+    const { app } = await mountApp({ now: () => now });
+
+    expect(JSON.parse(window.localStorage.getItem("spme.installDates"))).toEqual({ alpha: now });
+    let installedTime = document.querySelector('[data-package-id="alpha"] time[data-installed-at]');
+    expect(installedTime?.dateTime).toBe(installed.toISOString());
+    expect(installedTime?.textContent).toBe(installed.toLocaleDateString());
+    expect(installedTime?.title).toBe(`First seen installed: ${installed.toLocaleString()}`);
+
+    document.querySelector('[data-action="set-view"][data-view-mode="table"]').click();
+    installedTime = document.querySelector('[data-package-id="alpha"] [data-label="Installed"] time[data-installed-at]');
+    expect(installedTime?.dateTime).toBe(installed.toISOString());
+
+    await app.setTab("browse");
+    expect(document.querySelector("time[data-installed-at]")).toBeNull();
+  });
+
+  it("keeps install times across refreshes and resets them after an observed uninstall", async () => {
+    const firstSeen = Date.UTC(2026, 6, 1, 12, 0, 0);
+    let now = Date.UTC(2026, 6, 30, 22, 30, 0);
+    window.localStorage.setItem("spme.installDates", JSON.stringify({ alpha: firstSeen, stale: firstSeen }));
+    pageFixture();
+    const service = serviceFixture();
+    const app = new EnhancedPluginManager(service, { confirm: () => true, now: () => now });
+    await app.mount();
+
+    expect(app.packageByID("alpha").installedAt).toBe(firstSeen);
+    expect(JSON.parse(window.localStorage.getItem("spme.installDates"))).toEqual({ alpha: firstSeen });
+
+    const alpha = app.packageByID("alpha");
+    const beta = {
+      ...alpha,
+      package_id: "beta",
+      name: "Beta Helper",
+      installedAt: undefined,
+      plugin: { ...alpha.plugin, id: "beta", name: "Beta Helper" },
+    };
+    service.loadInstalled.mockImplementation(async () => ({ ...app.inventory, packages: [alpha, beta] }));
+    await app.refresh({ checkUpdates: false });
+    expect(JSON.parse(window.localStorage.getItem("spme.installDates"))).toEqual({ alpha: firstSeen, beta: now });
+
+    now += 60_000;
+    service.loadInstalled.mockImplementation(async () => ({ ...app.inventory, packages: [beta] }));
+    await app.refresh({ checkUpdates: false });
+    expect(JSON.parse(window.localStorage.getItem("spme.installDates"))).toEqual({ beta: now - 60_000 });
   });
 
   it("shows per-plugin Update actions only when an update is known", async () => {

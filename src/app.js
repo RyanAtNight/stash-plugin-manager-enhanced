@@ -65,6 +65,12 @@ function packageCommitDateHTML(pkg) {
   return `<time data-last-commit datetime="${date.toISOString()}" title="${escapeHTML(date.toLocaleString())}">${escapeHTML(date.toLocaleDateString())}</time>`;
 }
 
+function installDateHTML(value) {
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return '<span data-installed-at>Unknown</span>';
+  return `<time data-installed-at datetime="${date.toISOString()}" title="${escapeHTML(`First seen installed: ${date.toLocaleString()}`)}">${escapeHTML(date.toLocaleDateString())}</time>`;
+}
+
 function findCoreSections(documentRef) {
   const wanted = new Set(["Installed Plugins", "Available Plugins", "Plugins"]);
   return [...documentRef.querySelectorAll(".setting-section")].filter((section) =>
@@ -144,18 +150,21 @@ export class EnhancedPluginManager {
     let storedInstalledSort;
     let storedCurrentInstalls;
     let storedLastUpdateCheck;
+    let storedInstallDates;
     try {
       storedViewMode = this.storage?.getItem("spme.viewMode");
       storedInstalledStatus = this.storage?.getItem("spme.installedStatus");
       storedInstalledSort = this.storage?.getItem("spme.installedSort");
       storedCurrentInstalls = this.storage?.getItem("spme.currentInstalls");
       storedLastUpdateCheck = this.storage?.getItem("spme.lastUpdateCheck");
+      storedInstallDates = this.storage?.getItem("spme.installDates");
     } catch {
       storedViewMode = undefined;
       storedInstalledStatus = undefined;
       storedInstalledSort = undefined;
       storedCurrentInstalls = undefined;
       storedLastUpdateCheck = undefined;
+      storedInstallDates = undefined;
     }
     this.viewMode = storedViewMode === "table" ? "table" : "cards";
     const installedEnabled = storedInstalledStatus === "true" ? true : storedInstalledStatus === "false" ? false : undefined;
@@ -172,6 +181,15 @@ export class EnhancedPluginManager {
       );
     } catch {
       this.currentInstalls = {};
+    }
+    try {
+      const parsed = JSON.parse(storedInstallDates ?? "{}");
+      this.installDates = Object.fromEntries(
+        Object.entries(parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {})
+          .filter(([packageID, value]) => packageID && Number.isFinite(value) && value > 0 && Number.isFinite(new Date(value).getTime()))
+      );
+    } catch {
+      this.installDates = {};
     }
     this.inventory = undefined;
     this.available = undefined;
@@ -219,6 +237,7 @@ export class EnhancedPluginManager {
 
     try {
       this.inventory = await this.service.loadInstalled({ checkUpdates: false });
+      this.recordInstallDates();
       this.applyCurrentInstallAssumptions();
       if (this.activeTab === "browse" || this.activeTab === "sources") {
         await this.loadAvailable();
@@ -339,6 +358,41 @@ export class EnhancedPluginManager {
     }
   }
 
+  saveInstallDates() {
+    try {
+      if (Object.keys(this.installDates).length) {
+        this.storage?.setItem("spme.installDates", JSON.stringify(this.installDates));
+      } else {
+        this.storage?.removeItem("spme.installDates");
+      }
+    } catch {
+      // Storage may be unavailable in privacy-restricted browser contexts.
+    }
+  }
+
+  recordInstallDates() {
+    if (!this.inventory) return;
+    const observedAt = this.now();
+    if (!Number.isFinite(observedAt) || observedAt <= 0 || !Number.isFinite(new Date(observedAt).getTime())) return;
+    const installedIDs = new Set(this.inventory.packages.map((pkg) => pkg.package_id).filter(Boolean));
+    let changed = false;
+    Object.keys(this.installDates).forEach((packageID) => {
+      if (!installedIDs.has(packageID)) {
+        delete this.installDates[packageID];
+        changed = true;
+      }
+    });
+    this.inventory.packages.forEach((pkg) => {
+      if (!pkg.package_id) return;
+      if (!this.installDates[pkg.package_id]) {
+        this.installDates[pkg.package_id] = observedAt;
+        changed = true;
+      }
+      pkg.installedAt = this.installDates[pkg.package_id];
+    });
+    if (changed) this.saveInstallDates();
+  }
+
   applyCurrentInstallAssumptions() {
     if (!this.inventory) return;
     if (this.inventory.checkedUpdates) {
@@ -436,6 +490,7 @@ export class EnhancedPluginManager {
     this.render();
     try {
       this.inventory = await this.service.loadInstalled({ checkUpdates });
+      this.recordInstallDates();
       if (checkUpdates) this.recordUpdateCheck();
       this.applyCurrentInstallAssumptions();
       if (this.activeTab === "browse" || this.activeTab === "sources") {
@@ -664,7 +719,7 @@ export class EnhancedPluginManager {
       <div class="spme-package-main">
         <div class="spme-package-title"><div><h2>${escapeHTML(pkg.name)}</h2><code>${escapeHTML(pkg.package_id)}</code></div><div class="spme-badges">${status}${dependencyStatus}${trustBadge(pkg.trust)}</div></div>
         <p>${escapeHTML(packageDescription(pkg))}</p>
-        <dl><div><dt>Version</dt><dd>${version}</dd></div><div><dt>Last commit</dt><dd>${packageCommitDateHTML(pkg)}</dd></div><div><dt>Source</dt><dd>${this.sourceReferenceHTML(pkg)}</dd></div></dl>
+        <dl><div><dt>Version</dt><dd>${version}</dd></div><div><dt>Last commit</dt><dd>${packageCommitDateHTML(pkg)}</dd></div>${installed ? `<div><dt>Installed</dt><dd>${installDateHTML(pkg.installedAt)}</dd></div>` : ""}<div><dt>Source</dt><dd>${this.sourceReferenceHTML(pkg)}</dd></div></dl>
         ${capabilities}
       </div>
       <div class="spme-card-actions">${actions}</div>
@@ -676,9 +731,9 @@ export class EnhancedPluginManager {
     return `<div class="spme-table-scroll" tabindex="0" aria-label="${installed ? "Installed" : "Available"} plugin table">
       <table class="spme-package-table">
         <colgroup class="spme-columns-${installed ? "installed" : "browse"}">
-          <col class="spme-col-select"><col class="spme-col-plugin"><col class="spme-col-description"><col class="spme-col-version"><col class="spme-col-last-commit"><col class="spme-col-source"><col class="spme-col-status"><col class="spme-col-actions">
+          <col class="spme-col-select"><col class="spme-col-plugin"><col class="spme-col-description"><col class="spme-col-version"><col class="spme-col-last-commit">${installed ? '<col class="spme-col-installed">' : ""}<col class="spme-col-source"><col class="spme-col-status"><col class="spme-col-actions">
         </colgroup>
-        <thead><tr><th scope="col"><span class="visually-hidden">Select</span></th><th scope="col">Plugin</th><th scope="col">Description</th><th scope="col">Version</th><th scope="col">Last commit</th><th scope="col">Source</th><th scope="col">Status</th><th scope="col">Actions</th></tr></thead>
+        <thead><tr><th scope="col"><span class="visually-hidden">Select</span></th><th scope="col">Plugin</th><th scope="col">Description</th><th scope="col">Version</th><th scope="col">Last commit</th>${installed ? '<th scope="col">Installed</th>' : ""}<th scope="col">Source</th><th scope="col">Status</th><th scope="col">Actions</th></tr></thead>
         <tbody>${packages.map((pkg) => this.packageTableRow(pkg, installed)).join("")}</tbody>
       </table>
     </div>`;
@@ -712,6 +767,7 @@ export class EnhancedPluginManager {
       <td data-label="Description" class="spme-table-description">${escapeHTML(packageDescription(pkg))}</td>
       <td data-label="Version">${version}</td>
       <td data-label="Last commit">${packageCommitDateHTML(pkg)}</td>
+      ${installed ? `<td data-label="Installed">${installDateHTML(pkg.installedAt)}</td>` : ""}
       <td data-label="Source">${this.sourceReferenceHTML(pkg)}</td>
       <td data-label="Status"><div class="spme-badges">${status}${dependencyStatus}${trustBadge(pkg.trust)}</div></td>
       <td data-label="Actions"><div class="spme-table-actions">${actions}</div></td>

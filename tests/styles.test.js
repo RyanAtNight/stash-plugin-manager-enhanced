@@ -46,7 +46,8 @@ describe("package view responsive styles", () => {
 
   it("gives Installed actions a compact fixed width independent of Browse", () => {
     expect(css).toMatch(/#spme-root\[data-active-tab="installed"\] \.spme-package-table th:nth-child\(3\)\s*\{\s*width:\s*auto/);
-    expect(css).toMatch(/#spme-root\[data-active-tab="installed"\] \.spme-package-table th:nth-child\(8\)\s*\{\s*width:\s*13\.5rem/);
+    expect(css).toMatch(/\.spme-columns-installed \.spme-col-installed\s*\{\s*width:\s*12%/);
+    expect(css).toMatch(/#spme-root\[data-active-tab="installed"\] \.spme-package-table th:nth-child\(9\)\s*\{\s*width:\s*13\.5rem/);
     expect(css).toMatch(/\.spme-columns-browse \.spme-col-actions\s*\{\s*width:\s*12\.8rem/);
   });
 
