@@ -113,6 +113,7 @@
 .spme-package-table th:nth-child(7) { width:13%; }
 .spme-package-table th:nth-child(8) { width:15%; }
 #spme-root[data-active-tab="browse"] .spme-package-table th { width:auto; }
+#spme-root[data-active-tab="installed"] .spme-package-table th:nth-child(3) { width:auto; }
 #spme-root[data-active-tab="installed"] .spme-package-table th:nth-child(8) { width:13.5rem; }
 .spme-columns-browse .spme-col-select { width:3%; }
 .spme-columns-browse .spme-col-plugin { width:15%; }
