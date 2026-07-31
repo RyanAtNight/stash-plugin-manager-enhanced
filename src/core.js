@@ -257,6 +257,22 @@ export function packageLastCommitDate(pkg = {}) {
   return [pkg.source_package?.date, pkg.date].find((value) => value && !Number.isNaN(Date.parse(value)));
 }
 
+export function relativeTimeAgo(timestamp, now = Date.now()) {
+  const elapsed = Math.max(0, now - timestamp);
+  if (elapsed < 60_000) return "just now";
+  const units = [
+    [365 * 24 * 60 * 60_000, "year"],
+    [30 * 24 * 60 * 60_000, "month"],
+    [7 * 24 * 60 * 60_000, "week"],
+    [24 * 60 * 60_000, "day"],
+    [60 * 60_000, "hour"],
+    [60_000, "minute"],
+  ];
+  const [milliseconds, unit] = units.find(([duration]) => elapsed >= duration);
+  const value = Math.floor(elapsed / milliseconds);
+  return `${value} ${unit}${value === 1 ? "" : "s"} ago`;
+}
+
 export function sortPackages(packages, sort = "name") {
   const byName = (left, right) =>
     String(left.name || left.package_id || "").localeCompare(

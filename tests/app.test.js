@@ -95,7 +95,7 @@ function serviceFixture() {
 async function mountApp(options = {}) {
   pageFixture();
   const service = serviceFixture();
-  const app = new EnhancedPluginManager(service, { confirm: options.confirm ?? (() => true) });
+  const app = new EnhancedPluginManager(service, { confirm: options.confirm ?? (() => true), now: options.now });
   await app.mount();
   return { app, service };
 }
@@ -530,6 +530,71 @@ describe("EnhancedPluginManager", () => {
     assertDependencyBadge();
   });
 
+  it("uses concise trust pill labels while preserving full source tooltips", async () => {
+    const { app } = await mountApp();
+    const official = document.querySelector(".spme-trust-official");
+    expect(official?.textContent).toBe("Official");
+    expect(official?.getAttribute("title")).toBe("Official Stash source");
+
+    app.inventory.packages[0].trust = { level: "community", label: "Community GitHub source" };
+    app.render();
+    const community = document.querySelector(".spme-trust-community");
+    expect(community?.textContent).toBe("Community");
+    expect(community?.getAttribute("title")).toBe("Community GitHub source");
+  });
+
+  it("shows a page-level never-checked status instead of per-plugin unchecked pills", async () => {
+    const { app } = await mountApp();
+    app.inventory.packages[0].status = "unchecked";
+    app.render();
+
+    expect(document.querySelector(".spme-update-check-status")?.textContent).toBe("Updates never checked");
+    expect(document.body.textContent).not.toContain("Updates not checked");
+    expect(document.querySelector('[data-package-id="alpha"] .spme-status-current')).toBeNull();
+  });
+
+  it("restores the last successful update check as relative page-level time", async () => {
+    const now = Date.UTC(2026, 6, 30, 20, 0, 0);
+    const checkedAt = now - 2 * 60 * 60_000;
+    window.localStorage.setItem("spme.lastUpdateCheck", String(checkedAt));
+
+    await mountApp({ now: () => now });
+
+    const status = document.querySelector(".spme-update-check-status");
+    expect(status?.textContent).toBe("Updates checked 2 hours ago");
+    expect(status?.querySelector("time")?.getAttribute("datetime")).toBe(new Date(checkedAt).toISOString());
+  });
+
+  it("ignores an out-of-range stored update check timestamp", async () => {
+    window.localStorage.setItem("spme.lastUpdateCheck", "9e15");
+
+    await mountApp();
+
+    expect(document.querySelector(".spme-update-check-status")?.textContent).toBe("Updates never checked");
+  });
+
+  it("records a successful explicit update check and shows it immediately", async () => {
+    const now = Date.UTC(2026, 6, 30, 20, 0, 0);
+    const { service } = await mountApp({ now: () => now });
+
+    document.querySelector('[data-action="check-updates"]').click();
+
+    await vi.waitFor(() => expect(service.loadInstalled).toHaveBeenLastCalledWith({ checkUpdates: true }));
+    await vi.waitFor(() => expect(document.querySelector(".spme-update-check-status")?.textContent).toBe("Updates checked just now"));
+    expect(window.localStorage.getItem("spme.lastUpdateCheck")).toBe(String(now));
+  });
+
+  it("records a successful post-operation update check", async () => {
+    const now = Date.UTC(2026, 6, 30, 20, 0, 0);
+    const { service } = await mountApp({ now: () => now });
+
+    document.querySelector('[data-action="update-one"]').click();
+
+    await vi.waitFor(() => expect(service.update).toHaveBeenCalled());
+    await vi.waitFor(() => expect(service.loadInstalled).toHaveBeenLastCalledWith({ checkUpdates: true }));
+    expect(window.localStorage.getItem("spme.lastUpdateCheck")).toBe(String(now));
+  });
+
   it("populates the Installed dependency filter with known dependency plugins", async () => {
     const { app } = await mountApp();
     const template = app.inventory.packages[0];
@@ -944,7 +1009,9 @@ describe("EnhancedPluginManager", () => {
     await app.setTab("sources");
 
     expect(document.body.textContent).toContain("Healthy");
-    expect(document.body.textContent).toContain("Official Stash source");
+    const trust = document.querySelector(".spme-source-card .spme-trust-official");
+    expect(trust?.textContent).toBe("Official");
+    expect(trust?.title).toBe("Official Stash source");
     expect(document.body.textContent).toContain("2 packages");
     expect(document.querySelector('a[href$="index.yml"]')).not.toBeNull();
     const repository = document.querySelector('a[aria-label="Open Community (stable) GitHub repository"]');

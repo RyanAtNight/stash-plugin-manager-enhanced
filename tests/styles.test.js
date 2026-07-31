@@ -106,6 +106,10 @@ describe("package view responsive styles", () => {
     expect(css).toMatch(/#spme-root button\.spme-status-dependency:not\(:disabled\):hover\s*\{[^}]*background:\s*rgba\(176,124,255,\.16\)[^}]*border-color:\s*#c29aff/);
   });
 
+  it("aligns page-level update check metadata with Installed actions", () => {
+    expect(css).toMatch(/\.spme-update-check-status\s*\{[^}]*display:\s*inline-flex[^}]*align-items:\s*center[^}]*min-height:\s*2\.15rem[^}]*padding:\s*\.45rem \.65rem[^}]*background:\s*var\(--spme-panel-2\)[^}]*border:\s*1px solid var\(--spme-border\)/);
+  });
+
   it("places a compact interactive dismiss button at the far right of alerts", () => {
     expect(css).toMatch(/\.spme-alert\s*\{[\s\S]*display:\s*flex[\s\S]*align-items:\s*center/);
     expect(css).toMatch(/\.spme-alert-content\s*\{[\s\S]*flex:\s*1\s+1\s+auto/);

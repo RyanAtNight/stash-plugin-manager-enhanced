@@ -7,6 +7,7 @@ import {
   installedAnchorHref,
   installedAnchorID,
   packageLastCommitDate,
+  relativeTimeAgo,
   orphanedDependencies,
   pluginManagerTabFromURL,
   requiredPluginIDs,
@@ -86,9 +87,10 @@ function githubLink(pkg) {
 }
 
 function trustBadge(trust = { level: "unverified", label: "Unverified source" }) {
+  const visibleLabel = trust.level === "official" ? "Official" : trust.level === "community" ? "Community" : trust.label;
   return `<span class="spme-badge spme-trust-${escapeHTML(
     trust.level
-  )}" title="${escapeHTML(trust.label)}">${escapeHTML(trust.label)}</span>`;
+  )}" title="${escapeHTML(trust.label)}">${escapeHTML(visibleLabel)}</span>`;
 }
 
 function sourceErrorHTML(error) {
@@ -128,6 +130,7 @@ export class EnhancedPluginManager {
     this.document = options.document ?? globalThis.document;
     this.window = options.window ?? globalThis.window;
     this.storage = options.storage ?? this.window?.localStorage;
+    this.now = options.now ?? Date.now;
     this.confirm = options.confirm ?? globalThis.confirm?.bind(globalThis);
     this.setTimeout = options.setTimeout ?? globalThis.setTimeout?.bind(globalThis);
     this.activeTab = pluginManagerTabFromURL(this.window?.location?.href ?? "/settings?tab=plugins");
@@ -135,20 +138,27 @@ export class EnhancedPluginManager {
     let storedInstalledStatus;
     let storedInstalledSort;
     let storedCurrentInstalls;
+    let storedLastUpdateCheck;
     try {
       storedViewMode = this.storage?.getItem("spme.viewMode");
       storedInstalledStatus = this.storage?.getItem("spme.installedStatus");
       storedInstalledSort = this.storage?.getItem("spme.installedSort");
       storedCurrentInstalls = this.storage?.getItem("spme.currentInstalls");
+      storedLastUpdateCheck = this.storage?.getItem("spme.lastUpdateCheck");
     } catch {
       storedViewMode = undefined;
       storedInstalledStatus = undefined;
       storedInstalledSort = undefined;
       storedCurrentInstalls = undefined;
+      storedLastUpdateCheck = undefined;
     }
     this.viewMode = storedViewMode === "table" ? "table" : "cards";
     const installedEnabled = storedInstalledStatus === "true" ? true : storedInstalledStatus === "false" ? false : undefined;
     const installedSort = ["name", "last-commit", "last-commit-oldest"].includes(storedInstalledSort) ? storedInstalledSort : "name";
+    const parsedLastUpdateCheck = Number(storedLastUpdateCheck);
+    this.lastUpdateCheck = Number.isFinite(parsedLastUpdateCheck) && parsedLastUpdateCheck > 0 && Number.isFinite(new Date(parsedLastUpdateCheck).getTime())
+      ? parsedLastUpdateCheck
+      : undefined;
     try {
       const parsed = JSON.parse(storedCurrentInstalls ?? "{}");
       this.currentInstalls = Object.fromEntries(
@@ -421,6 +431,7 @@ export class EnhancedPluginManager {
     this.render();
     try {
       this.inventory = await this.service.loadInstalled({ checkUpdates });
+      if (checkUpdates) this.recordUpdateCheck();
       this.applyCurrentInstallAssumptions();
       if (this.activeTab === "browse" || this.activeTab === "sources") {
         await this.loadAvailable(true);
@@ -567,6 +578,21 @@ export class EnhancedPluginManager {
     }
   }
 
+  updateCheckStatusHTML() {
+    if (!this.lastUpdateCheck) return '<span class="spme-update-check-status">Updates never checked</span>';
+    const date = new Date(this.lastUpdateCheck);
+    return `<span class="spme-update-check-status">Updates checked <time datetime="${date.toISOString()}" title="${escapeHTML(date.toLocaleString())}">${escapeHTML(relativeTimeAgo(this.lastUpdateCheck, this.now()))}</time></span>`;
+  }
+
+  recordUpdateCheck() {
+    this.lastUpdateCheck = this.now();
+    try {
+      this.storage?.setItem("spme.lastUpdateCheck", String(this.lastUpdateCheck));
+    } catch {
+      // Storage may be unavailable in privacy-restricted browser contexts.
+    }
+  }
+
   installedHTML() {
     const dependencies = this.knownDependencyPackages();
     if (this.filters.installed.dependency && !dependencies.some((pkg) => pkg.package_id === this.filters.installed.dependency)) {
@@ -586,6 +612,7 @@ export class EnhancedPluginManager {
     return `<section class="spme-panel" role="tabpanel">
       <div class="spme-actions spme-sticky">
         <button type="button" data-action="check-updates" ${this.busy ? "disabled" : ""}>Check for updates</button>
+        ${this.updateCheckStatusHTML()}
         <button type="button" data-action="update-all" ${
           !updates.length || this.busy ? "disabled" : ""
         }>Update all (${updates.length})</button>
@@ -614,7 +641,7 @@ export class EnhancedPluginManager {
       : pkg.status === "update"
         ? '<span class="spme-badge spme-status-update">Update available</span>'
         : pkg.status === "unchecked"
-          ? '<span class="spme-badge">Updates not checked</span>'
+          ? ""
           : installed
             ? '<span class="spme-badge spme-status-current">Current</span>'
             : '<span class="spme-badge spme-status-available">Available</span>';
@@ -661,7 +688,7 @@ export class EnhancedPluginManager {
       : pkg.status === "update"
         ? '<span class="spme-badge spme-status-update">Update available</span>'
         : pkg.status === "unchecked"
-          ? '<span class="spme-badge">Updates not checked</span>'
+          ? ""
           : installed
             ? '<span class="spme-badge spme-status-current">Current</span>'
             : '<span class="spme-badge spme-status-available">Available</span>';
@@ -843,6 +870,7 @@ export class EnhancedPluginManager {
         await this.service.waitForJob(result);
       }
       this.inventory = await this.service.loadInstalled({ checkUpdates: checkUpdatesAfter });
+      if (checkUpdatesAfter) this.recordUpdateCheck();
       if (rememberNewInstalls) {
         this.inventory.packages.forEach((pkg) => {
           if (!installedBefore.has(pkg.package_id) && typeof pkg.version === "string" && pkg.version) {

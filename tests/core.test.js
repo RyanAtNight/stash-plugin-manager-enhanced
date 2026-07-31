@@ -14,6 +14,7 @@ import {
   packageLastCommitDate,
   packageStatus,
   orphanedDependencies,
+  relativeTimeAgo,
   requiredPluginIDs,
   safeExternalUrl,
   sourceAnchorHref,
@@ -320,6 +321,19 @@ describe("filterPackages", () => {
       dependencyPackages[1],
       dependencyPackages[2],
     ]);
+  });
+});
+
+describe("relativeTimeAgo", () => {
+  it("describes elapsed update-check time in compact relative words", () => {
+    const now = Date.UTC(2026, 6, 30, 20, 0, 0);
+    expect(relativeTimeAgo(now - 30_000, now)).toBe("just now");
+    expect(relativeTimeAgo(now - 60_000, now)).toBe("1 minute ago");
+    expect(relativeTimeAgo(now - 2 * 60 * 60_000, now)).toBe("2 hours ago");
+    expect(relativeTimeAgo(now - 3 * 24 * 60 * 60_000, now)).toBe("3 days ago");
+    expect(relativeTimeAgo(now - 14 * 24 * 60 * 60_000, now)).toBe("2 weeks ago");
+    expect(relativeTimeAgo(now - 90 * 24 * 60 * 60_000, now)).toBe("3 months ago");
+    expect(relativeTimeAgo(now - 730 * 24 * 60 * 60_000, now)).toBe("2 years ago");
   });
 });
 
