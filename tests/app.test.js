@@ -655,8 +655,8 @@ describe("EnhancedPluginManager", () => {
     expect(document.querySelector('a[href$="index.yml"]')).not.toBeNull();
     const repository = document.querySelector('a[aria-label="Open Community (stable) GitHub repository"]');
     expect(repository?.querySelector("svg.spme-github-icon")?.getAttribute("aria-hidden")).toBe("true");
-    expect(repository?.querySelector(".spme-github-label")?.textContent).toBe("GitHub");
-    expect(repository?.querySelector(".spme-external-icon")?.textContent).toBe("↗");
+    expect(repository?.textContent.trim()).toBe("");
+    expect(repository?.title).toBe("Open Community (stable) GitHub repository");
     expect(repository?.href).toBe("https://github.com/stashapp/CommunityScripts");
     expect(repository?.target).toBe("_blank");
     expect(repository?.rel).toContain("noopener");
