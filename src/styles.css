@@ -120,7 +120,7 @@
 .spme-columns-browse .spme-col-last-commit { width:11%; }
 .spme-columns-browse .spme-col-source { width:12%; }
 .spme-columns-browse .spme-col-status { width:13%; }
-.spme-columns-browse .spme-col-actions { width:11.2rem; }
+.spme-columns-browse .spme-col-actions { width:12.2rem; }
 #spme-root[data-active-tab="browse"] .spme-table-actions { flex-wrap:nowrap; }
 .spme-package-table td strong, .spme-package-table td code { display:block; }
 .spme-table-description { color:var(--spme-text-muted); white-space:normal; overflow:visible; text-overflow:clip; }
