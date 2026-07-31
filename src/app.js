@@ -300,6 +300,17 @@ export class EnhancedPluginManager {
     return (presentation === "cards" ? controls.reverse() : controls).join("");
   }
 
+  dependencyStatusHTML(pkg, installed) {
+    if (!installed) return "";
+    const dependents = dependentPlugins(this.inventory.packages, pkg.package_id);
+    if (!dependents.length) return "";
+    const requiredBy = dependents
+      .map((dependent) => `${dependent.name || dependent.package_id} (${dependent.enabled ? "enabled" : "disabled"})`)
+      .join(", ");
+    const tooltip = `Required by: ${requiredBy}`;
+    return `<span class="spme-badge spme-status-dependency" title="${escapeHTML(tooltip)}" aria-label="${escapeHTML(`Dependency. ${tooltip}`)}">Dependency</span>`;
+  }
+
   saveCurrentInstallAssumptions() {
     try {
       if (Object.keys(this.currentInstalls).length) {
@@ -575,6 +586,7 @@ export class EnhancedPluginManager {
           : installed
             ? '<span class="spme-badge spme-status-current">Current</span>'
             : '<span class="spme-badge spme-status-available">Available</span>';
+    const dependencyStatus = this.dependencyStatusHTML(pkg, installed);
     const version = installed && pkg.source_package
       ? `${escapeHTML(pkg.version || "Unknown")} → ${escapeHTML(pkg.source_package.version || "Unknown")}`
       : escapeHTML(pkg.version || "Unknown");
@@ -585,7 +597,7 @@ export class EnhancedPluginManager {
     return `<article${installed ? ` id="${installedAnchorID(pkg.package_id)}" tabindex="-1"` : ""} class="spme-package-card${installed ? " spme-installed-target" : ""}" data-package-id="${escapeHTML(pkg.package_id)}">
       <label class="spme-select"><input type="checkbox" data-select-package="${installed ? "installed" : "available"}" data-key="${escapeHTML(selectKey)}" aria-label="Select ${escapeHTML(pkg.name)}" ${selected ? "checked" : ""} ${pkg.runtimeOnly ? 'disabled title="Runtime-only plugins are not available for package operations."' : ""}></label>
       <div class="spme-package-main">
-        <div class="spme-package-title"><div><h2>${escapeHTML(pkg.name)}</h2><code>${escapeHTML(pkg.package_id)}</code></div><div class="spme-badges">${status}${trustBadge(pkg.trust)}</div></div>
+        <div class="spme-package-title"><div><h2>${escapeHTML(pkg.name)}</h2><code>${escapeHTML(pkg.package_id)}</code></div><div class="spme-badges">${status}${dependencyStatus}${trustBadge(pkg.trust)}</div></div>
         <p>${escapeHTML(packageDescription(pkg))}</p>
         <dl><div><dt>Version</dt><dd>${version}</dd></div><div><dt>Last commit</dt><dd>${packageCommitDateHTML(pkg)}</dd></div><div><dt>Source</dt><dd>${this.sourceReferenceHTML(pkg)}</dd></div></dl>
         ${capabilities}
@@ -621,6 +633,7 @@ export class EnhancedPluginManager {
           : installed
             ? '<span class="spme-badge spme-status-current">Current</span>'
             : '<span class="spme-badge spme-status-available">Available</span>';
+    const dependencyStatus = this.dependencyStatusHTML(pkg, installed);
     const version = installed && pkg.source_package
       ? `${escapeHTML(pkg.version || "Unknown")} → ${escapeHTML(pkg.source_package.version || "Unknown")}`
       : escapeHTML(pkg.version || "Unknown");
@@ -635,7 +648,7 @@ export class EnhancedPluginManager {
       <td data-label="Version">${version}</td>
       <td data-label="Last commit">${packageCommitDateHTML(pkg)}</td>
       <td data-label="Source">${this.sourceReferenceHTML(pkg)}</td>
-      <td data-label="Status"><div class="spme-badges">${status}${trustBadge(pkg.trust)}</div></td>
+      <td data-label="Status"><div class="spme-badges">${status}${dependencyStatus}${trustBadge(pkg.trust)}</div></td>
       <td data-label="Actions"><div class="spme-table-actions">${actions}</div></td>
     </tr>`;
   }

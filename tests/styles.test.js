@@ -101,6 +101,10 @@ describe("package view responsive styles", () => {
     expect(css).toMatch(/#spme-root button\.spme-enable-toggle\[aria-checked="true"\][\s\S]*\.spme-enable-toggle-knob\s*\{[^}]*transform:\s*translateX\(1\.8rem\)/);
   });
 
+  it("styles dependency status badges as hoverable metadata", () => {
+    expect(css).toMatch(/\.spme-status-dependency\s*\{[^}]*border-color:\s*#b07cff[^}]*color:\s*#d1afff[^}]*cursor:\s*help/);
+  });
+
   it("places a compact interactive dismiss button at the far right of alerts", () => {
     expect(css).toMatch(/\.spme-alert\s*\{[\s\S]*display:\s*flex[\s\S]*align-items:\s*center/);
     expect(css).toMatch(/\.spme-alert-content\s*\{[\s\S]*flex:\s*1\s+1\s+auto/);

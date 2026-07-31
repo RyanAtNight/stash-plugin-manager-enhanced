@@ -505,6 +505,31 @@ describe("EnhancedPluginManager", () => {
     expect(service.setEnabled).not.toHaveBeenCalled();
   });
 
+  it("labels dependency plugins and lists every installed dependent in a tooltip", async () => {
+    const { app } = await mountApp();
+    const template = app.inventory.packages[0];
+    const make = (id, name, requires = [], enabled = true) => ({ ...template, package_id: id, name, enabled, requires, plugin: { ...template.plugin, id, name, enabled, requires } });
+    const library = make("library", "Shared Library");
+    const enabledConsumer = make("enabled-consumer", "Enabled Consumer", ["library"]);
+    const disabledConsumer = make("disabled-consumer", "Disabled <Consumer>", ["library"], false);
+    app.inventory.packages = [library, enabledConsumer, disabledConsumer];
+    app.render();
+
+    const assertDependencyBadge = () => {
+      const badge = document.querySelector('[data-package-id="library"] .spme-status-dependency');
+      expect(badge?.textContent).toBe("Dependency");
+      expect(badge?.getAttribute("title")).toBe("Required by: Enabled Consumer (enabled), Disabled <Consumer> (disabled)");
+      expect(badge?.getAttribute("aria-label")).toBe("Dependency. Required by: Enabled Consumer (enabled), Disabled <Consumer> (disabled)");
+      expect(document.querySelector('[data-package-id="enabled-consumer"] .spme-status-dependency')).toBeNull();
+      expect(document.querySelector('[data-package-id="disabled-consumer"] .spme-status-dependency')).toBeNull();
+      expect(document.querySelector("script")).toBeNull();
+    };
+
+    assertDependencyBadge();
+    document.querySelector('[data-action="set-view"][data-view-mode="table"]').click();
+    assertDependencyBadge();
+  });
+
   it("allows disabling a dependency without warning when only disabled plugins require it", async () => {
     const confirm = vi.fn(() => false);
     const { app, service } = await mountApp({ confirm });
