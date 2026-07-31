@@ -22,27 +22,23 @@ The integration is intentionally progressive because Stash's `SettingsPluginsPan
 ### Advanced and detailed features
 
 - Separate **Installed**, **Browse**, **Sources**, and **Configuration** views
-- Subtab URLs such as `?tab=plugins&pluginManagerTab=configuration` survive refresh and browser history
 - Browse renders 50 packages initially with progressive **Load more** controls
-- No nested package-list scroll areas
-- Responsive, wider layout with sticky actions
-- Table descriptions wrap naturally instead of being truncated
+- Responsive, wider layout
+- Visible descriptions for installed plugins
 - Search by name, ID, description, version, and source
 - Per-plugin last-commit dates with name or newest-commit sorting
-- Enabled, disabled, source, and updates-only filters
+- Filter plugins for enabled, disabled, source, and updates-only
 - Visible installed/enabled/update counts
 - Individual and bulk installation, updating, and uninstalling
-- Per-plugin enable/disable controls
-- Runtime-only plugins appear only when present, with enable/disable controls and package operations safely unavailable
+- Runtime-only plugins appear when present (absent in the stock UI), with enable/disable controls and with package operations disabled for safety
 - Source health, package counts, trust labels, last-check time, and repository-root GitHub links
-- Temporary top-of-list source creation, source deletion, and in-place card editing with duplicate checks
+- New UI for Source creation, source deletion, and in-place card editing
 - Installed and Browse source labels link to stable, URL-addressable cards in **Sources**, including refresh and browser-history restoration
-- Collapsed-by-default plugin configuration with expand/collapse all
+- Collapsible plugin configuration page with expand/collapse all
 - Explicit hook names and trigger events
 - Manifest-derived capability summaries
 - Accessible selection labels and contextual search labels
 - Operation feedback, package-job completion polling, and destructive confirmations
-- Blank numeric settings are omitted from saved configuration instead of being coerced to `0`
 - Clickable GitHub links for installed and available plugins
 
 ## GitHub URL resolution
