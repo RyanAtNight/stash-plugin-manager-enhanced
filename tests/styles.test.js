@@ -64,6 +64,10 @@ describe("package view responsive styles", () => {
     expect(resultRule).not.toContain("margin-left:auto");
   });
 
+  it("aligns the Installed result count with the Updates only control", () => {
+    expect(css).toMatch(/\.spme-check \+ \.spme-result-count\s*\{[^}]*display:\s*inline-flex[^}]*align-items:\s*center[^}]*padding-bottom:\s*\.55rem/);
+  });
+
   it("styles repository links as icon buttons rather than underlined text links", () => {
     expect(css).toMatch(/#spme-root \.spme-repo-link\s*\{[\s\S]*display:\s*inline-flex[\s\S]*text-decoration:\s*none/);
     expect(css).toMatch(/#spme-root \.spme-repo-link\s*\{[^}]*background:\s*#fff[^}]*border-color:\s*#fff[^}]*color:\s*#24292f/);

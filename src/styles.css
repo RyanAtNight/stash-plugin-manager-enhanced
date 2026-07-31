@@ -64,6 +64,7 @@
 }
 .spme-check { flex-direction:row !important; align-items:center; padding-bottom:.55rem; }
 .spme-result-count { color:var(--spme-text-muted); }
+.spme-check + .spme-result-count { display:inline-flex; align-items:center; padding-bottom:.55rem; }
 .spme-sort-control { margin-left:auto !important; }
 .spme-list, .spme-config-list, .spme-source-grid { display:grid; gap:.75rem; }
 .spme-load-more { display:flex; justify-content:center; padding:1.25rem; }
