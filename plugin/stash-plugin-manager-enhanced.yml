@@ -6,3 +6,8 @@ ui:
     - stash-plugin-manager-enhanced.js
   css:
     - stash-plugin-manager-enhanced.css
+settings:
+  lastUpdateCheck:
+    displayName: Last update check
+    description: Millisecond timestamp of the last successful Installed update check. Shared across browsers via Stash plugin configuration.
+    type: NUMBER

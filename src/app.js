@@ -28,6 +28,9 @@ const TAB_DEFINITIONS = [
   ["configuration", "Configuration"],
 ];
 
+const PLUGIN_ID = "stash-plugin-manager-enhanced";
+const LAST_UPDATE_CHECK_SETTING = "lastUpdateCheck";
+
 const SOURCE_SORT_OPTIONS = [
   ["name", "Name (A–Z)"],
   ["name-desc", "Name (Z–A)"],
@@ -69,6 +72,12 @@ function installDateHTML(value) {
   const date = new Date(value);
   if (!Number.isFinite(date.getTime())) return '<span data-installed-at>Unknown</span>';
   return `<time data-installed-at datetime="${date.toISOString()}" title="${escapeHTML(`First seen installed: ${date.toLocaleString()}`)}">${escapeHTML(date.toLocaleDateString())}</time>`;
+}
+
+function parseUpdateCheckTimestamp(value) {
+  const parsed = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0 || !Number.isFinite(new Date(parsed).getTime())) return undefined;
+  return parsed;
 }
 
 function findCoreSections(documentRef) {
@@ -169,10 +178,8 @@ export class EnhancedPluginManager {
     this.viewMode = storedViewMode === "table" ? "table" : "cards";
     const installedEnabled = storedInstalledStatus === "true" ? true : storedInstalledStatus === "false" ? false : undefined;
     const installedSort = ["name", "last-commit", "last-commit-oldest"].includes(storedInstalledSort) ? storedInstalledSort : "name";
-    const parsedLastUpdateCheck = Number(storedLastUpdateCheck);
-    this.lastUpdateCheck = Number.isFinite(parsedLastUpdateCheck) && parsedLastUpdateCheck > 0 && Number.isFinite(new Date(parsedLastUpdateCheck).getTime())
-      ? parsedLastUpdateCheck
-      : undefined;
+    this.lastUpdateCheck = parseUpdateCheckTimestamp(storedLastUpdateCheck);
+    this.persistingLastUpdateCheck = false;
     try {
       const parsed = JSON.parse(storedCurrentInstalls ?? "{}");
       this.currentInstalls = Object.fromEntries(
@@ -239,6 +246,7 @@ export class EnhancedPluginManager {
       this.inventory = await this.service.loadInstalled({ checkUpdates: false });
       this.recordInstallDates();
       this.applyCurrentInstallAssumptions();
+      await this.syncLastUpdateCheckFromInventory();
       if (this.activeTab === "browse" || this.activeTab === "sources") {
         await this.loadAvailable();
       }
@@ -491,7 +499,8 @@ export class EnhancedPluginManager {
     try {
       this.inventory = await this.service.loadInstalled({ checkUpdates });
       this.recordInstallDates();
-      if (checkUpdates) this.recordUpdateCheck();
+      if (checkUpdates) await this.recordUpdateCheck();
+      else await this.syncLastUpdateCheckFromInventory();
       this.applyCurrentInstallAssumptions();
       if (this.activeTab === "browse" || this.activeTab === "sources") {
         await this.loadAvailable(true);
@@ -645,13 +654,65 @@ export class EnhancedPluginManager {
     return `<span class="spme-update-check-status"><time datetime="${date.toISOString()}" title="${escapeHTML(date.toLocaleString())}">${escapeHTML(relativeTimeAgo(this.lastUpdateCheck, this.now()))}</time></span>`;
   }
 
-  recordUpdateCheck() {
-    this.lastUpdateCheck = this.now();
+  serverLastUpdateCheck(inventory = this.inventory) {
+    return parseUpdateCheckTimestamp(inventory?.pluginConfig?.[PLUGIN_ID]?.[LAST_UPDATE_CHECK_SETTING]);
+  }
+
+  saveLastUpdateCheckLocally(timestamp = this.lastUpdateCheck) {
     try {
-      this.storage?.setItem("spme.lastUpdateCheck", String(this.lastUpdateCheck));
+      if (timestamp) this.storage?.setItem("spme.lastUpdateCheck", String(timestamp));
+      else this.storage?.removeItem?.("spme.lastUpdateCheck");
     } catch {
       // Storage may be unavailable in privacy-restricted browser contexts.
     }
+  }
+
+  async persistLastUpdateCheck(timestamp = this.lastUpdateCheck) {
+    const value = parseUpdateCheckTimestamp(timestamp);
+    if (!value || !this.service?.configurePlugin || this.persistingLastUpdateCheck) return;
+    const currentServer = this.serverLastUpdateCheck();
+    if (currentServer === value) {
+      this.saveLastUpdateCheckLocally(value);
+      return;
+    }
+    this.persistingLastUpdateCheck = true;
+    try {
+      const nextConfig = {
+        ...(this.inventory?.pluginConfig?.[PLUGIN_ID] ?? {}),
+        [LAST_UPDATE_CHECK_SETTING]: value,
+      };
+      await this.service.configurePlugin(PLUGIN_ID, nextConfig);
+      if (this.inventory) {
+        this.inventory.pluginConfig = {
+          ...(this.inventory.pluginConfig ?? {}),
+          [PLUGIN_ID]: nextConfig,
+        };
+      }
+      this.saveLastUpdateCheckLocally(value);
+    } catch {
+      // Server persistence can fail offline; browser storage remains the local cache.
+      this.saveLastUpdateCheckLocally(value);
+    } finally {
+      this.persistingLastUpdateCheck = false;
+    }
+  }
+
+  async syncLastUpdateCheckFromInventory() {
+    const serverValue = this.serverLastUpdateCheck();
+    const localValue = parseUpdateCheckTimestamp(this.lastUpdateCheck);
+    const newest = [serverValue, localValue].filter((value) => value !== undefined).sort((left, right) => right - left)[0];
+    if (!newest) return;
+    const changed = this.lastUpdateCheck !== newest;
+    this.lastUpdateCheck = newest;
+    this.saveLastUpdateCheckLocally(newest);
+    if (serverValue !== newest) await this.persistLastUpdateCheck(newest);
+    else if (changed) this.render();
+  }
+
+  async recordUpdateCheck() {
+    this.lastUpdateCheck = this.now();
+    this.saveLastUpdateCheckLocally(this.lastUpdateCheck);
+    await this.persistLastUpdateCheck(this.lastUpdateCheck);
   }
 
   installedHTML() {
@@ -887,17 +948,19 @@ export class EnhancedPluginManager {
     const plugin = pkg.plugin;
     const config = this.inventory.pluginConfig[plugin.id] ?? {};
     const hooks = (plugin.hooks ?? []).map((hook) => `<div class="spme-hook"><strong>${escapeHTML(hook.name)}</strong><p>${escapeHTML(hook.description || "")}</p><ul>${(hook.hooks ?? []).map((event) => `<li><code>${escapeHTML(event)}</code></li>`).join("")}</ul></div>`).join("");
-    const settings = (plugin.settings ?? []).map((setting) => {
-      const value = config[setting.name];
-      const label = setting.display_name || setting.name;
-      let input;
-      if (setting.type === "BOOLEAN") {
-        input = `<input type="checkbox" data-config-input data-plugin="${escapeHTML(plugin.id)}" data-setting="${escapeHTML(setting.name)}" aria-label="${escapeHTML(label)}" ${value ? "checked" : ""}>`;
-      } else {
-        input = `<input data-config-input data-plugin="${escapeHTML(plugin.id)}" data-setting="${escapeHTML(setting.name)}" data-setting-type="${escapeHTML(setting.type)}" aria-label="${escapeHTML(label)}" type="${setting.type === "NUMBER" ? "number" : "text"}" value="${escapeHTML(value ?? "")}">`;
-      }
-      return `<label class="spme-setting"><span><strong>${escapeHTML(label)}</strong><small>${escapeHTML(setting.description || setting.name)}</small></span>${input}</label>`;
-    }).join("");
+    const settings = (plugin.settings ?? [])
+      .filter((setting) => !(plugin.id === PLUGIN_ID && setting.name === LAST_UPDATE_CHECK_SETTING))
+      .map((setting) => {
+        const value = config[setting.name];
+        const label = setting.display_name || setting.name;
+        let input;
+        if (setting.type === "BOOLEAN") {
+          input = `<input type="checkbox" data-config-input data-plugin="${escapeHTML(plugin.id)}" data-setting="${escapeHTML(setting.name)}" aria-label="${escapeHTML(label)}" ${value ? "checked" : ""}>`;
+        } else {
+          input = `<input data-config-input data-plugin="${escapeHTML(plugin.id)}" data-setting="${escapeHTML(setting.name)}" data-setting-type="${escapeHTML(setting.type)}" aria-label="${escapeHTML(label)}" type="${setting.type === "NUMBER" ? "number" : "text"}" value="${escapeHTML(value ?? "")}">`;
+        }
+        return `<label class="spme-setting"><span><strong>${escapeHTML(label)}</strong><small>${escapeHTML(setting.description || setting.name)}</small></span>${input}</label>`;
+      }).join("");
     return `<details id="${configurationAnchorID(plugin.id)}" class="spme-plugin-config" data-plugin-id="${escapeHTML(plugin.id)}" tabindex="-1"><summary><span><strong>${escapeHTML(plugin.name)}</strong> <code>${escapeHTML(plugin.id)}</code></span><span class="spme-badges"><span class="spme-badge ${pkg.enabled ? "spme-enabled" : "spme-disabled"}">${pkg.enabled ? "Enabled" : "Disabled"}</span>${githubLink(pkg)}${this.installedReferenceHTML(pkg)}</span></summary><div class="spme-config-body">${plugin.description ? `<p>${escapeHTML(plugin.description)}</p>` : ""}${hooks ? `<section><h3>Hooks</h3>${hooks}</section>` : ""}${settings ? `<section><h3>Settings</h3>${settings}</section>` : '<p>No configurable settings.</p>'}<div class="spme-actions"><button type="button" data-action="save-config" data-id="${escapeHTML(plugin.id)}">Save changes</button><button type="button" data-action="reset-config" data-id="${escapeHTML(plugin.id)}">Reset stored settings</button></div><p class="spme-help">Stash plugin manifests do not declare filesystem or network permissions, compatibility ranges, or setting defaults. This page does not infer them.</p></div></details>`;
   }
 
@@ -934,7 +997,8 @@ export class EnhancedPluginManager {
         await this.service.waitForJob(result);
       }
       this.inventory = await this.service.loadInstalled({ checkUpdates: checkUpdatesAfter });
-      if (checkUpdatesAfter) this.recordUpdateCheck();
+      if (checkUpdatesAfter) await this.recordUpdateCheck();
+      else await this.syncLastUpdateCheckFromInventory();
       if (rememberNewInstalls) {
         this.inventory.packages.forEach((pkg) => {
           if (!installedBefore.has(pkg.package_id) && typeof pkg.version === "string" && pkg.version) {
