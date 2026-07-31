@@ -20,6 +20,7 @@ describe("package view responsive styles", () => {
     expect(css).toMatch(/\.spme-view-toggle\s*\{[^}]*gap:\s*0(?:;|\s)/);
     expect(css).toMatch(/#spme-root \.spme-view-toggle button\s*\{[^}]*border-color:\s*transparent/);
     expect(css).toMatch(/#spme-root \.spme-view-toggle button\[aria-pressed="true"\]\s*\{[^}]*border-color:\s*var\(--spme-accent\)/);
+    expect(css).toMatch(/#spme-root \.spme-view-toggle button\[aria-pressed="true"\]:hover,\s*#spme-root \.spme-view-toggle button\[aria-pressed="true"\]:active\s*\{[^}]*background:\s*var\(--spme-accent\)[^}]*box-shadow:\s*none[^}]*cursor:\s*default/);
   });
 
   it("wraps table descriptions instead of truncating them", () => {
