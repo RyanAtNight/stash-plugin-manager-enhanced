@@ -642,9 +642,9 @@ export class EnhancedPluginManager {
         ? '<span class="spme-badge spme-status-update">Update available</span>'
         : pkg.status === "unchecked"
           ? ""
-          : installed
+          : pkg.status === "current" || installed
             ? '<span class="spme-badge spme-status-current">Current</span>'
-            : '<span class="spme-badge spme-status-available">Available</span>';
+            : "";
     const dependencyStatus = this.dependencyStatusHTML(pkg, installed);
     const version = installed && pkg.source_package
       ? `${escapeHTML(pkg.version || "Unknown")} → ${escapeHTML(pkg.source_package.version || "Unknown")}`
@@ -689,9 +689,9 @@ export class EnhancedPluginManager {
         ? '<span class="spme-badge spme-status-update">Update available</span>'
         : pkg.status === "unchecked"
           ? ""
-          : installed
+          : pkg.status === "current" || installed
             ? '<span class="spme-badge spme-status-current">Current</span>'
-            : '<span class="spme-badge spme-status-available">Available</span>';
+            : "";
     const dependencyStatus = this.dependencyStatusHTML(pkg, installed);
     const version = installed && pkg.source_package
       ? `${escapeHTML(pkg.version || "Unknown")} → ${escapeHTML(pkg.source_package.version || "Unknown")}`

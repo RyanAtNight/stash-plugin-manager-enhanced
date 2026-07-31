@@ -279,6 +279,16 @@ describe("EnhancedPluginManager", () => {
     expect(row.querySelector('a[aria-label="Open Beta Helper GitHub repository"]')).not.toBeNull();
   });
 
+  it("omits the redundant Available status from Browse Cards and Table", async () => {
+    const { app } = await mountApp();
+    await app.setTab("browse");
+
+    expect(document.querySelector(".spme-status-available")).toBeNull();
+
+    document.querySelector('[data-action="set-view"][data-view-mode="table"]').click();
+    expect(document.querySelector(".spme-status-available")).toBeNull();
+  });
+
   it("marks freshly installed plugin versions Current without checking for updates", async () => {
     pageFixture();
     const service = serviceFixture();
