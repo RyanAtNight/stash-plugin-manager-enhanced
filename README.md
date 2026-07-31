@@ -15,24 +15,26 @@ The integration is intentionally progressive because Stash's `SettingsPluginsPan
 - Manage installed plugins, discover new ones, maintain sources, and edit configuration from one focused interface
 - Switch between responsive **Cards** and information-dense **Table** presentations
 - Find plugins quickly with search, sorting, filters, source links, and clear status counts
-- Install, update, enable, disable, configure, or uninstall plugins individually or in bulk
+- Install, update, and uninstall plugins individually or in bulk; enable, disable, and configure plugins one at a time
 - Inspect source health, trust, package coverage, update status, commit dates, and GitHub repositories
 - Keep your place through refreshes and browser Back/Forward with URL-addressable tabs and source links
 
 ### Advanced and detailed features
 
+Compared with Stash's stock Plugins page, the enhanced interface adds:
+
 - Separate **Installed**, **Browse**, **Sources**, and **Configuration** views
 - Browse renders 50 packages initially with progressive **Load more** controls
-- Responsive, wider layout
-- Visible descriptions for installed plugins
+- Responsive, wider Cards and Table layouts with full plugin descriptions
 - Search by name, ID, description, version, and source
-- Per-plugin last-commit dates with name or newest-commit sorting
+- Per-plugin last-commit dates with name, newest-commit, or oldest-commit sorting
 - Filter plugins for enabled, disabled, source, and updates-only
+- Remember the Installed Status, Sort, and Cards/Table preferences between visits
 - Visible installed/enabled/update counts
 - Individual and bulk installation, updating, and uninstalling
-- Runtime-only plugins appear when present (absent in the stock UI), with enable/disable controls and with package operations disabled for safety
+- Runtime-only plugins appear when present (unlike the stock UI), with enable/disable controls and package operations disabled for safety
 - Source health, package counts, trust labels, last-check time, and repository-root GitHub links
-- New UI for Source creation, source deletion, and in-place card editing
+- Add, edit, and delete package sources directly from the Sources view
 - Installed and Browse source labels link to stable, URL-addressable cards in **Sources**, including refresh and browser-history restoration
 - Collapsible plugin configuration page with expand/collapse all
 - Explicit hook names and trigger events
