@@ -520,6 +520,14 @@ describe("EnhancedPluginManager", () => {
     document.querySelector('[data-action="set-view"][data-view-mode="cards"]').click();
     link = document.querySelector('a[aria-label="Open Beta Helper GitHub repository"]');
     expectGitHubButton(link, "Beta Helper");
+
+    await app.setTab("installed");
+    const alpha = app.inventory.packages.find((pkg) => pkg.package_id === "alpha");
+    alpha.githubUrl = undefined;
+    app.render();
+    const actions = document.querySelector('[data-package-id="alpha"] .spme-card-actions');
+    expect(actions?.querySelector(".spme-repo-link")).toBeNull();
+    expect(actions?.textContent).not.toContain("Repository unavailable");
   });
 
   it("links configurable Installed plugins to their expanded Configuration panel", async () => {

@@ -112,7 +112,7 @@
 .spme-configure-icon { stroke:currentColor; }
 .spme-trash-icon { stroke:currentColor; }
 .spme-external-icon { flex:0 0 auto; font-size:.95em; line-height:1; }
-.spme-repo-missing { color:var(--spme-text-muted); font-size:.78rem; text-align:center; }
+
 .spme-capabilities { margin-top:.75rem; }
 .spme-table-scroll { border:1px solid var(--spme-border); border-radius:.6rem; overflow-x:auto; background:var(--spme-panel); }
 .spme-package-table { width:100%; border-collapse:collapse; table-layout:fixed; }

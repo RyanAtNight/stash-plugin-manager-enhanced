@@ -78,9 +78,7 @@ function githubRepositoryLink(url, name) {
 }
 
 function githubLink(pkg) {
-  if (!pkg.githubUrl) {
-    return `<span class="spme-repo-missing" title="This package does not declare a GitHub repository and its source is not a conventional GitHub Pages index.">Repository unavailable</span>`;
-  }
+  if (!pkg.githubUrl) return "";
   return githubRepositoryLink(pkg.githubUrl, pkg.name);
 }
 
@@ -689,7 +687,7 @@ export class EnhancedPluginManager {
       const githubURL = deriveSourceGithubUrl(source.url);
       const repository = githubURL
         ? githubRepositoryLink(githubURL, source.name || "Unnamed source")
-        : '<span class="spme-repo-missing">Repository unavailable</span>';
+        : "";
       return { ...entry, inferredTrust, sourceURL, repository };
     });
     const cards = entries.map(({ source, index, health, installed, enabled, inferredTrust, sourceURL, repository }) => {
