@@ -116,8 +116,17 @@ describe("package view responsive styles", () => {
     expect(css).toMatch(/#spme-root button\.spme-status-dependency:not\(:disabled\):hover\s*\{[^}]*background:\s*rgba\(176,124,255,\.16\)[^}]*border-color:\s*#c29aff/);
   });
 
-  it("aligns page-level update check metadata with Installed actions", () => {
-    expect(css).toMatch(/\.spme-update-check-status\s*\{[^}]*display:\s*inline-flex[^}]*align-items:\s*center[^}]*min-height:\s*2\.15rem[^}]*padding:\s*\.45rem \.65rem[^}]*background:\s*var\(--spme-panel-2\)[^}]*border:\s*1px solid var\(--spme-border\)/);
+  it("presents update-check metadata as spaced plain text between action groups", () => {
+    const rule = css.match(/\.spme-update-check-status\s*\{([^}]*)\}/)?.[1] ?? "";
+    expect(rule).toMatch(/display:\s*inline-flex/);
+    expect(rule).toMatch(/align-self:\s*stretch/);
+    expect(rule).toMatch(/align-items:\s*center/);
+    expect(rule).toMatch(/margin-right:\s*\.5rem/);
+    expect(rule).toMatch(/background:\s*transparent/);
+    expect(rule).toMatch(/border:\s*0/);
+    expect(rule).toMatch(/border-radius:\s*0/);
+    expect(rule).toMatch(/padding:\s*0/);
+    expect(css).toMatch(/\.spme-update-check-status time\s*\{\s*margin-left:\s*\.35em/);
   });
 
   it("places a compact interactive dismiss button at the far right of alerts", () => {

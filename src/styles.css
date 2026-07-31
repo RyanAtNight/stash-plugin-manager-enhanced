@@ -47,7 +47,8 @@
 .spme-sticky { position:sticky; top:3.25rem; z-index:8; background:rgba(29,44,54,.96); backdrop-filter:blur(8px); padding:.65rem; border:1px solid var(--spme-border); border-radius:.5rem; }
 .spme-toolbar, .spme-actions { display:flex; align-items:flex-end; flex-wrap:wrap; gap:.5rem; }
 .spme-toolbar { margin:1rem 0; }
-.spme-update-check-status { display:inline-flex; align-items:center; min-height:2.15rem; padding:.45rem .65rem; background:var(--spme-panel-2); border:1px solid var(--spme-border); border-radius:.35rem; color:var(--spme-text-muted); white-space:nowrap; }
+.spme-update-check-status { align-self:stretch; display:inline-flex; align-items:center; margin-right:.5rem; padding:0; border:0; border-radius:0; background:transparent; color:var(--spme-text-muted); white-space:nowrap; }
+.spme-update-check-status time { margin-left:.35em; }
 .spme-toolbar label, .spme-source-form label { display:flex; flex-direction:column; gap:.25rem; margin:0; }
 .spme-toolbar label > span, .spme-source-form label > span { font-size:.82rem; color:var(--spme-text-muted); }
 .spme-toolbar input[type="search"] { min-width:min(25rem, 72vw); }
