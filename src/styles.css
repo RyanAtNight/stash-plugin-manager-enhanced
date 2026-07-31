@@ -166,6 +166,7 @@
 #spme-root[data-active-tab="sources"] .spme-card-actions,
 #spme-root[data-active-tab="sources"] .spme-table-actions { align-items:stretch; }
 #spme-root[data-active-tab="sources"] .spme-repo-link { height:auto; }
+#spme-root[data-active-tab="sources"] button.spme-source-delete-action { height:auto; }
 .spme-source-table .spme-table-actions { flex-wrap:nowrap; }
 .spme-source-row { scroll-margin-top:5rem; }
 .spme-source-row:target,

@@ -1165,6 +1165,29 @@ describe("EnhancedPluginManager", () => {
     expect(repository?.rel).toContain("noopener");
   });
 
+  it("uses the Installed trash action for deleting Sources in Cards and Table", async () => {
+    const { app } = await mountApp();
+    await app.setTab("sources");
+
+    const assertDeleteAction = (selector) => {
+      const button = document.querySelector(`${selector} [data-action="delete-source"]`);
+      expect(button?.textContent.trim()).toBe("");
+      expect(button?.classList.contains("danger")).toBe(true);
+      expect(button?.classList.contains("spme-icon-action")).toBe(true);
+      expect(button?.classList.contains("spme-uninstall-action")).toBe(true);
+      expect(button?.classList.contains("spme-source-delete-action")).toBe(true);
+      expect(button?.getAttribute("aria-label")).toBe("Delete Community (stable) source");
+      expect(button?.title).toBe("Delete Community (stable) source");
+      const icon = button?.querySelector("svg.spme-trash-icon");
+      expect(icon?.getAttribute("aria-hidden")).toBe("true");
+      expect(icon?.getAttribute("viewBox")).toBe("3 3 18 18");
+    };
+
+    assertDeleteAction(".spme-source-card");
+    document.querySelector('[data-action="set-view"][data-view-mode="table"]').click();
+    assertDeleteAction(".spme-source-row");
+  });
+
   it("opens Browse filtered to the selected source from Sources Cards and Table", async () => {
     const { app } = await mountApp();
     const sourceURL = app.inventory.sources[0].url;

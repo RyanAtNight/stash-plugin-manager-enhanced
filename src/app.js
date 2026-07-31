@@ -86,6 +86,11 @@ function githubLink(pkg) {
   return githubRepositoryLink(pkg.githubUrl, pkg.name);
 }
 
+function sourceDeleteAction(source, index) {
+  const label = `Delete ${source.name || "Unnamed source"} source`;
+  return `<button type="button" class="danger spme-icon-action spme-uninstall-action spme-source-delete-action" data-action="delete-source" data-index="${index}" aria-label="${escapeHTML(label)}" title="${escapeHTML(label)}">${TRASH_ICON}</button>`;
+}
+
 function trustBadge(trust = { level: "unverified", label: "Unverified source" }) {
   const visibleLabel = trust.level === "official" ? "Official" : trust.level === "community" ? "Community" : trust.label;
   return `<span class="spme-badge spme-trust-${escapeHTML(
@@ -765,9 +770,10 @@ export class EnhancedPluginManager {
         ? githubRepositoryLink(githubURL, source.name || "Unnamed source")
         : "";
       const browseAction = `<button type="button" data-action="browse-source" data-source-url="${escapeHTML(source.url)}">Browse</button>`;
-      return { ...entry, inferredTrust, sourceURL, repository, browseAction };
+      const deleteAction = sourceDeleteAction(source, entry.index);
+      return { ...entry, inferredTrust, sourceURL, repository, browseAction, deleteAction };
     });
-    const cards = entries.map(({ source, index, health, installed, enabled, inferredTrust, sourceURL, repository, browseAction }) => {
+    const cards = entries.map(({ source, index, health, installed, enabled, inferredTrust, sourceURL, repository, browseAction, deleteAction }) => {
       const editing = this.editingSource === index;
       return `<article id="${sourceAnchorID(source.url)}" class="spme-source-card${editing ? " spme-source-card-editing" : ""}" data-source-index="${index}" tabindex="-1">
         <div><h2>${escapeHTML(source.name || "Unnamed source")}</h2>${sourceURL}<div class="spme-badges">${trustBadge(inferredTrust)}<span class="spme-badge ${health?.ok ? "spme-status-current" : "spme-status-error"}">${health?.ok ? "Healthy" : "Error"}</span></div></div>
@@ -775,10 +781,10 @@ export class EnhancedPluginManager {
         ${health?.error ? sourceErrorHTML(health.error) : ""}
         ${editing
           ? this.sourceFormHTML(source, { editing: true })
-          : `<div class="spme-card-actions">${repository}${browseAction}<button type="button" data-action="edit-source" data-index="${index}">Edit</button><button type="button" class="danger subtle" data-action="delete-source" data-index="${index}">Delete</button></div>`}
+          : `<div class="spme-card-actions">${repository}${browseAction}<button type="button" data-action="edit-source" data-index="${index}">Edit</button>${deleteAction}</div>`}
       </article>`;
     }).join("");
-    const tableRows = entries.map(({ source, index, health, installed, enabled, inferredTrust, sourceURL, repository, browseAction }) => {
+    const tableRows = entries.map(({ source, index, health, installed, enabled, inferredTrust, sourceURL, repository, browseAction, deleteAction }) => {
       const editing = this.editingSource === index;
       const healthStatus = `<span class="spme-badge ${health?.ok ? "spme-status-current" : "spme-status-error"}">${health?.ok ? "Healthy" : "Error"}</span>`;
       const row = `<tr id="${sourceAnchorID(source.url)}" class="spme-source-row${editing ? " spme-source-row-editing" : ""}" data-source-index="${index}" tabindex="-1">
@@ -788,7 +794,7 @@ export class EnhancedPluginManager {
         <td data-label="Enabled">${enabled}</td>
         <td data-label="Last checked">${escapeHTML(formatDate(health?.checkedAt))}</td>
         <td data-label="Status"><div class="spme-source-table-status"><div class="spme-badges">${trustBadge(inferredTrust)}${healthStatus}</div>${health?.error ? sourceErrorHTML(health.error) : ""}</div></td>
-        <td data-label="Actions"><div class="spme-table-actions">${repository}${browseAction}<button type="button" data-action="edit-source" data-index="${index}">Edit</button><button type="button" class="danger subtle" data-action="delete-source" data-index="${index}">Delete</button></div></td>
+        <td data-label="Actions"><div class="spme-table-actions">${repository}${browseAction}<button type="button" data-action="edit-source" data-index="${index}">Edit</button>${deleteAction}</div></td>
       </tr>`;
       return editing ? `${row}<tr class="spme-source-edit-row"><td colspan="7">${this.sourceFormHTML(source, { editing: true })}</td></tr>` : row;
     }).join("");

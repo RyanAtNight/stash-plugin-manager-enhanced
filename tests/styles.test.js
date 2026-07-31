@@ -162,6 +162,10 @@ describe("package view responsive styles", () => {
     expect(css).toMatch(/#spme-root\[data-active-tab="sources"\] \.spme-repo-link\s*\{\s*height:\s*auto/);
   });
 
+  it("stretches the Sources trash action to match its neighboring buttons", () => {
+    expect(css).toMatch(/#spme-root\[data-active-tab="sources"\] button\.spme-source-delete-action\s*\{\s*height:\s*auto/);
+  });
+
   it("styles linked source labels and highlights the anchored source card", () => {
     expect(css).toMatch(/\.spme-source-link\s*\{[\s\S]*text-decoration:\s*underline/);
     expect(css).toMatch(/\.spme-source-card:target,[\s\S]*\.spme-source-card:focus\s*\{[\s\S]*border-color:\s*var\(--spme-accent\)/);
