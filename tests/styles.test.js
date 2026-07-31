@@ -58,6 +58,12 @@ describe("package view responsive styles", () => {
     expect(css).toMatch(/\.spme-toolbar select\s*\{[\s\S]*padding-right:\s*1\.8rem/);
   });
 
+  it("right-aligns Sort instead of separating the result count from the filters", () => {
+    expect(css).toMatch(/\.spme-sort-control\s*\{[^}]*margin-left:\s*auto/);
+    const resultRule = css.match(/\.spme-result-count\s*\{([^}]*)\}/)?.[1] ?? "";
+    expect(resultRule).not.toContain("margin-left:auto");
+  });
+
   it("styles repository links as icon buttons rather than underlined text links", () => {
     expect(css).toMatch(/#spme-root \.spme-repo-link\s*\{[\s\S]*display:\s*inline-flex[\s\S]*text-decoration:\s*none/);
     expect(css).toMatch(/#spme-root \.spme-repo-link\s*\{[^}]*background:\s*#fff[^}]*border-color:\s*#fff[^}]*color:\s*#24292f/);

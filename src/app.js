@@ -535,21 +535,22 @@ export class EnhancedPluginManager {
     </header>`;
   }
 
-  toolbarHTML({ kind, count, selectedCount = 0, extra = "" }) {
+  toolbarHTML({ kind, count, selectedCount = 0, filters = "", sort = "" }) {
     const label = kind === "installed" ? "installed plugins" : "available plugins";
     return `<div class="spme-toolbar">
       <label class="spme-search"><span>Search ${label}</span><input type="search" data-filter="${kind}" aria-label="Search ${label}" placeholder="Name, ID, description, or source" value="${escapeHTML(
         this.filters[kind].query
       )}"></label>
-      ${extra}
+      ${filters}
       <span class="spme-result-count" aria-live="polite">${plural(count, "result")}</span>
       ${selectedCount ? `<span>${plural(selectedCount, "selected plugin")}</span>` : ""}
+      ${sort}
     </div>`;
   }
 
   sortControlHTML(kind) {
     const selected = this.filters[kind].sort;
-    return `<label><span>Sort</span><select data-filter-select="${kind}-sort" aria-label="Sort ${kind === "installed" ? "installed" : "available"} plugins"><option value="name" ${selected === "name" ? "selected" : ""}>Plugin name (A–Z)</option><option value="last-commit" ${selected === "last-commit" ? "selected" : ""}>Last commit (newest)</option><option value="last-commit-oldest" ${selected === "last-commit-oldest" ? "selected" : ""}>Last commit (oldest)</option></select></label>`;
+    return `<label class="spme-sort-control"><span>Sort</span><select data-filter-select="${kind}-sort" aria-label="Sort ${kind === "installed" ? "installed" : "available"} plugins"><option value="name" ${selected === "name" ? "selected" : ""}>Plugin name (A–Z)</option><option value="last-commit" ${selected === "last-commit" ? "selected" : ""}>Last commit (newest)</option><option value="last-commit-oldest" ${selected === "last-commit-oldest" ? "selected" : ""}>Last commit (oldest)</option></select></label>`;
   }
 
   knownDependencyPackages() {
@@ -601,7 +602,7 @@ export class EnhancedPluginManager {
     const packages = sortPackages(filterPackages(this.inventory.packages, this.filters.installed), this.filters.installed.sort);
     const selected = packages.filter((pkg) => this.selectedInstalled.has(pkg.package_id));
     const updates = this.inventory.packages.filter((pkg) => pkg.status === "update");
-    const filterExtras = `${this.sortControlHTML("installed")}${this.dependencyFilterHTML(dependencies)}<label><span>Status</span><select data-filter-select="installed-enabled" aria-label="Filter installed plugins by enabled status"><option value="">All states</option><option value="true" ${
+    const filters = `${this.dependencyFilterHTML(dependencies)}<label><span>Status</span><select data-filter-select="installed-enabled" aria-label="Filter installed plugins by enabled status"><option value="">All states</option><option value="true" ${
       this.filters.installed.enabled === true ? "selected" : ""
     }>Enabled</option><option value="false" ${
       this.filters.installed.enabled === false ? "selected" : ""
@@ -624,7 +625,7 @@ export class EnhancedPluginManager {
         }>Uninstall selected (${selected.length})</button>
         <button type="button" data-action="reload">Reload plugin definitions</button>
       </div>
-      ${this.toolbarHTML({ kind: "installed", count: packages.length, selectedCount: selected.length, extra: filterExtras })}
+      ${this.toolbarHTML({ kind: "installed", count: packages.length, selectedCount: selected.length, filters, sort: this.sortControlHTML("installed") })}
       ${this.viewMode === "table"
         ? this.packageTable(packages, true)
         : `<div class="spme-list">${packages.map((pkg) => this.packageCard(pkg, true)).join("") || '<p class="spme-empty">No installed plugins match these filters.</p>'}</div>`}
@@ -718,10 +719,10 @@ export class EnhancedPluginManager {
     const visiblePackages = packages.slice(0, this.browseLimit);
     const selected = packages.filter((pkg) => this.selectedAvailable.has(`${pkg.sourceURL}|${pkg.package_id}`));
     const sourceOptions = this.inventory.sources.map((source) => `<option value="${escapeHTML(source.url)}" ${this.filters.browse.source === source.url ? "selected" : ""}>${escapeHTML(source.name || source.url)}</option>`).join("");
-    const extra = `${this.sortControlHTML("browse")}<label><span>Source</span><select data-filter-select="browse-source" aria-label="Filter available plugins by source"><option value="">All sources</option>${sourceOptions}</select></label>`;
+    const filters = `<label><span>Source</span><select data-filter-select="browse-source" aria-label="Filter available plugins by source"><option value="">All sources</option>${sourceOptions}</select></label>`;
     return `<section class="spme-panel" role="tabpanel">
       <div class="spme-actions spme-sticky"><button type="button" data-action="install-selected" ${!selected.length || this.busy ? "disabled" : ""}>Install selected (${selected.length})</button><button type="button" data-action="refresh-sources">Refresh catalog</button></div>
-      ${this.toolbarHTML({ kind: "browse", count: packages.length, selectedCount: selected.length, extra })}
+      ${this.toolbarHTML({ kind: "browse", count: packages.length, selectedCount: selected.length, filters, sort: this.sortControlHTML("browse") })}
       ${this.viewMode === "table"
         ? this.packageTable(visiblePackages, false)
         : `<div class="spme-list">${visiblePackages.map((pkg) => this.packageCard(pkg, false)).join("") || '<p class="spme-empty">No available plugins match these filters.</p>'}</div>`}
@@ -763,9 +764,10 @@ export class EnhancedPluginManager {
       const repository = githubURL
         ? githubRepositoryLink(githubURL, source.name || "Unnamed source")
         : "";
-      return { ...entry, inferredTrust, sourceURL, repository };
+      const browseAction = `<button type="button" data-action="browse-source" data-source-url="${escapeHTML(source.url)}">Browse</button>`;
+      return { ...entry, inferredTrust, sourceURL, repository, browseAction };
     });
-    const cards = entries.map(({ source, index, health, installed, enabled, inferredTrust, sourceURL, repository }) => {
+    const cards = entries.map(({ source, index, health, installed, enabled, inferredTrust, sourceURL, repository, browseAction }) => {
       const editing = this.editingSource === index;
       return `<article id="${sourceAnchorID(source.url)}" class="spme-source-card${editing ? " spme-source-card-editing" : ""}" data-source-index="${index}" tabindex="-1">
         <div><h2>${escapeHTML(source.name || "Unnamed source")}</h2>${sourceURL}<div class="spme-badges">${trustBadge(inferredTrust)}<span class="spme-badge ${health?.ok ? "spme-status-current" : "spme-status-error"}">${health?.ok ? "Healthy" : "Error"}</span></div></div>
@@ -773,10 +775,10 @@ export class EnhancedPluginManager {
         ${health?.error ? sourceErrorHTML(health.error) : ""}
         ${editing
           ? this.sourceFormHTML(source, { editing: true })
-          : `<div class="spme-card-actions">${repository}<button type="button" data-action="edit-source" data-index="${index}">Edit</button><button type="button" class="danger subtle" data-action="delete-source" data-index="${index}">Delete</button></div>`}
+          : `<div class="spme-card-actions">${repository}${browseAction}<button type="button" data-action="edit-source" data-index="${index}">Edit</button><button type="button" class="danger subtle" data-action="delete-source" data-index="${index}">Delete</button></div>`}
       </article>`;
     }).join("");
-    const tableRows = entries.map(({ source, index, health, installed, enabled, inferredTrust, sourceURL, repository }) => {
+    const tableRows = entries.map(({ source, index, health, installed, enabled, inferredTrust, sourceURL, repository, browseAction }) => {
       const editing = this.editingSource === index;
       const healthStatus = `<span class="spme-badge ${health?.ok ? "spme-status-current" : "spme-status-error"}">${health?.ok ? "Healthy" : "Error"}</span>`;
       const row = `<tr id="${sourceAnchorID(source.url)}" class="spme-source-row${editing ? " spme-source-row-editing" : ""}" data-source-index="${index}" tabindex="-1">
@@ -786,7 +788,7 @@ export class EnhancedPluginManager {
         <td data-label="Enabled">${enabled}</td>
         <td data-label="Last checked">${escapeHTML(formatDate(health?.checkedAt))}</td>
         <td data-label="Status"><div class="spme-source-table-status"><div class="spme-badges">${trustBadge(inferredTrust)}${healthStatus}</div>${health?.error ? sourceErrorHTML(health.error) : ""}</div></td>
-        <td data-label="Actions"><div class="spme-table-actions">${repository}<button type="button" data-action="edit-source" data-index="${index}">Edit</button><button type="button" class="danger subtle" data-action="delete-source" data-index="${index}">Delete</button></div></td>
+        <td data-label="Actions"><div class="spme-table-actions">${repository}${browseAction}<button type="button" data-action="edit-source" data-index="${index}">Edit</button><button type="button" class="danger subtle" data-action="delete-source" data-index="${index}">Delete</button></div></td>
       </tr>`;
       return editing ? `${row}<tr class="spme-source-edit-row"><td colspan="7">${this.sourceFormHTML(source, { editing: true })}</td></tr>` : row;
     }).join("");
@@ -811,10 +813,10 @@ export class EnhancedPluginManager {
       const text = [pkg.name, pkg.package_id, packageDescription(pkg), ...(pkg.plugin.settings ?? []).map((setting) => `${setting.name} ${setting.display_name} ${setting.description}`)].join(" ").toLowerCase();
       return !query || text.includes(query);
     });
-    const extra = `<label><span>Status</span><select data-filter-select="configuration-enabled" aria-label="Filter plugin configuration by enabled status"><option value="">All states</option><option value="true" ${this.filters.configuration.enabled === true ? "selected" : ""}>Enabled</option><option value="false" ${this.filters.configuration.enabled === false ? "selected" : ""}>Disabled</option></select></label>`;
+    const filters = `<label><span>Status</span><select data-filter-select="configuration-enabled" aria-label="Filter plugin configuration by enabled status"><option value="">All states</option><option value="true" ${this.filters.configuration.enabled === true ? "selected" : ""}>Enabled</option><option value="false" ${this.filters.configuration.enabled === false ? "selected" : ""}>Disabled</option></select></label>`;
     return `<section class="spme-panel" role="tabpanel">
       <div class="spme-actions spme-sticky"><button type="button" data-action="expand-config">Expand all</button><button type="button" data-action="collapse-config">Collapse all</button></div>
-      ${this.toolbarHTML({ kind: "configuration", count: packages.length, extra })}
+      ${this.toolbarHTML({ kind: "configuration", count: packages.length, filters })}
       <div class="spme-config-list">${packages.map((pkg) => this.pluginConfigCard(pkg)).join("") || '<p class="spme-empty">No plugin configuration matches these filters.</p>'}</div>
     </section>`;
   }
@@ -915,6 +917,105 @@ export class EnhancedPluginManager {
       return `${dependency.name} is required by the following enabled ${dependents.length === 1 ? "plugin" : "plugins"}:\n${names}`;
     }).join("\n\n");
     return this.confirm?.(`${details}\n\nDisabling ${pkg.name} may break those plugins. Continue?`) ?? false;
+  }
+
+  dependencyActivationPlan(pkg) {
+    const installedByID = new Map(this.inventory.packages.map((candidate) => [candidate.package_id, candidate]));
+    const available = this.available?.packages ?? [];
+    const steps = [];
+    const unresolved = [];
+    const visiting = new Set();
+    const visited = new Set();
+    const findAvailable = (id, requiringPackage) => {
+      const candidates = available.filter((candidate) => candidate.package_id === id);
+      return candidates.find((candidate) => candidate.sourceURL === requiringPackage.sourceURL)
+        ?? (candidates.length === 1 ? candidates[0] : undefined);
+    };
+    const visit = (candidate, target = false) => {
+      const id = candidate.package_id;
+      if (visited.has(id)) return;
+      if (visiting.has(id)) {
+        unresolved.push(`${id} (dependency cycle)`);
+        return;
+      }
+      visiting.add(id);
+      for (const dependencyID of requiredPluginIDs(candidate)) {
+        const dependency = installedByID.get(dependencyID) ?? findAvailable(dependencyID, candidate);
+        if (!dependency) {
+          unresolved.push(dependencyID);
+          continue;
+        }
+        visit(dependency);
+      }
+      visiting.delete(id);
+      visited.add(id);
+      if (target) return;
+      const installed = installedByID.get(id);
+      if (!installed) steps.push({ operation: "install", pkg: candidate });
+      else if (!installed.enabled) steps.push({ operation: "enable", pkg: installed });
+    };
+    visit(pkg, true);
+    return { steps, unresolved: [...new Set(unresolved)] };
+  }
+
+  async enablePlugin(pkg) {
+    const installedByID = new Map(this.inventory.packages.map((candidate) => [candidate.package_id, candidate]));
+    const checked = new Set();
+    const hasMissingDependency = (candidate) => {
+      if (checked.has(candidate.package_id)) return false;
+      checked.add(candidate.package_id);
+      return requiredPluginIDs(candidate).some((id) => {
+        const dependency = installedByID.get(id);
+        return !dependency || hasMissingDependency(dependency);
+      });
+    };
+    const missingCatalog = !this.available && hasMissingDependency(pkg);
+    if (missingCatalog) {
+      try {
+        await this.loadAvailable();
+      } catch (error) {
+        this.message = { type: "error", text: `Could not check dependencies for ${pkg.name}: ${error instanceof Error ? error.message : String(error)}` };
+        this.render();
+        return false;
+      }
+    }
+    const { steps, unresolved } = this.dependencyActivationPlan(pkg);
+    if (unresolved.length) {
+      this.message = { type: "error", text: `Cannot enable ${pkg.name}. Required dependencies are unavailable or ambiguous: ${unresolved.join(", ")}.` };
+      this.render();
+      return false;
+    }
+    if (steps.length) {
+      const details = steps.map(({ operation, pkg: dependency }) =>
+        `- ${dependency.name} is ${operation === "install" ? "not installed" : "installed but disabled"}`
+      ).join("\n");
+      const accepted = this.confirm?.(`${pkg.name} requires:\n${details}\n\nInstall and enable all required dependencies and continue?`) ?? false;
+      if (!accepted) return false;
+      for (const step of steps) {
+        if (step.operation === "install") {
+          const installed = await this.runOperation(
+            `Installing ${step.pkg.name}`,
+            () => this.service.install([step.pkg]),
+            { checkUpdatesAfter: false, rememberNewInstalls: true }
+          );
+          if (!installed) return false;
+          const installedDependency = this.packageByID(step.pkg.package_id);
+          if (!installedDependency) {
+            this.message = { type: "error", text: `${step.pkg.name} was not present after installation; ${pkg.name} was not enabled.` };
+            this.render();
+            return false;
+          }
+          if (installedDependency.enabled) continue;
+        }
+        const enabled = await this.runOperation(
+          `Enabling ${step.pkg.name}`,
+          () => this.service.setEnabled(step.pkg.package_id, true),
+          { checkUpdatesAfter: false }
+        );
+        if (!enabled) return false;
+      }
+    }
+    return this.runOperation(`Enabling ${pkg.name}`, () => this.service.setEnabled(pkg.package_id, true));
   }
 
   confirmUninstall(packages) {
@@ -1018,11 +1119,18 @@ export class EnhancedPluginManager {
       this.selectInstalledDependency(dependency.package_id);
       return this.render();
     }
+    if (action === "browse-source") {
+      const sourceURL = button.dataset.sourceUrl;
+      if (!this.inventory.sources.some((source) => source.url === sourceURL)) return;
+      this.filters.browse.source = sourceURL;
+      this.browseLimit = 50;
+      return this.setTab("browse");
+    }
     if (action === "toggle-enabled") {
       const pkg = this.packageByID(button.dataset.id);
       if (!pkg) return;
       if (!pkg.enabled) {
-        await this.runOperation(`Enabling ${pkg.name}`, () => this.service.setEnabled(pkg.package_id, true));
+        await this.enablePlugin(pkg);
         return;
       }
       if (!this.confirmDisable(pkg)) return;

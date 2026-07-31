@@ -63,7 +63,8 @@
   cursor:pointer;
 }
 .spme-check { flex-direction:row !important; align-items:center; padding-bottom:.55rem; }
-.spme-result-count { margin-left:auto; color:var(--spme-text-muted); }
+.spme-result-count { color:var(--spme-text-muted); }
+.spme-sort-control { margin-left:auto !important; }
 .spme-list, .spme-config-list, .spme-source-grid { display:grid; gap:.75rem; }
 .spme-load-more { display:flex; justify-content:center; padding:1.25rem; }
 .spme-package-card, .spme-source-card, .spme-plugin-config, .spme-source-form { background:var(--spme-panel); border:1px solid var(--spme-border); border-radius:.6rem; }

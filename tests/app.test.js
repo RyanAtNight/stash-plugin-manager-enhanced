@@ -436,6 +436,25 @@ describe("EnhancedPluginManager", () => {
     expect(document.querySelector('input[aria-label="Select Alpha Tool"]')).not.toBeNull();
   });
 
+  it("keeps filters together, places their result count next, and right-aligns Sort", async () => {
+    const { app } = await mountApp();
+    const controlOrder = () => [...document.querySelector(".spme-toolbar").children].map((element) => {
+      if (element.matches(".spme-result-count")) return "results";
+      if (element.querySelector?.('[data-filter-select="installed-dependency"]')) return "dependency";
+      if (element.querySelector?.('[data-filter-select="installed-enabled"]')) return "status";
+      if (element.matches(".spme-check")) return "updates";
+      if (element.querySelector?.('[data-filter-select$="-sort"]')) return "sort";
+      if (element.matches(".spme-search")) return "search";
+      if (element.querySelector?.('[data-filter-select="browse-source"]')) return "source";
+      return "other";
+    });
+
+    expect(controlOrder()).toEqual(["search", "dependency", "status", "updates", "results", "sort"]);
+
+    await app.setTab("browse");
+    expect(controlOrder()).toEqual(["search", "source", "results", "sort"]);
+  });
+
   it("dismisses alert messages from an accessible close button", async () => {
     const { app } = await mountApp();
     app.message = { type: "success", text: "Plugin operation completed." };
@@ -513,6 +532,119 @@ describe("EnhancedPluginManager", () => {
     await vi.waitFor(() => expect(confirm).toHaveBeenCalledWith(expect.stringContaining("Enabled Consumer")));
     expect(confirm.mock.calls[0][0]).toContain("required by the following enabled plugin");
     expect(service.setEnabled).not.toHaveBeenCalled();
+  });
+
+  it("prompts and enables disabled dependencies before enabling a plugin", async () => {
+    const confirm = vi.fn(() => true);
+    const { app, service } = await mountApp({ confirm });
+    const template = app.inventory.packages[0];
+    let packages = [
+      { ...template, package_id: "library", name: "Shared Library", enabled: false, requires: [], plugin: { ...template.plugin, id: "library", name: "Shared Library", enabled: false, requires: [] } },
+      { ...template, package_id: "consumer", name: "Consumer", enabled: false, requires: ["library"], plugin: { ...template.plugin, id: "consumer", name: "Consumer", enabled: false, requires: ["library"] } },
+    ];
+    app.inventory = { ...app.inventory, packages };
+    service.setEnabled.mockImplementation(async (id, enabled) => {
+      packages = packages.map((pkg) => pkg.package_id === id
+        ? { ...pkg, enabled, plugin: { ...pkg.plugin, enabled } }
+        : pkg);
+      return true;
+    });
+    service.loadInstalled.mockImplementation(async () => ({ ...app.inventory, packages }));
+    app.render();
+
+    document.querySelector('[data-package-id="consumer"] [data-action="toggle-enabled"]').click();
+
+    await vi.waitFor(() => expect(service.setEnabled).toHaveBeenCalledTimes(2));
+    expect(confirm).toHaveBeenCalledWith(expect.stringContaining("Shared Library is installed but disabled"));
+    expect(confirm.mock.calls[0][0]).toContain("Install and enable all required dependencies and continue?");
+    expect(service.setEnabled.mock.calls.map(([id, enabled]) => [id, enabled])).toEqual([
+      ["library", true],
+      ["consumer", true],
+    ]);
+  });
+
+  it("installs and enables missing dependencies in transitive prerequisite order", async () => {
+    const confirm = vi.fn(() => true);
+    const { app, service } = await mountApp({ confirm });
+    await app.setTab("browse");
+    await app.setTab("installed");
+    const template = app.inventory.packages[0];
+    const library = { ...template, package_id: "library", name: "Shared Library", enabled: false, requires: [], plugin: { ...template.plugin, id: "library", name: "Shared Library", enabled: false, requires: [] } };
+    const consumer = { ...template, package_id: "consumer", name: "Consumer", enabled: false, requires: ["helper"], plugin: { ...template.plugin, id: "consumer", name: "Consumer", enabled: false, requires: ["helper"] } };
+    const helper = {
+      ...app.available.packages[0],
+      package_id: "helper",
+      name: "Missing Helper",
+      requires: ["library"],
+    };
+    let packages = [library, consumer];
+    app.inventory = { ...app.inventory, packages };
+    app.available = { ...app.available, packages: [helper] };
+    service.install.mockImplementation(async ([candidate]) => {
+      packages = [...packages, {
+        ...candidate,
+        installed: true,
+        enabled: false,
+        plugin: { id: candidate.package_id, name: candidate.name, enabled: false, requires: candidate.requires },
+      }];
+      return true;
+    });
+    service.setEnabled.mockImplementation(async (id, enabled) => {
+      packages = packages.map((pkg) => pkg.package_id === id
+        ? { ...pkg, enabled, plugin: { ...pkg.plugin, enabled } }
+        : pkg);
+      return true;
+    });
+    service.loadInstalled.mockImplementation(async () => ({ ...app.inventory, packages }));
+    app.render();
+
+    document.querySelector('[data-package-id="consumer"] [data-action="toggle-enabled"]').click();
+
+    await vi.waitFor(() => expect(service.setEnabled).toHaveBeenCalledWith("consumer", true));
+    expect(confirm.mock.calls[0][0]).toContain("Shared Library is installed but disabled");
+    expect(confirm.mock.calls[0][0]).toContain("Missing Helper is not installed");
+    expect(service.install).toHaveBeenCalledWith([helper]);
+    expect(service.setEnabled.mock.calls.map(([id, enabled]) => [id, enabled])).toEqual([
+      ["library", true],
+      ["helper", true],
+      ["consumer", true],
+    ]);
+  });
+
+  it("loads the available catalog when an installed dependency has a missing dependency", async () => {
+    const { app, service } = await mountApp();
+    const template = app.inventory.packages[0];
+    const availableHelper = {
+      package_id: "helper",
+      name: "Nested Helper",
+      sourceURL: template.sourceURL,
+      sourceName: template.sourceName,
+      requires: [],
+      metadata: {},
+    };
+    let packages = [
+      { ...template, package_id: "middle", name: "Middle", enabled: true, requires: ["helper"], plugin: { ...template.plugin, id: "middle", name: "Middle", enabled: true, requires: ["helper"] } },
+      { ...template, package_id: "consumer", name: "Consumer", enabled: false, requires: ["middle"], plugin: { ...template.plugin, id: "consumer", name: "Consumer", enabled: false, requires: ["middle"] } },
+    ];
+    app.inventory = { ...app.inventory, packages };
+    app.available = undefined;
+    service.loadAvailable.mockResolvedValue({ packages: [availableHelper], health: [] });
+    service.install.mockImplementation(async ([candidate]) => {
+      packages = [...packages, { ...candidate, installed: true, enabled: false, plugin: { id: candidate.package_id, name: candidate.name, enabled: false, requires: [] } }];
+      return true;
+    });
+    service.setEnabled.mockImplementation(async (id, enabled) => {
+      packages = packages.map((pkg) => pkg.package_id === id ? { ...pkg, enabled, plugin: { ...pkg.plugin, enabled } } : pkg);
+      return true;
+    });
+    service.loadInstalled.mockImplementation(async () => ({ ...app.inventory, packages }));
+    app.render();
+
+    document.querySelector('[data-package-id="consumer"] [data-action="toggle-enabled"]').click();
+
+    await vi.waitFor(() => expect(service.setEnabled).toHaveBeenCalledWith("consumer", true));
+    expect(service.loadAvailable).toHaveBeenCalled();
+    expect(service.install).toHaveBeenCalledWith([availableHelper]);
   });
 
   it("labels dependency plugins and lists every installed dependent in a tooltip", async () => {
@@ -1031,6 +1163,31 @@ describe("EnhancedPluginManager", () => {
     expect(repository?.href).toBe("https://github.com/stashapp/CommunityScripts");
     expect(repository?.target).toBe("_blank");
     expect(repository?.rel).toContain("noopener");
+  });
+
+  it("opens Browse filtered to the selected source from Sources Cards and Table", async () => {
+    const { app } = await mountApp();
+    const sourceURL = app.inventory.sources[0].url;
+    await app.setTab("sources");
+
+    const browseCard = document.querySelector('.spme-source-card [data-action="browse-source"]');
+    expect(browseCard?.textContent).toBe("Browse");
+    expect(browseCard?.dataset.sourceUrl).toBe(sourceURL);
+    browseCard.click();
+
+    expect(app.activeTab).toBe("browse");
+    expect(app.filters.browse.source).toBe(sourceURL);
+    expect(document.querySelector('[data-filter-select="browse-source"]')?.value).toBe(sourceURL);
+    expect(new URL(window.location.href).searchParams.get("pluginManagerTab")).toBe("browse");
+
+    await app.setTab("sources");
+    document.querySelector('[data-action="set-view"][data-view-mode="table"]').click();
+    const browseTable = document.querySelector('.spme-source-row [data-action="browse-source"]');
+    expect(browseTable?.dataset.sourceUrl).toBe(sourceURL);
+    browseTable.click();
+
+    expect(app.activeTab).toBe("browse");
+    expect(app.filters.browse.source).toBe(sourceURL);
   });
 
   it("shows installed and enabled plugin counts for each source", async () => {
