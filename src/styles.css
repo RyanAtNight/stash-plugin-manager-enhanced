@@ -140,6 +140,13 @@
 .spme-source-link { color:#59c8ff; text-decoration:underline; text-decoration-color:rgba(89,200,255,.55); text-underline-offset:.15em; }
 .spme-source-link:hover { color:#8bdcff; text-decoration-color:currentColor; }
 .spme-source-card a { overflow-wrap:anywhere; }
+.spme-source-error { grid-column:1/-1; display:grid; grid-template-columns:auto minmax(0,1fr); gap:.65rem; align-items:start; min-width:0; margin:0; padding:.7rem .8rem; background:rgba(220,82,96,.09); border:1px solid rgba(220,82,96,.42); border-left:3px solid var(--spme-danger); border-radius:.45rem; color:inherit; }
+.spme-source-error-icon { display:inline-grid; place-items:center; width:1.4rem; height:1.4rem; border:1px solid var(--spme-danger); border-radius:50%; color:#ffb0b8; font-weight:700; line-height:1; }
+.spme-source-error strong { color:#ffb0b8; }
+.spme-source-error p { margin:.1rem 0 0; color:#e6edf2; }
+.spme-source-error details { margin-top:.35rem; }
+.spme-source-error summary { width:max-content; max-width:100%; color:#ffb0b8; cursor:pointer; font-size:.8rem; }
+.spme-source-error code { display:block; max-width:100%; margin-top:.4rem; padding:.55rem .65rem; border-radius:.35rem; background:rgba(0,0,0,.18); color:#e6edf2; font-size:.78rem; line-height:1.45; white-space:pre-wrap; overflow-wrap:anywhere; }
 .spme-source-form { display:grid; grid-template-columns:1fr 2fr 1fr; gap:.75rem; margin-top:1rem; padding:1rem; }
 .spme-source-form-inline { grid-column:1/-1; width:100%; margin:0; padding:1rem 0 0; background:transparent; border:0; border-top:1px solid var(--spme-border); border-radius:0; }
 .spme-source-form h2, .spme-source-form .spme-help, .spme-source-form > div { grid-column:1/-1; }
@@ -183,6 +190,7 @@
   .spme-package-card { grid-template-columns:auto minmax(0,1fr); }
   .spme-card-actions { grid-column:2; flex-direction:row; flex-wrap:wrap; justify-content:flex-start; }
   .spme-source-card, .spme-source-form { grid-template-columns:1fr; }
+  .spme-source-card > .spme-card-actions { grid-column:1; }
   .spme-source-form h2, .spme-source-form .spme-help, .spme-source-form > div { grid-column:auto; }
   .spme-setting { grid-template-columns:1fr; }
   .spme-sticky { position:static; }

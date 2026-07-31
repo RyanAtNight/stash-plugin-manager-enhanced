@@ -70,6 +70,19 @@ function trustBadge(trust = { level: "unverified", label: "Unverified source" })
   )}" title="${escapeHTML(trust.label)}">${escapeHTML(trust.label)}</span>`;
 }
 
+function sourceErrorHTML(error) {
+  const diagnostic = String(error);
+  const summary = diagnostic.includes("404 Not Found")
+    ? "Package index returned 404 Not Found."
+    : diagnostic.includes("filename, directory name, or volume label syntax is incorrect")
+      ? "Local package index path is invalid or unavailable."
+      : "Stash could not load this source.";
+  return `<aside class="spme-source-error" aria-label="Source unavailable">
+    <span class="spme-source-error-icon" aria-hidden="true">!</span>
+    <div><strong>Source unavailable</strong><p>${escapeHTML(summary)}</p><details><summary>Technical details</summary><code>${escapeHTML(diagnostic)}</code></details></div>
+  </aside>`;
+}
+
 function packageDescription(pkg) {
   return pkg.plugin?.description || pkg.metadata?.description || "No description provided.";
 }
@@ -516,7 +529,7 @@ export class EnhancedPluginManager {
       return `<article id="${sourceAnchorID(source.url)}" class="spme-source-card${editing ? " spme-source-card-editing" : ""}" data-source-index="${index}" tabindex="-1">
         <div><h2>${escapeHTML(source.name || "Unnamed source")}</h2>${sourceURL}<div class="spme-badges">${trustBadge(inferredTrust)}<span class="spme-badge ${health?.ok ? "spme-status-current" : "spme-status-error"}">${health?.ok ? "Healthy" : "Error"}</span></div></div>
         <dl><div><dt>Packages</dt><dd>${plural(health?.packageCount ?? 0, "package")}</dd></div><div><dt>Installed</dt><dd>${plural(installed.length, "plugin")}</dd></div><div><dt>Enabled</dt><dd>${plural(enabled, "plugin")}</dd></div><div><dt>Last checked</dt><dd>${escapeHTML(formatDate(health?.checkedAt))}</dd></div><div><dt>Local path</dt><dd>${escapeHTML(source.local_path || "Default")}</dd></div></dl>
-        ${health?.error ? `<p class="spme-text-error">${escapeHTML(health.error)}</p>` : ""}
+        ${health?.error ? sourceErrorHTML(health.error) : ""}
         ${editing
           ? this.sourceFormHTML(source, { editing: true })
           : `<div class="spme-card-actions">${repository}<button type="button" data-action="edit-source" data-index="${index}">Edit</button><button type="button" class="danger subtle" data-action="delete-source" data-index="${index}">Delete</button></div>`}

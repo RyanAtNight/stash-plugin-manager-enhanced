@@ -77,6 +77,12 @@ describe("package view responsive styles", () => {
     expect(css).toMatch(/\.spme-source-form-actions\s*\{[\s\S]*display:\s*flex[\s\S]*gap:\s*\.5rem/);
   });
 
+  it("contains source diagnostics in a readable full-width callout", () => {
+    expect(css).toMatch(/\.spme-source-error\s*\{[\s\S]*grid-column:\s*1\/-1[\s\S]*background:\s*rgba\(220,82,96,\.09\)[\s\S]*border-left:\s*3px solid var\(--spme-danger\)/);
+    expect(css).toMatch(/\.spme-source-error code\s*\{[\s\S]*white-space:\s*pre-wrap[\s\S]*overflow-wrap:\s*anywhere/);
+    expect(css).toMatch(/@media \(max-width:\s*800px\)[\s\S]*\.spme-source-card > \.spme-card-actions\s*\{\s*grid-column:\s*1/);
+  });
+
   it("styles linked source labels and highlights the anchored source card", () => {
     expect(css).toMatch(/\.spme-source-link\s*\{[\s\S]*text-decoration:\s*underline/);
     expect(css).toMatch(/\.spme-source-card:target,[\s\S]*\.spme-source-card:focus\s*\{[\s\S]*border-color:\s*var\(--spme-accent\)/);

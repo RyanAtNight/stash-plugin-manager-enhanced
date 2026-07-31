@@ -457,6 +457,22 @@ describe("EnhancedPluginManager", () => {
     expect(values.Enabled).toBe("1 plugin");
   });
 
+  it("presents source failures as compact callouts with human and technical details", async () => {
+    const { app } = await mountApp();
+    await app.setTab("sources");
+    const diagnostic = 'listing remote packages: failed to get remote file: 404 Not Found <script>alert("x")</script>';
+    app.available.health[0] = { ...app.available.health[0], ok: false, error: diagnostic };
+    app.render();
+
+    const callout = document.querySelector(".spme-source-error");
+    expect(callout?.getAttribute("aria-label")).toBe("Source unavailable");
+    expect(callout?.querySelector("strong")?.textContent).toBe("Source unavailable");
+    expect(callout?.querySelector("p")?.textContent).toBe("Package index returned 404 Not Found.");
+    expect(callout?.querySelector("details summary")?.textContent).toBe("Technical details");
+    expect(callout?.querySelector("code")?.textContent).toBe(diagnostic);
+    expect(callout?.querySelector("script")).toBeNull();
+  });
+
   it("creates a temporary add-source card above the source grid", async () => {
     const { app } = await mountApp();
     await app.setTab("sources");
