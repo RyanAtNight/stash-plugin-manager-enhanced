@@ -231,6 +231,11 @@ describe("EnhancedPluginManager", () => {
       expect(uninstall?.querySelector("svg.spme-trash-icon")?.getAttribute("aria-hidden")).toBe("true");
       expect(uninstall?.getAttribute("aria-label")).toBe("Uninstall Current Plugin");
       expect(uninstall?.getAttribute("title")).toBe("Uninstall Current Plugin");
+
+      const actionOrder = (packageID) => [...document.querySelector(`[data-package-id="${packageID}"] .spme-card-actions, [data-package-id="${packageID}"] .spme-table-actions`).children]
+        .map((action) => action.dataset.action || (action.querySelector(".spme-github-icon") ? "github" : "unknown"));
+      expect(actionOrder("current-plugin")).toEqual(["toggle-enabled", "github", "uninstall-one", "open-configuration"]);
+      expect(actionOrder("alpha")).toEqual(["toggle-enabled", "github", "update-one", "uninstall-one", "open-configuration"]);
     };
     assertUpdateActions();
 
@@ -512,7 +517,11 @@ describe("EnhancedPluginManager", () => {
     const cardConfigure = document.querySelector('[data-package-id="alpha"] [data-action="open-configuration"]');
     expect(cardConfigure).not.toBeNull();
     expect(cardConfigure?.textContent.trim()).toBe("");
-    expect(cardConfigure?.querySelector("svg.spme-configure-icon")?.getAttribute("aria-hidden")).toBe("true");
+    const configureIcon = cardConfigure?.querySelector("svg.spme-configure-icon");
+    expect(configureIcon?.getAttribute("aria-hidden")).toBe("true");
+    expect(configureIcon?.getAttribute("width")).toBe("19");
+    expect(configureIcon?.getAttribute("height")).toBe("19");
+    expect(configureIcon?.getAttribute("viewBox")).toBe("3 3 18 18");
     expect(cardConfigure?.querySelector("svg.spme-gear-icon")).toBeNull();
     expect(cardConfigure?.getAttribute("aria-label")).toBe("Configure Alpha Tool");
     expect(cardConfigure?.getAttribute("title")).toBe("Configure Alpha Tool");

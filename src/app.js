@@ -69,7 +69,7 @@ function findCoreSections(documentRef) {
 }
 
 const GITHUB_BUTTON_CONTENT = `<svg class="spme-github-icon" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82A7.65 7.65 0 0 1 8 3.87c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path></svg>`;
-const CONFIGURE_ICON = `<svg class="spme-configure-icon" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false"><path d="M4 6h5M15 6h5M4 12h10M18 12h2M4 18h2M12 18h8"></path><circle cx="12" cy="6" r="2"></circle><circle cx="16" cy="12" r="2"></circle><circle cx="9" cy="18" r="2"></circle></svg>`;
+const CONFIGURE_ICON = `<svg class="spme-configure-icon" viewBox="3 3 18 18" width="19" height="19" aria-hidden="true" focusable="false"><path d="M4 6h5M15 6h5M4 12h10M18 12h2M4 18h2M12 18h8"></path><circle cx="12" cy="6" r="2"></circle><circle cx="16" cy="12" r="2"></circle><circle cx="9" cy="18" r="2"></circle></svg>`;
 const TRASH_ICON = `<svg class="spme-trash-icon" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false"><path d="M4 7h16"></path><path d="M9 7V4h6v3"></path><path d="m6 7 1 13h10l1-13"></path><path d="M10 11v5M14 11v5"></path></svg>`;
 
 function githubRepositoryLink(url, name) {
@@ -285,6 +285,16 @@ export class EnhancedPluginManager {
   uninstallActionHTML(pkg) {
     const label = `Uninstall ${pkg.name}`;
     return `<button type="button" class="danger subtle spme-icon-action" data-action="uninstall-one" data-id="${escapeHTML(pkg.package_id)}" aria-label="${escapeHTML(label)}" title="${escapeHTML(label)}">${TRASH_ICON}</button>`;
+  }
+
+  packageActionsHTML(pkg, installed, selectKey) {
+    const repository = githubLink(pkg);
+    const configure = this.configurationReferenceHTML(pkg);
+    if (!installed) {
+      return `${repository}${configure}<button type="button" data-action="install-one" data-key="${escapeHTML(selectKey)}">Install</button>`;
+    }
+    if (pkg.runtimeOnly) return `${this.enableToggleHTML(pkg)}${repository}${configure}`;
+    return `${this.enableToggleHTML(pkg)}${repository}${this.updateActionHTML(pkg)}${this.uninstallActionHTML(pkg)}${configure}`;
   }
 
   saveCurrentInstallAssumptions() {
@@ -568,13 +578,7 @@ export class EnhancedPluginManager {
     const capabilities = installed && pkg.capabilities?.length
       ? `<details class="spme-capabilities"><summary>Capabilities</summary><ul>${pkg.capabilities.map((item) => `<li>${escapeHTML(item)}</li>`).join("")}</ul></details>`
       : "";
-    const actions = installed
-      ? pkg.runtimeOnly
-        ? this.enableToggleHTML(pkg)
-        : `${this.enableToggleHTML(pkg)}
-         ${this.updateActionHTML(pkg)}
-         ${this.uninstallActionHTML(pkg)}`
-      : `<button type="button" data-action="install-one" data-key="${escapeHTML(selectKey)}">Install</button>`;
+    const actions = this.packageActionsHTML(pkg, installed, selectKey);
     return `<article${installed ? ` id="${installedAnchorID(pkg.package_id)}" tabindex="-1"` : ""} class="spme-package-card${installed ? " spme-installed-target" : ""}" data-package-id="${escapeHTML(pkg.package_id)}">
       <label class="spme-select"><input type="checkbox" data-select-package="${installed ? "installed" : "available"}" data-key="${escapeHTML(selectKey)}" aria-label="Select ${escapeHTML(pkg.name)}" ${selected ? "checked" : ""} ${pkg.runtimeOnly ? 'disabled title="Runtime-only plugins are not available for package operations."' : ""}></label>
       <div class="spme-package-main">
@@ -583,7 +587,7 @@ export class EnhancedPluginManager {
         <dl><div><dt>Version</dt><dd>${version}</dd></div><div><dt>Last commit</dt><dd>${packageCommitDateHTML(pkg)}</dd></div><div><dt>Source</dt><dd>${this.sourceReferenceHTML(pkg)}</dd></div></dl>
         ${capabilities}
       </div>
-      <div class="spme-card-actions">${githubLink(pkg)}${this.configurationReferenceHTML(pkg)}${actions}</div>
+      <div class="spme-card-actions">${actions}</div>
     </article>`;
   }
 
@@ -617,13 +621,7 @@ export class EnhancedPluginManager {
     const version = installed && pkg.source_package
       ? `${escapeHTML(pkg.version || "Unknown")} → ${escapeHTML(pkg.source_package.version || "Unknown")}`
       : escapeHTML(pkg.version || "Unknown");
-    const actions = installed
-      ? pkg.runtimeOnly
-        ? this.enableToggleHTML(pkg)
-        : `${this.enableToggleHTML(pkg)}
-         ${this.updateActionHTML(pkg)}
-         ${this.uninstallActionHTML(pkg)}`
-      : `<button type="button" data-action="install-one" data-key="${escapeHTML(selectKey)}">Install</button>`;
+    const actions = this.packageActionsHTML(pkg, installed, selectKey);
     const capabilities = installed && pkg.capabilities?.length
       ? `<details class="spme-table-capabilities"><summary>Capabilities</summary><ul>${pkg.capabilities.map((item) => `<li>${escapeHTML(item)}</li>`).join("")}</ul></details>`
       : "";
@@ -635,7 +633,7 @@ export class EnhancedPluginManager {
       <td data-label="Last commit">${packageCommitDateHTML(pkg)}</td>
       <td data-label="Source">${this.sourceReferenceHTML(pkg)}</td>
       <td data-label="Status"><div class="spme-badges">${status}${trustBadge(pkg.trust)}</div></td>
-      <td data-label="Actions"><div class="spme-table-actions">${githubLink(pkg)}${this.configurationReferenceHTML(pkg)}${actions}</div></td>
+      <td data-label="Actions"><div class="spme-table-actions">${actions}</div></td>
     </tr>`;
   }
 
