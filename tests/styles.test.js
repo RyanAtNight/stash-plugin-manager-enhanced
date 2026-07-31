@@ -126,7 +126,7 @@ describe("package view responsive styles", () => {
     expect(rule).toMatch(/border:\s*0/);
     expect(rule).toMatch(/border-radius:\s*0/);
     expect(rule).toMatch(/padding:\s*0/);
-    expect(css).toMatch(/\.spme-update-check-status time\s*\{\s*margin-left:\s*\.35em/);
+    expect(css).not.toMatch(/\.spme-update-check-status time\s*\{[^}]*margin-left:/);
   });
 
   it("places a compact interactive dismiss button at the far right of alerts", () => {

@@ -48,7 +48,6 @@
 .spme-toolbar, .spme-actions { display:flex; align-items:flex-end; flex-wrap:wrap; gap:.5rem; }
 .spme-toolbar { margin:1rem 0; }
 .spme-update-check-status { align-self:stretch; display:inline-flex; align-items:center; margin-right:.5rem; padding:0; border:0; border-radius:0; background:transparent; color:var(--spme-text-muted); white-space:nowrap; }
-.spme-update-check-status time { margin-left:.35em; }
 .spme-toolbar label, .spme-source-form label { display:flex; flex-direction:column; gap:.25rem; margin:0; }
 .spme-toolbar label > span, .spme-source-form label > span { font-size:.82rem; color:var(--spme-text-muted); }
 .spme-toolbar input[type="search"] { min-width:min(25rem, 72vw); }

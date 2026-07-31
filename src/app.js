@@ -587,7 +587,7 @@ export class EnhancedPluginManager {
   updateCheckStatusHTML() {
     if (!this.lastUpdateCheck) return '<span class="spme-update-check-status">Updates never checked</span>';
     const date = new Date(this.lastUpdateCheck);
-    return `<span class="spme-update-check-status">Updates checked <time datetime="${date.toISOString()}" title="${escapeHTML(date.toLocaleString())}">${escapeHTML(relativeTimeAgo(this.lastUpdateCheck, this.now()))}</time></span>`;
+    return `<span class="spme-update-check-status"><time datetime="${date.toISOString()}" title="${escapeHTML(date.toLocaleString())}">${escapeHTML(relativeTimeAgo(this.lastUpdateCheck, this.now()))}</time></span>`;
   }
 
   recordUpdateCheck() {

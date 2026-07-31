@@ -703,8 +703,10 @@ describe("EnhancedPluginManager", () => {
     await mountApp({ now: () => now });
 
     const status = document.querySelector(".spme-update-check-status");
-    expect(status?.textContent).toBe("Updates checked 2 hours ago");
-    expect(status?.querySelector("time")?.getAttribute("datetime")).toBe(new Date(checkedAt).toISOString());
+    const time = status?.querySelector("time");
+    expect(status?.textContent).toBe("2 hours ago");
+    expect(time?.textContent).toBe("2 hours ago");
+    expect(time?.getAttribute("datetime")).toBe(new Date(checkedAt).toISOString());
   });
 
   it("ignores an out-of-range stored update check timestamp", async () => {
@@ -722,7 +724,7 @@ describe("EnhancedPluginManager", () => {
     document.querySelector('[data-action="check-updates"]').click();
 
     await vi.waitFor(() => expect(service.loadInstalled).toHaveBeenLastCalledWith({ checkUpdates: true }));
-    await vi.waitFor(() => expect(document.querySelector(".spme-update-check-status")?.textContent).toBe("Updates checked just now"));
+    await vi.waitFor(() => expect(document.querySelector(".spme-update-check-status")?.textContent).toBe("just now"));
     expect(window.localStorage.getItem("spme.lastUpdateCheck")).toBe(String(now));
   });
 
