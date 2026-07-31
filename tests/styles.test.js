@@ -83,6 +83,12 @@ describe("package view responsive styles", () => {
     expect(css).toMatch(/@media \(max-width:\s*800px\)[\s\S]*\.spme-source-card > \.spme-card-actions\s*\{\s*grid-column:\s*1/);
   });
 
+  it("sizes and highlights the Sources table without affecting package tables", () => {
+    expect(css).toMatch(/\.spme-columns-sources \.spme-col-source-actions\s*\{\s*width:\s*16\.8rem/);
+    expect(css).toMatch(/\.spme-source-row:target,[\s\S]*\.spme-source-row:focus\s*\{[\s\S]*outline:/);
+    expect(css).toMatch(/\.spme-source-edit-row \.spme-source-form\s*\{[\s\S]*margin:\s*0/);
+  });
+
   it("styles linked source labels and highlights the anchored source card", () => {
     expect(css).toMatch(/\.spme-source-link\s*\{[\s\S]*text-decoration:\s*underline/);
     expect(css).toMatch(/\.spme-source-card:target,[\s\S]*\.spme-source-card:focus\s*\{[\s\S]*border-color:\s*var\(--spme-accent\)/);

@@ -499,6 +499,33 @@ describe("EnhancedPluginManager", () => {
     expect([...document.querySelectorAll('[data-filter-select="sources-sort"] option')].map((option) => option.value)).toEqual(Object.keys(expectations));
   });
 
+  it("renders Sources as an editable semantic table and switches back to Cards", async () => {
+    const { app } = await mountApp();
+    await app.setTab("sources");
+    app.available.health[0] = { ...app.available.health[0], ok: false, error: "404 Not Found" };
+    document.querySelector('[data-action="set-view"][data-view-mode="table"]').click();
+
+    const table = document.querySelector(".spme-source-table");
+    expect([...table.querySelectorAll("th")].map((cell) => cell.textContent.trim())).toEqual([
+      "Source", "Packages", "Installed", "Enabled", "Last checked", "Status", "Actions",
+    ]);
+    const row = table.querySelector(".spme-source-row");
+    expect(row?.dataset.sourceIndex).toBe("0");
+    expect(row?.id).toBe(sourceAnchorID(app.inventory.sources[0].url));
+    expect(row?.querySelector('[data-label="Packages"]')?.textContent).toContain("2");
+    expect(row?.querySelector(".spme-source-error details")).not.toBeNull();
+    expect(document.querySelectorAll(".spme-source-card")).toHaveLength(0);
+
+    row.querySelector('[data-action="edit-source"]').click();
+    const editor = document.querySelector('.spme-source-edit-row [data-source-form]');
+    expect(editor?.closest("td")?.colSpan).toBe(7);
+    expect(document.activeElement).toBe(editor?.elements.name);
+
+    document.querySelector('[data-action="set-view"][data-view-mode="cards"]').click();
+    expect(document.querySelector(".spme-source-table")).toBeNull();
+    expect(document.querySelector(".spme-source-card")).not.toBeNull();
+  });
+
   it("presents source failures as compact callouts with human and technical details", async () => {
     const { app } = await mountApp();
     await app.setTab("sources");

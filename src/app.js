@@ -337,8 +337,8 @@ export class EnhancedPluginManager {
   headerHTML() {
     const updates = this.inventory.packages.filter((pkg) => pkg.status === "update").length;
     const enabled = this.inventory.packages.filter((pkg) => pkg.enabled).length;
-    const viewToggle = this.activeTab === "installed" || this.activeTab === "browse"
-      ? `<div class="spme-view-toggle" role="group" aria-label="Package display mode">
+    const viewToggle = ["installed", "browse", "sources"].includes(this.activeTab)
+      ? `<div class="spme-view-toggle" role="group" aria-label="Display mode">
           <button type="button" data-action="set-view" data-view-mode="cards" aria-pressed="${this.viewMode === "cards"}">Cards</button>
           <button type="button" data-action="set-view" data-view-mode="table" aria-pressed="${this.viewMode === "table"}">Table</button>
         </div>`
@@ -538,8 +538,8 @@ export class EnhancedPluginManager {
       const installed = this.inventory.packages.filter((pkg) => pkg.sourceURL === source.url);
       const enabled = installed.filter((pkg) => pkg.enabled).length;
       return { source, index, health, installed, enabled, packages: health?.packageCount ?? 0 };
-    }), this.filters.sources.sort);
-    const rows = entries.map(({ source, index, health, installed, enabled }) => {
+    }), this.filters.sources.sort).map((entry) => {
+      const { source, health } = entry;
       const trust = health?.source ? this.available.packages.find((pkg) => pkg.sourceURL === source.url)?.trust : undefined;
       const inferredTrust = trust ?? (source.url.includes("stashapp.github.io/CommunityScripts")
         ? { level: "official", label: "Official Stash source" }
@@ -554,6 +554,9 @@ export class EnhancedPluginManager {
       const repository = githubURL
         ? githubRepositoryLink(githubURL, source.name || "Unnamed source")
         : '<span class="spme-repo-missing">Repository unavailable</span>';
+      return { ...entry, inferredTrust, sourceURL, repository };
+    });
+    const cards = entries.map(({ source, index, health, installed, enabled, inferredTrust, sourceURL, repository }) => {
       const editing = this.editingSource === index;
       return `<article id="${sourceAnchorID(source.url)}" class="spme-source-card${editing ? " spme-source-card-editing" : ""}" data-source-index="${index}" tabindex="-1">
         <div><h2>${escapeHTML(source.name || "Unnamed source")}</h2>${sourceURL}<div class="spme-badges">${trustBadge(inferredTrust)}<span class="spme-badge ${health?.ok ? "spme-status-current" : "spme-status-error"}">${health?.ok ? "Healthy" : "Error"}</span></div></div>
@@ -564,6 +567,21 @@ export class EnhancedPluginManager {
           : `<div class="spme-card-actions">${repository}<button type="button" data-action="edit-source" data-index="${index}">Edit</button><button type="button" class="danger subtle" data-action="delete-source" data-index="${index}">Delete</button></div>`}
       </article>`;
     }).join("");
+    const tableRows = entries.map(({ source, index, health, installed, enabled, inferredTrust, sourceURL, repository }) => {
+      const editing = this.editingSource === index;
+      const healthStatus = `<span class="spme-badge ${health?.ok ? "spme-status-current" : "spme-status-error"}">${health?.ok ? "Healthy" : "Error"}</span>`;
+      const row = `<tr id="${sourceAnchorID(source.url)}" class="spme-source-row${editing ? " spme-source-row-editing" : ""}" data-source-index="${index}" tabindex="-1">
+        <td data-label="Source"><div class="spme-source-table-name"><strong>${escapeHTML(source.name || "Unnamed source")}</strong>${sourceURL}<small>Local path: ${escapeHTML(source.local_path || "Default")}</small></div></td>
+        <td data-label="Packages">${health?.packageCount ?? 0}</td>
+        <td data-label="Installed">${installed.length}</td>
+        <td data-label="Enabled">${enabled}</td>
+        <td data-label="Last checked">${escapeHTML(formatDate(health?.checkedAt))}</td>
+        <td data-label="Status"><div class="spme-source-table-status"><div class="spme-badges">${trustBadge(inferredTrust)}${healthStatus}</div>${health?.error ? sourceErrorHTML(health.error) : ""}</div></td>
+        <td data-label="Actions"><div class="spme-table-actions">${repository}<button type="button" data-action="edit-source" data-index="${index}">Edit</button><button type="button" class="danger subtle" data-action="delete-source" data-index="${index}">Delete</button></div></td>
+      </tr>`;
+      return editing ? `${row}<tr class="spme-source-edit-row"><td colspan="7">${this.sourceFormHTML(source, { editing: true })}</td></tr>` : row;
+    }).join("");
+    const table = `<div class="spme-table-scroll"><table class="spme-package-table spme-source-table"><colgroup class="spme-columns-sources"><col class="spme-col-source-name"><col class="spme-col-source-count"><col class="spme-col-source-count"><col class="spme-col-source-count"><col class="spme-col-source-checked"><col class="spme-col-source-status"><col class="spme-col-source-actions"></colgroup><thead><tr><th>Source</th><th>Packages</th><th>Installed</th><th>Enabled</th><th>Last checked</th><th>Status</th><th>Actions</th></tr></thead><tbody>${tableRows}</tbody></table></div>`;
     const addCard = this.addingSource
       ? `<article class="spme-source-card spme-source-card-adding" data-add-source-card>${this.sourceFormHTML()}</article>`
       : "";
@@ -572,7 +590,7 @@ export class EnhancedPluginManager {
       <div class="spme-actions spme-sticky"><button type="button" data-action="refresh-sources">Check all sources</button><button type="button" data-action="add-source" aria-expanded="${this.addingSource}" ${this.addingSource ? "disabled" : ""}>Add plugin source</button></div>
       <div class="spme-toolbar"><label><span>Sort</span><select data-filter-select="sources-sort" aria-label="Sort plugin sources">${sortOptions}</select></label><span class="spme-result-count">${plural(entries.length, "source")}</span></div>
       ${addCard}
-      <div class="spme-source-grid">${rows || '<p class="spme-empty">No plugin sources configured.</p>'}</div>
+      ${entries.length ? (this.viewMode === "table" ? table : `<div class="spme-source-grid">${cards}</div>`) : '<p class="spme-empty">No plugin sources configured.</p>'}
     </section>`;
   }
 
