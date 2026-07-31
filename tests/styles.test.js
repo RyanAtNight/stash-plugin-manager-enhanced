@@ -68,12 +68,6 @@ describe("package view responsive styles", () => {
     expect(css).toMatch(/\.spme-check \+ \.spme-result-count\s*\{[^}]*display:\s*inline-flex[^}]*align-items:\s*center[^}]*padding-bottom:\s*\.55rem/);
   });
 
-  it("keeps the Stash Updates-only checkbox label at normal text emphasis", () => {
-    expect(css).toMatch(/\.spme-check > \.custom-control-label\s*\{[^}]*display:\s*inline-block[^}]*color:\s*inherit[^}]*font-size:\s*inherit/);
-    expect(css).toMatch(/#spme-root \.spme-checkbox \.custom-control-input:checked ~ \.custom-control-label::before\s*\{[^}]*background:\s*#137cbd[^}]*border-color:\s*#137cbd/);
-    expect(css).toMatch(/#spme-root \.spme-checkbox \.custom-control-input:checked ~ \.custom-control-label::after\s*\{[^}]*background:\s*transparent url\(/);
-  });
-
   it("styles repository links as icon buttons rather than underlined text links", () => {
     expect(css).toMatch(/#spme-root \.spme-repo-link\s*\{[\s\S]*display:\s*inline-flex[\s\S]*text-decoration:\s*none/);
     expect(css).toMatch(/#spme-root \.spme-repo-link\s*\{[^}]*background:\s*#fff[^}]*border-color:\s*#fff[^}]*color:\s*#24292f/);

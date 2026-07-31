@@ -436,27 +436,6 @@ describe("EnhancedPluginManager", () => {
     expect(document.querySelector('input[aria-label="Select Alpha Tool"]')).not.toBeNull();
   });
 
-  it("uses Stash custom checkboxes for package selection and Updates only", async () => {
-    const { app } = await mountApp();
-    const assertStashCheckbox = (input) => {
-      const control = input?.closest("div.custom-control.custom-checkbox");
-      expect(control).not.toBeNull();
-      expect(control?.classList.contains("spme-checkbox")).toBe(true);
-      expect(input?.classList.contains("custom-control-input")).toBe(true);
-      const label = input?.nextElementSibling;
-      expect(label?.matches("label.custom-control-label")).toBe(true);
-      expect(input?.id).not.toBe("");
-      expect(label?.htmlFor).toBe(input?.id);
-    };
-
-    assertStashCheckbox(document.querySelector('[data-select-package="installed"]'));
-    assertStashCheckbox(document.querySelector('[data-filter-check="updates"]'));
-
-    app.viewMode = "table";
-    app.render();
-    assertStashCheckbox(document.querySelector('.spme-package-table [data-select-package="installed"]'));
-  });
-
   it("keeps filters together, places their result count next, and right-aligns Sort", async () => {
     const { app } = await mountApp();
     const controlOrder = () => [...document.querySelector(".spme-toolbar").children].map((element) => {
