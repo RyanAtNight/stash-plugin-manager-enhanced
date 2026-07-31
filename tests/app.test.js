@@ -487,6 +487,10 @@ describe("EnhancedPluginManager", () => {
       "enabled-desc": ["Alpha", "Zulu", "Mid"],
     };
 
+    app.render();
+    expect(document.querySelector('[data-filter-select="sources-sort"]').value).toBe("packages-desc");
+    expect([...document.querySelectorAll(".spme-source-card h2")].map((heading) => heading.textContent)).toEqual(expectations["packages-desc"]);
+
     for (const [value, expected] of Object.entries(expectations)) {
       app.filters.sources.sort = value;
       app.render();

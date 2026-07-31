@@ -136,7 +136,7 @@ export class EnhancedPluginManager {
     this.filters = {
       installed: { query: "", enabled: undefined, updatesOnly: false, sort: "name" },
       browse: { query: "", source: "", sort: "last-commit" },
-      sources: { sort: "name" },
+      sources: { sort: "packages-desc" },
       configuration: { query: "", enabled: undefined },
     };
     this.message = undefined;
