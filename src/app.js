@@ -58,7 +58,7 @@ function packageCommitDateHTML(pkg) {
   const value = packageLastCommitDate(pkg);
   if (!value) return '<span data-last-commit>Unknown</span>';
   const date = new Date(value);
-  return `<time data-last-commit datetime="${date.toISOString()}">${escapeHTML(formatDate(value))}</time>`;
+  return `<time data-last-commit datetime="${date.toISOString()}" title="${escapeHTML(date.toLocaleString())}">${escapeHTML(date.toLocaleDateString())}</time>`;
 }
 
 function findCoreSections(documentRef) {

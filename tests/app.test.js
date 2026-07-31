@@ -285,7 +285,11 @@ describe("EnhancedPluginManager", () => {
     const cardOrder = () => [...document.querySelectorAll(".spme-package-card")].map((card) => card.dataset.packageId);
     const rowOrder = () => [...document.querySelectorAll(".spme-package-table tbody tr")].map((row) => row.dataset.packageId);
     expect(cardOrder()).toEqual(["alpha", "zulu"]);
-    expect(document.querySelector('[data-package-id="alpha"] time[data-last-commit]')?.dateTime).toBe("2025-03-01T00:00:00.000Z");
+    const installedCommit = new Date("2025-03-01T00:00:00Z");
+    let commitTime = document.querySelector('[data-package-id="alpha"] time[data-last-commit]');
+    expect(commitTime?.dateTime).toBe("2025-03-01T00:00:00.000Z");
+    expect(commitTime?.textContent).toBe(installedCommit.toLocaleDateString());
+    expect(commitTime?.title).toBe(installedCommit.toLocaleString());
 
     let sort = document.querySelector('[data-filter-select="installed-sort"]');
     sort.value = "last-commit";
@@ -293,7 +297,9 @@ describe("EnhancedPluginManager", () => {
     expect(cardOrder()).toEqual(["zulu", "alpha"]);
     document.querySelector('[data-action="set-view"][data-view-mode="table"]').click();
     expect(rowOrder()).toEqual(["zulu", "alpha"]);
-    expect(document.querySelector('[data-package-id="alpha"] [data-label="Last commit"] time[data-last-commit]')).not.toBeNull();
+    commitTime = document.querySelector('[data-package-id="alpha"] [data-label="Last commit"] time[data-last-commit]');
+    expect(commitTime?.textContent).toBe(installedCommit.toLocaleDateString());
+    expect(commitTime?.title).toBe(installedCommit.toLocaleString());
     sort = document.querySelector('[data-filter-select="installed-sort"]');
     expect([...sort.options].map((option) => option.value)).toContain("last-commit-oldest");
     sort.value = "last-commit-oldest";
@@ -311,7 +317,11 @@ describe("EnhancedPluginManager", () => {
     app.viewMode = "cards";
     app.render();
     expect(cardOrder()).toEqual(["beta", "aardvark"]);
-    expect(document.querySelector('[data-package-id="beta"] time[data-last-commit]')?.dateTime).toBe("2025-02-01T00:00:00.000Z");
+    const availableCommit = new Date("2025-02-01T00:00:00Z");
+    commitTime = document.querySelector('[data-package-id="beta"] time[data-last-commit]');
+    expect(commitTime?.dateTime).toBe("2025-02-01T00:00:00.000Z");
+    expect(commitTime?.textContent).toBe(availableCommit.toLocaleDateString());
+    expect(commitTime?.title).toBe(availableCommit.toLocaleString());
 
     sort = document.querySelector('[data-filter-select="browse-sort"]');
     expect(sort.value).toBe("last-commit");
