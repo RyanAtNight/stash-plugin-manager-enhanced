@@ -31,6 +31,11 @@ describe("package view responsive styles", () => {
     expect(css).toMatch(/data-active-tab="browse"[\s\S]*\.spme-table-actions\s*\{[\s\S]*flex-wrap:\s*nowrap/);
   });
 
+  it("gives Installed actions a compact fixed width independent of Browse", () => {
+    expect(css).toMatch(/\.spme-columns-installed \.spme-col-actions\s*\{\s*width:\s*13\.5rem/);
+    expect(css).toMatch(/\.spme-columns-browse \.spme-col-actions\s*\{\s*width:\s*12\.8rem/);
+  });
+
   it("gives toolbar dropdowns the same visible indicator as Stash's Language select", () => {
     expect(css).toMatch(/\.spme-toolbar select\s*\{[\s\S]*appearance:\s*none/);
     expect(css).toMatch(/\.spme-toolbar select\s*\{[\s\S]*background-image:\s*url\([^)]*svg[\s\S]*polygon/);
