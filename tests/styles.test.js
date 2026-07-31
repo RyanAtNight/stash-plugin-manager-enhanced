@@ -59,6 +59,9 @@ describe("package view responsive styles", () => {
 
   it("styles Configure links as primary actions and highlights their target panel", () => {
     expect(css).toMatch(/#spme-root \.spme-config-link\s*\{[^}]*text-decoration:\s*none/);
+    expect(css).toMatch(/#spme-root \.spme-icon-action\s*\{[^}]*width:\s*2\.15rem[^}]*height:\s*2\.15rem[^}]*padding:\s*0/);
+    expect(css).toMatch(/\.spme-gear-icon\s*\{[^}]*stroke:\s*currentColor/);
+    expect(css).toMatch(/\.spme-trash-icon\s*\{[^}]*stroke:\s*currentColor/);
     expect(css).toMatch(/#spme-root \.spme-config-link:hover\s*\{[^}]*background:\s*#10659a/);
     expect(css).toMatch(/\.spme-plugin-config:target,[\s\S]*\.spme-plugin-config:focus\s*\{[^}]*border-color:\s*var\(--spme-accent\)/);
   });
@@ -76,10 +79,6 @@ describe("package view responsive styles", () => {
   });
 
   it("visually distinguishes enabled and disabled plugin states with a true switch", () => {
-    expect(css).toMatch(/\.spme-enabled\s*\{[^}]*background:\s*rgba\(56,178,109,/);
-    expect(css).toMatch(/\.spme-enabled::before\s*\{[^}]*content:\s*"✓"/);
-    expect(css).toMatch(/\.spme-disabled\s*\{[^}]*background:\s*rgba\(255,255,255,/);
-    expect(css).toMatch(/\.spme-disabled::before\s*\{[^}]*content:\s*"○"/);
     expect(css).toMatch(/#spme-root button\.spme-enable-toggle\s*\{[^}]*background:\s*var\(--spme-panel-2\)/);
     expect(css).toMatch(/\.spme-enable-toggle-track\s*\{[^}]*border-radius:\s*99px[^}]*background:\s*#687985/);
     expect(css).toMatch(/\.spme-enable-toggle-knob\s*\{[^}]*border-radius:\s*50%[^}]*transition:/);

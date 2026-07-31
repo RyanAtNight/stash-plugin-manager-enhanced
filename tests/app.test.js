@@ -198,6 +198,46 @@ describe("EnhancedPluginManager", () => {
     expect(document.querySelectorAll(".spme-package-card")).toHaveLength(0);
   });
 
+  it("shows per-plugin Update actions only when an update is known", async () => {
+    const { app } = await mountApp();
+    const template = app.inventory.packages[0];
+    app.inventory.packages.push(
+      {
+        ...template,
+        package_id: "current-plugin",
+        name: "Current Plugin",
+        status: "current",
+        plugin: { ...template.plugin, id: "current-plugin", name: "Current Plugin" },
+      },
+      {
+        ...template,
+        package_id: "unchecked-plugin",
+        name: "Unchecked Plugin",
+        status: "unchecked",
+        source_package: undefined,
+        plugin: { ...template.plugin, id: "unchecked-plugin", name: "Unchecked Plugin" },
+      }
+    );
+    app.render();
+
+    const assertUpdateActions = () => {
+      const update = document.querySelector('[data-package-id="alpha"] [data-action="update-one"]');
+      expect(update).not.toBeNull();
+      expect(update.disabled).toBe(false);
+      expect(document.querySelector('[data-package-id="current-plugin"] [data-action="update-one"]')).toBeNull();
+      expect(document.querySelector('[data-package-id="unchecked-plugin"] [data-action="update-one"]')).toBeNull();
+      const uninstall = document.querySelector('[data-package-id="current-plugin"] [data-action="uninstall-one"]');
+      expect(uninstall?.textContent.trim()).toBe("");
+      expect(uninstall?.querySelector("svg.spme-trash-icon")?.getAttribute("aria-hidden")).toBe("true");
+      expect(uninstall?.getAttribute("aria-label")).toBe("Uninstall Current Plugin");
+      expect(uninstall?.getAttribute("title")).toBe("Uninstall Current Plugin");
+    };
+    assertUpdateActions();
+
+    document.querySelector('[data-action="set-view"][data-view-mode="table"]').click();
+    assertUpdateActions();
+  });
+
   it("uses Table view for available packages while retaining install controls", async () => {
     const { app } = await mountApp();
     document.querySelector('[data-action="set-view"][data-view-mode="table"]').click();
@@ -375,6 +415,7 @@ describe("EnhancedPluginManager", () => {
     const dismiss = alert?.querySelector('[data-action="dismiss-message"]');
     expect(alert?.querySelector(".spme-alert-content")?.textContent).toBe("Plugin operation completed.");
     expect(dismiss?.getAttribute("aria-label")).toBe("Dismiss notification");
+    expect(dismiss?.getAttribute("title")).toBe("Dismiss");
 
     dismiss.click();
     expect(app.message).toBeUndefined();
@@ -402,7 +443,7 @@ describe("EnhancedPluginManager", () => {
     app.render();
 
     const enabledPlugin = document.querySelector('[data-package-id="alpha"]');
-    expect(enabledPlugin.querySelector(".spme-enabled")?.textContent).toBe("Enabled");
+    expect(enabledPlugin.querySelector(".spme-enabled, .spme-disabled")).toBeNull();
     expect(enabledPlugin.querySelector('[role="switch"]')?.getAttribute("aria-checked")).toBe("true");
     expect(enabledPlugin.querySelector('[role="switch"] .spme-enable-toggle-label')?.textContent).toBe("Enabled");
     let plugin = document.querySelector('[data-package-id="dev-helper"]');
@@ -410,7 +451,7 @@ describe("EnhancedPluginManager", () => {
     expect(plugin.querySelector('[data-select-package="installed"]').disabled).toBe(true);
     expect(plugin.querySelector('[data-action="toggle-enabled"]')?.textContent).toContain("Disabled");
     expect(plugin.querySelector('[role="switch"]')?.getAttribute("aria-checked")).toBe("false");
-    expect(plugin.querySelector(".spme-disabled")?.textContent).toBe("Disabled");
+    expect(plugin.querySelector(".spme-enabled, .spme-disabled")).toBeNull();
     expect(plugin.querySelector('[data-action="update-one"]')).toBeNull();
     expect(plugin.querySelector('[data-action="uninstall-one"]')).toBeNull();
 
@@ -421,6 +462,7 @@ describe("EnhancedPluginManager", () => {
     expect(plugin.querySelector('[data-action="update-one"]')).toBeNull();
     expect(plugin.querySelector('[data-action="uninstall-one"]')).toBeNull();
     expect(plugin.querySelector('[role="switch"]')?.getAttribute("aria-checked")).toBe("false");
+    expect(plugin.querySelector(".spme-enabled, .spme-disabled")).toBeNull();
 
     plugin.querySelector('[data-action="toggle-enabled"]').click();
     await vi.waitFor(() => expect(service.setEnabled).toHaveBeenCalledWith("dev-helper", true));
@@ -429,30 +471,31 @@ describe("EnhancedPluginManager", () => {
   it("opens installed and available GitHub repositories in a new tab", async () => {
     const { app } = await mountApp();
 
-    const expectGitHubButton = (link) => {
+    const expectGitHubButton = (link, name) => {
       expect(link?.querySelector("svg.spme-github-icon")?.getAttribute("aria-hidden")).toBe("true");
-      expect(link?.querySelector(".spme-github-label")?.textContent).toBe("GitHub");
-      expect(link?.querySelector(".spme-external-icon")?.textContent).toBe("↗");
+      expect(link?.textContent.trim()).toBe("");
+      expect(link?.getAttribute("aria-label")).toBe(`Open ${name} GitHub repository`);
+      expect(link?.getAttribute("title")).toBe(`Open ${name} GitHub repository`);
     };
 
     let link = document.querySelector('a[aria-label="Open Alpha Tool GitHub repository"]');
     expect(link?.target).toBe("_blank");
     expect(link?.rel).toContain("noopener");
-    expectGitHubButton(link);
+    expectGitHubButton(link, "Alpha Tool");
 
     document.querySelector('[data-action="set-view"][data-view-mode="table"]').click();
     link = document.querySelector('a[aria-label="Open Alpha Tool GitHub repository"]');
-    expectGitHubButton(link);
+    expectGitHubButton(link, "Alpha Tool");
 
     await app.setTab("browse");
     link = document.querySelector('a[aria-label="Open Beta Helper GitHub repository"]');
     expect(link?.href).toContain("github.com");
     expect(link?.target).toBe("_blank");
-    expectGitHubButton(link);
+    expectGitHubButton(link, "Beta Helper");
 
     document.querySelector('[data-action="set-view"][data-view-mode="cards"]').click();
     link = document.querySelector('a[aria-label="Open Beta Helper GitHub repository"]');
-    expectGitHubButton(link);
+    expectGitHubButton(link, "Beta Helper");
   });
 
   it("links configurable Installed plugins to their expanded Configuration panel", async () => {
@@ -465,11 +508,18 @@ describe("EnhancedPluginManager", () => {
     });
     app.render();
 
-    expect(document.querySelector('[data-package-id="alpha"] [data-action="open-configuration"]')).not.toBeNull();
+    const cardConfigure = document.querySelector('[data-package-id="alpha"] [data-action="open-configuration"]');
+    expect(cardConfigure).not.toBeNull();
+    expect(cardConfigure?.textContent.trim()).toBe("");
+    expect(cardConfigure?.querySelector("svg.spme-gear-icon")?.getAttribute("aria-hidden")).toBe("true");
+    expect(cardConfigure?.getAttribute("aria-label")).toBe("Configure Alpha Tool");
+    expect(cardConfigure?.getAttribute("title")).toBe("Configure Alpha Tool");
     expect(document.querySelector('[data-package-id="plain"] [data-action="open-configuration"]')).toBeNull();
     document.querySelector('[data-action="set-view"][data-view-mode="table"]').click();
     const configure = document.querySelector('[data-package-id="alpha"] [data-action="open-configuration"]');
-    expect(configure?.textContent).toBe("Configure");
+    expect(configure?.textContent.trim()).toBe("");
+    expect(configure?.querySelector("svg.spme-gear-icon")).not.toBeNull();
+    expect(configure?.getAttribute("title")).toBe("Configure Alpha Tool");
     expect(configure?.getAttribute("href")).toContain(`pluginManagerTab=configuration#${configurationAnchorID("alpha")}`);
     configure.click();
 

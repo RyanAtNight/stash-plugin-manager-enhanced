@@ -71,11 +71,7 @@
 .spme-package-title code, .spme-plugin-config code { color:#cbd7de; }
 .spme-badges { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:.35rem; }
 .spme-badge { display:inline-flex; align-items:center; border:1px solid var(--spme-border); border-radius:99px; padding:.2rem .5rem; font-size:.74rem; line-height:1.2; }
-.spme-enabled, .spme-status-current, .spme-trust-official { border-color:var(--spme-success); color:#82e2aa; }
-.spme-enabled { background:rgba(56,178,109,.12); font-weight:600; }
-.spme-enabled::before { content:"✓"; margin-right:.28rem; font-weight:700; }
-.spme-disabled { background:rgba(255,255,255,.06); border-color:rgba(255,255,255,.24); color:#d2dbe1; font-weight:600; }
-.spme-disabled::before { content:"○"; margin-right:.28rem; font-weight:700; }
+.spme-status-current, .spme-trust-official { border-color:var(--spme-success); color:#82e2aa; }
 .spme-status-update, .spme-trust-community { border-color:var(--spme-warning); color:#ffc376; }
 .spme-status-error, .spme-trust-unverified { border-color:var(--spme-danger); color:#ff9aa4; }
 .spme-runtime-only { border-color:var(--spme-accent); color:#8ed8ff; }
@@ -109,7 +105,11 @@
 #spme-root .spme-config-link { display:inline-flex; align-items:center; justify-content:center; border:1px solid #137cbd; border-radius:.35rem; padding:.45rem .65rem; background:#137cbd; color:#fff; text-align:center; text-decoration:none; cursor:pointer; transition:color .15s ease-in-out, background-color .15s ease-in-out, border-color .15s ease-in-out, box-shadow .15s ease-in-out; }
 #spme-root .spme-config-link:hover { background:#10659a; border-color:#0e5e8f; color:#fff; text-decoration:none; }
 #spme-root .spme-config-link:active { background:#0e5e8f; border-color:#0d5683; color:#fff; text-decoration:none; box-shadow:0 0 0 .2rem rgba(54,144,199,.5); outline:0; }
+#spme-root .spme-icon-action { flex:0 0 2.15rem; width:2.15rem; height:2.15rem; padding:0; }
 .spme-github-icon { flex:0 0 auto; fill:currentColor; }
+.spme-gear-icon, .spme-trash-icon { flex:0 0 auto; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+.spme-gear-icon { stroke:currentColor; }
+.spme-trash-icon { stroke:currentColor; }
 .spme-external-icon { flex:0 0 auto; font-size:.95em; line-height:1; }
 .spme-repo-missing { color:var(--spme-text-muted); font-size:.78rem; text-align:center; }
 .spme-capabilities { margin-top:.75rem; }
