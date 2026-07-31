@@ -16,6 +16,10 @@ describe("package view responsive styles", () => {
     expect(css).toMatch(/#spme-root \.spme-tabs button\.active\s*\{[\s\S]*background:\s*var\(--spme-accent\)/);
   });
 
+  it("keeps whitespace between Cards and Table in every view toggle", () => {
+    expect(css).toMatch(/\.spme-view-toggle\s*\{[^}]*gap:\s*\.25rem/);
+  });
+
   it("wraps table descriptions instead of truncating them", () => {
     const desktop = css.slice(0, css.indexOf("@media (max-width: 1100px)"));
     expect(desktop).toMatch(/\.spme-table-description\s*\{[\s\S]*white-space:\s*normal[\s\S]*overflow:\s*visible[\s\S]*text-overflow:\s*clip/);
