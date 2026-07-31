@@ -306,10 +306,15 @@ describe("EnhancedPluginManager", () => {
     });
     app.render();
 
+    const enabledPlugin = document.querySelector('[data-package-id="alpha"]');
+    expect(enabledPlugin.querySelector(".spme-enabled")?.textContent).toBe("Enabled");
+    expect(enabledPlugin.querySelector('[data-action="toggle-enabled"]')?.classList.contains("spme-disable-action")).toBe(true);
     let plugin = document.querySelector('[data-package-id="dev-helper"]');
     expect(plugin.querySelector(".spme-runtime-only")?.textContent).toBe("Runtime-only");
     expect(plugin.querySelector('[data-select-package="installed"]').disabled).toBe(true);
     expect(plugin.querySelector('[data-action="toggle-enabled"]')?.textContent).toBe("Enable");
+    expect(plugin.querySelector('[data-action="toggle-enabled"]')?.classList.contains("spme-enable-action")).toBe(true);
+    expect(plugin.querySelector(".spme-disabled")?.textContent).toBe("Disabled");
     expect(plugin.querySelector('[data-action="update-one"]')).toBeNull();
     expect(plugin.querySelector('[data-action="uninstall-one"]')).toBeNull();
 
@@ -319,6 +324,7 @@ describe("EnhancedPluginManager", () => {
     expect(plugin.querySelector('[data-select-package="installed"]').disabled).toBe(true);
     expect(plugin.querySelector('[data-action="update-one"]')).toBeNull();
     expect(plugin.querySelector('[data-action="uninstall-one"]')).toBeNull();
+    expect(plugin.querySelector('[data-action="toggle-enabled"]')?.classList.contains("spme-enable-action")).toBe(true);
 
     plugin.querySelector('[data-action="toggle-enabled"]').click();
     await vi.waitFor(() => expect(service.setEnabled).toHaveBeenCalledWith("dev-helper", true));

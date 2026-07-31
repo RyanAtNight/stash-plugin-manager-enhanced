@@ -75,6 +75,15 @@ describe("package view responsive styles", () => {
     expect(css).toMatch(/#spme-root button\.subtle:not\(:disabled\):active/);
   });
 
+  it("visually distinguishes enabled and disabled plugin states and actions", () => {
+    expect(css).toMatch(/\.spme-enabled\s*\{[^}]*background:\s*rgba\(56,178,109,/);
+    expect(css).toMatch(/\.spme-enabled::before\s*\{[^}]*content:\s*"✓"/);
+    expect(css).toMatch(/\.spme-disabled\s*\{[^}]*background:\s*rgba\(255,255,255,/);
+    expect(css).toMatch(/\.spme-disabled::before\s*\{[^}]*content:\s*"○"/);
+    expect(css).toMatch(/#spme-root button\.spme-disable-action\s*\{[^}]*background:\s*transparent[^}]*border-color:\s*var\(--spme-border\)/);
+    expect(css).toMatch(/#spme-root button\.spme-enable-action\s*\{[^}]*background:\s*#137cbd/);
+  });
+
   it("places a compact interactive dismiss button at the far right of alerts", () => {
     expect(css).toMatch(/\.spme-alert\s*\{[\s\S]*display:\s*flex[\s\S]*align-items:\s*center/);
     expect(css).toMatch(/\.spme-alert-content\s*\{[\s\S]*flex:\s*1\s+1\s+auto/);

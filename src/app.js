@@ -497,8 +497,8 @@ export class EnhancedPluginManager {
       : "";
     const actions = installed
       ? pkg.runtimeOnly
-        ? `<button type="button" data-action="toggle-enabled" data-id="${escapeHTML(pkg.package_id)}">${pkg.enabled ? "Disable" : "Enable"}</button>`
-        : `<button type="button" data-action="toggle-enabled" data-id="${escapeHTML(pkg.package_id)}">${pkg.enabled ? "Disable" : "Enable"}</button>
+        ? `<button type="button" class="${pkg.enabled ? "spme-disable-action" : "spme-enable-action"}" data-action="toggle-enabled" data-id="${escapeHTML(pkg.package_id)}">${pkg.enabled ? "Disable" : "Enable"}</button>`
+        : `<button type="button" class="${pkg.enabled ? "spme-disable-action" : "spme-enable-action"}" data-action="toggle-enabled" data-id="${escapeHTML(pkg.package_id)}">${pkg.enabled ? "Disable" : "Enable"}</button>
          <button type="button" data-action="update-one" data-id="${escapeHTML(pkg.package_id)}" ${pkg.status !== "update" ? "disabled" : ""}>Update</button>
          <button type="button" class="danger subtle" data-action="uninstall-one" data-id="${escapeHTML(pkg.package_id)}">Uninstall</button>`
       : `<button type="button" data-action="install-one" data-key="${escapeHTML(selectKey)}">Install</button>`;
@@ -549,8 +549,8 @@ export class EnhancedPluginManager {
       : escapeHTML(pkg.version || "Unknown");
     const actions = installed
       ? pkg.runtimeOnly
-        ? `<button type="button" data-action="toggle-enabled" data-id="${escapeHTML(pkg.package_id)}">${pkg.enabled ? "Disable" : "Enable"}</button>`
-        : `<button type="button" data-action="toggle-enabled" data-id="${escapeHTML(pkg.package_id)}">${pkg.enabled ? "Disable" : "Enable"}</button>
+        ? `<button type="button" class="${pkg.enabled ? "spme-disable-action" : "spme-enable-action"}" data-action="toggle-enabled" data-id="${escapeHTML(pkg.package_id)}">${pkg.enabled ? "Disable" : "Enable"}</button>`
+        : `<button type="button" class="${pkg.enabled ? "spme-disable-action" : "spme-enable-action"}" data-action="toggle-enabled" data-id="${escapeHTML(pkg.package_id)}">${pkg.enabled ? "Disable" : "Enable"}</button>
          <button type="button" data-action="update-one" data-id="${escapeHTML(pkg.package_id)}" ${pkg.status !== "update" ? "disabled" : ""}>Update</button>
          <button type="button" class="danger subtle" data-action="uninstall-one" data-id="${escapeHTML(pkg.package_id)}">Uninstall</button>`
       : `<button type="button" data-action="install-one" data-key="${escapeHTML(selectKey)}">Install</button>`;

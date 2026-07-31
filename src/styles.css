@@ -72,7 +72,10 @@
 .spme-badges { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:.35rem; }
 .spme-badge { display:inline-flex; align-items:center; border:1px solid var(--spme-border); border-radius:99px; padding:.2rem .5rem; font-size:.74rem; line-height:1.2; }
 .spme-enabled, .spme-status-current, .spme-trust-official { border-color:var(--spme-success); color:#82e2aa; }
-.spme-disabled { color:var(--spme-text-muted); }
+.spme-enabled { background:rgba(56,178,109,.12); font-weight:600; }
+.spme-enabled::before { content:"✓"; margin-right:.28rem; font-weight:700; }
+.spme-disabled { background:rgba(255,255,255,.06); border-color:rgba(255,255,255,.24); color:#d2dbe1; font-weight:600; }
+.spme-disabled::before { content:"○"; margin-right:.28rem; font-weight:700; }
 .spme-status-update, .spme-trust-community { border-color:var(--spme-warning); color:#ffc376; }
 .spme-status-error, .spme-trust-unverified { border-color:var(--spme-danger); color:#ff9aa4; }
 .spme-runtime-only { border-color:var(--spme-accent); color:#8ed8ff; }
@@ -92,6 +95,10 @@
 #spme-root button.subtle { background:transparent; border-color:var(--spme-danger); color:#ff9aa4; }
 #spme-root button.subtle:not(:disabled):hover { background:rgba(220,82,96,.14); border-color:#b94350; color:#ffb0b8; }
 #spme-root button.subtle:not(:disabled):active { background:rgba(220,82,96,.25); border-color:#a33a46; box-shadow:0 0 0 .2rem rgba(220,82,96,.5); }
+#spme-root button.spme-enable-action { background:#137cbd; border-color:#137cbd; color:#fff; }
+#spme-root button.spme-disable-action { background:transparent; border-color:var(--spme-border); color:#dce5ea; }
+#spme-root button.spme-disable-action:not(:disabled):hover { background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.3); color:#fff; }
+#spme-root button.spme-disable-action:not(:disabled):active { background:rgba(255,255,255,.14); border-color:rgba(255,255,255,.38); box-shadow:0 0 0 .2rem rgba(145,163,175,.35); }
 #spme-root .spme-repo-link { background:transparent; border-color:var(--spme-border); color:#fff; text-decoration:none; }
 #spme-root .spme-repo-link:hover { background:#10659a; border-color:#0e5e8f; color:#fff; text-decoration:none; }
 #spme-root .spme-repo-link:active { background:#0e5e8f; border-color:#0d5683; color:#fff; text-decoration:none; box-shadow:0 0 0 .2rem rgba(54,144,199,.5); outline:0; }
