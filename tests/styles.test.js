@@ -93,11 +93,11 @@ describe("package view responsive styles", () => {
   });
 
   it("visually distinguishes enabled and disabled plugin states with a true switch", () => {
-    expect(css).toMatch(/#spme-root button\.spme-enable-toggle\s*\{[^}]*min-width:\s*0[^}]*background:\s*transparent[^}]*border-color:\s*transparent/);
-    expect(css).toMatch(/\.spme-enable-toggle-track\s*\{[^}]*border-radius:\s*99px[^}]*background:\s*#687985/);
-    expect(css).toMatch(/\.spme-enable-toggle-knob\s*\{[^}]*border-radius:\s*50%[^}]*transition:/);
+    expect(css).toMatch(/#spme-root button\.spme-enable-toggle\s*\{[^}]*width:\s*3\.8rem[^}]*height:\s*2\.15rem[^}]*padding:\s*0[^}]*background:\s*transparent[^}]*border-color:\s*transparent/);
+    expect(css).toMatch(/\.spme-enable-toggle-track\s*\{[^}]*width:\s*3\.8rem[^}]*height:\s*2\.15rem[^}]*border-radius:\s*99px[^}]*background:\s*#687985/);
+    expect(css).toMatch(/\.spme-enable-toggle-knob\s*\{[^}]*width:\s*1\.55rem[^}]*height:\s*1\.55rem[^}]*border-radius:\s*50%[^}]*transition:/);
     expect(css).toMatch(/#spme-root button\.spme-enable-toggle\[aria-checked="true"\][\s\S]*\.spme-enable-toggle-track\s*\{[^}]*background:\s*var\(--spme-success\)/);
-    expect(css).toMatch(/#spme-root button\.spme-enable-toggle\[aria-checked="true"\][\s\S]*\.spme-enable-toggle-knob\s*\{[^}]*transform:\s*translateX/);
+    expect(css).toMatch(/#spme-root button\.spme-enable-toggle\[aria-checked="true"\][\s\S]*\.spme-enable-toggle-knob\s*\{[^}]*transform:\s*translateX\(1\.8rem\)/);
   });
 
   it("places a compact interactive dismiss button at the far right of alerts", () => {

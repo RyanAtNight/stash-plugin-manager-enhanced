@@ -92,14 +92,14 @@
 #spme-root button.subtle:not(:disabled):hover { background:rgba(220,82,96,.14); border-color:#b94350; color:#ffb0b8; }
 #spme-root button.subtle:not(:disabled):active { background:rgba(220,82,96,.25); border-color:#a33a46; box-shadow:0 0 0 .2rem rgba(220,82,96,.5); }
 #spme-root button.spme-uninstall-action { background:var(--spme-danger); border-color:var(--spme-danger); color:#fff; }
-#spme-root button.spme-enable-toggle { min-width:0; width:2.4rem; height:2.15rem; padding:.45rem .2rem; gap:0; background:transparent; border-color:transparent; color:#dce5ea; }
+#spme-root button.spme-enable-toggle { min-width:0; width:3.8rem; height:2.15rem; padding:0; gap:0; background:transparent; border-color:transparent; color:#dce5ea; }
 #spme-root button.spme-enable-toggle:not(:disabled):hover,
 #spme-root button.spme-enable-toggle:not(:disabled):active { background:transparent; border-color:transparent; color:#fff; }
-.spme-enable-toggle-track { position:relative; flex:0 0 auto; width:2rem; height:1.05rem; border:1px solid rgba(255,255,255,.2); border-radius:99px; background:#687985; transition:background-color .18s ease-in-out, border-color .18s ease-in-out; }
-.spme-enable-toggle-knob { position:absolute; top:.13rem; left:.13rem; width:.7rem; height:.7rem; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.55); transition:transform .18s ease-in-out; }
+.spme-enable-toggle-track { position:relative; box-sizing:border-box; flex:0 0 auto; width:3.8rem; height:2.15rem; border:1px solid rgba(255,255,255,.2); border-radius:99px; background:#687985; transition:background-color .18s ease-in-out, border-color .18s ease-in-out; }
+.spme-enable-toggle-knob { position:absolute; top:.23rem; left:.23rem; width:1.55rem; height:1.55rem; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.55); transition:transform .18s ease-in-out; }
 #spme-root button.spme-enable-toggle[aria-checked="true"] { border-color:transparent; }
 #spme-root button.spme-enable-toggle[aria-checked="true"] .spme-enable-toggle-track { background:var(--spme-success); border-color:#55cf88; }
-#spme-root button.spme-enable-toggle[aria-checked="true"] .spme-enable-toggle-knob { transform:translateX(.95rem); }
+#spme-root button.spme-enable-toggle[aria-checked="true"] .spme-enable-toggle-knob { transform:translateX(1.8rem); }
 #spme-root .spme-repo-link { background:#fff; border-color:#fff; color:#24292f; text-decoration:none; }
 #spme-root .spme-repo-link:hover { background:#e6edf2; border-color:#e6edf2; color:#24292f; text-decoration:none; }
 #spme-root .spme-repo-link:active { background:#d0d7de; border-color:#d0d7de; color:#24292f; text-decoration:none; box-shadow:0 0 0 .2rem rgba(54,144,199,.5); outline:0; }
