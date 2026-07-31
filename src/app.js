@@ -18,6 +18,17 @@ const TAB_DEFINITIONS = [
   ["configuration", "Configuration"],
 ];
 
+const SOURCE_SORT_OPTIONS = [
+  ["name", "Name (A–Z)"],
+  ["name-desc", "Name (Z–A)"],
+  ["packages", "Packages (fewest)"],
+  ["packages-desc", "Packages (most)"],
+  ["installed", "Installed (fewest)"],
+  ["installed-desc", "Installed (most)"],
+  ["enabled", "Enabled (fewest)"],
+  ["enabled-desc", "Enabled (most)"],
+];
+
 function escapeHTML(value = "") {
   return String(value)
     .replaceAll("&", "&amp;")
@@ -83,6 +94,20 @@ function sourceErrorHTML(error) {
   </aside>`;
 }
 
+function sortSourceEntries(entries, sort = "name") {
+  const descending = sort.endsWith("-desc");
+  const field = sort.replace(/-desc$/, "");
+  return [...entries].sort((a, b) => {
+    const comparison = field === "name"
+      ? (a.source.name || a.source.url).localeCompare(b.source.name || b.source.url)
+      : field === "installed"
+        ? a.installed.length - b.installed.length
+        : (a[field] ?? 0) - (b[field] ?? 0);
+    if (comparison) return descending ? -comparison : comparison;
+    return (a.source.name || a.source.url).localeCompare(b.source.name || b.source.url);
+  });
+}
+
 function packageDescription(pkg) {
   return pkg.plugin?.description || pkg.metadata?.description || "No description provided.";
 }
@@ -111,6 +136,7 @@ export class EnhancedPluginManager {
     this.filters = {
       installed: { query: "", enabled: undefined, updatesOnly: false, sort: "name" },
       browse: { query: "", source: "", sort: "name" },
+      sources: { sort: "name" },
       configuration: { query: "", enabled: undefined },
     };
     this.message = undefined;
@@ -507,10 +533,13 @@ export class EnhancedPluginManager {
 
   sourcesHTML() {
     if (!this.available) return '<div class="spme-loading" role="status">Checking plugin sources…</div>';
-    const rows = this.inventory.sources.map((source, index) => {
+    const entries = sortSourceEntries(this.inventory.sources.map((source, index) => {
       const health = this.available.health.find((item) => item.source.url === source.url);
       const installed = this.inventory.packages.filter((pkg) => pkg.sourceURL === source.url);
       const enabled = installed.filter((pkg) => pkg.enabled).length;
+      return { source, index, health, installed, enabled, packages: health?.packageCount ?? 0 };
+    }), this.filters.sources.sort);
+    const rows = entries.map(({ source, index, health, installed, enabled }) => {
       const trust = health?.source ? this.available.packages.find((pkg) => pkg.sourceURL === source.url)?.trust : undefined;
       const inferredTrust = trust ?? (source.url.includes("stashapp.github.io/CommunityScripts")
         ? { level: "official", label: "Official Stash source" }
@@ -538,8 +567,10 @@ export class EnhancedPluginManager {
     const addCard = this.addingSource
       ? `<article class="spme-source-card spme-source-card-adding" data-add-source-card>${this.sourceFormHTML()}</article>`
       : "";
+    const sortOptions = SOURCE_SORT_OPTIONS.map(([value, label]) => `<option value="${value}" ${this.filters.sources.sort === value ? "selected" : ""}>${label}</option>`).join("");
     return `<section class="spme-panel" role="tabpanel">
       <div class="spme-actions spme-sticky"><button type="button" data-action="refresh-sources">Check all sources</button><button type="button" data-action="add-source" aria-expanded="${this.addingSource}" ${this.addingSource ? "disabled" : ""}>Add plugin source</button></div>
+      <div class="spme-toolbar"><label><span>Sort</span><select data-filter-select="sources-sort" aria-label="Sort plugin sources">${sortOptions}</select></label><span class="spme-result-count">${plural(entries.length, "source")}</span></div>
       ${addCard}
       <div class="spme-source-grid">${rows || '<p class="spme-empty">No plugin sources configured.</p>'}</div>
     </section>`;
@@ -771,6 +802,10 @@ export class EnhancedPluginManager {
     if (target.dataset.filterSelect === "browse-source") {
       this.filters.browse.source = target.value;
       this.browseLimit = 50;
+      return this.render();
+    }
+    if (target.dataset.filterSelect === "sources-sort") {
+      this.filters.sources.sort = SOURCE_SORT_OPTIONS.some(([value]) => value === target.value) ? target.value : "name";
       return this.render();
     }
   }

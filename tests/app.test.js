@@ -457,6 +457,43 @@ describe("EnhancedPluginManager", () => {
     expect(values.Enabled).toBe("1 plugin");
   });
 
+  it("sorts Sources by name, package, installed, and enabled counts in both directions", async () => {
+    const { app } = await mountApp();
+    await app.setTab("sources");
+    app.inventory.sources = [
+      { name: "Zulu", url: "https://example.com/z.yml" },
+      { name: "Alpha", url: "https://example.com/a.yml" },
+      { name: "Mid", url: "https://example.com/m.yml" },
+    ];
+    app.inventory.packages = [
+      { package_id: "z1", sourceURL: "https://example.com/z.yml", enabled: true },
+      { package_id: "z2", sourceURL: "https://example.com/z.yml", enabled: false },
+      { package_id: "a1", sourceURL: "https://example.com/a.yml", enabled: true },
+    ];
+    app.available.health = [
+      { source: app.inventory.sources[0], ok: true, packageCount: 1 },
+      { source: app.inventory.sources[1], ok: true, packageCount: 5 },
+      { source: app.inventory.sources[2], ok: true, packageCount: 3 },
+    ];
+    const expectations = {
+      name: ["Alpha", "Mid", "Zulu"],
+      "name-desc": ["Zulu", "Mid", "Alpha"],
+      packages: ["Zulu", "Mid", "Alpha"],
+      "packages-desc": ["Alpha", "Mid", "Zulu"],
+      installed: ["Mid", "Alpha", "Zulu"],
+      "installed-desc": ["Zulu", "Alpha", "Mid"],
+      enabled: ["Mid", "Alpha", "Zulu"],
+      "enabled-desc": ["Alpha", "Zulu", "Mid"],
+    };
+
+    for (const [value, expected] of Object.entries(expectations)) {
+      app.filters.sources.sort = value;
+      app.render();
+      expect([...document.querySelectorAll(".spme-source-card h2")].map((heading) => heading.textContent)).toEqual(expected);
+    }
+    expect([...document.querySelectorAll('[data-filter-select="sources-sort"] option')].map((option) => option.value)).toEqual(Object.keys(expectations));
+  });
+
   it("presents source failures as compact callouts with human and technical details", async () => {
     const { app } = await mountApp();
     await app.setTab("sources");
