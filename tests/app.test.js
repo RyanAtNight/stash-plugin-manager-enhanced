@@ -141,6 +141,41 @@ describe("EnhancedPluginManager", () => {
     expect(document.querySelector('[data-action="set-view"][data-view-mode="table"]').getAttribute("aria-pressed")).toBe("true");
   });
 
+  it("restores and persists the Installed Status and Sort preferences", async () => {
+    window.localStorage.setItem("spme.installedStatus", "false");
+    window.localStorage.setItem("spme.installedSort", "last-commit-oldest");
+    let { app } = await mountApp();
+
+    expect(app.filters.installed.enabled).toBe(false);
+    expect(app.filters.installed.sort).toBe("last-commit-oldest");
+    expect(document.querySelector('[data-filter-select="installed-enabled"]').value).toBe("false");
+    expect(document.querySelector('[data-filter-select="installed-sort"]').value).toBe("last-commit-oldest");
+
+    const status = document.querySelector('[data-filter-select="installed-enabled"]');
+    status.value = "true";
+    status.dispatchEvent(new Event("change", { bubbles: true }));
+    const sort = document.querySelector('[data-filter-select="installed-sort"]');
+    sort.value = "last-commit";
+    sort.dispatchEvent(new Event("change", { bubbles: true }));
+    expect(window.localStorage.getItem("spme.installedStatus")).toBe("true");
+    expect(window.localStorage.getItem("spme.installedSort")).toBe("last-commit");
+
+    app.unmount();
+    ({ app } = await mountApp());
+    expect(app.filters.installed.enabled).toBe(true);
+    expect(app.filters.installed.sort).toBe("last-commit");
+  });
+
+  it("ignores obsolete Installed Status and Sort preferences", async () => {
+    window.localStorage.setItem("spme.installedStatus", "broken");
+    window.localStorage.setItem("spme.installedSort", "broken");
+
+    const { app } = await mountApp();
+
+    expect(app.filters.installed.enabled).toBeUndefined();
+    expect(app.filters.installed.sort).toBe("name");
+  });
+
   it("renders installed plugins as a semantic table when Table view is selected", async () => {
     await mountApp();
     document.querySelector('[data-action="set-view"][data-view-mode="table"]').click();

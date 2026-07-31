@@ -128,19 +128,27 @@ export class EnhancedPluginManager {
     this.setTimeout = options.setTimeout ?? globalThis.setTimeout?.bind(globalThis);
     this.activeTab = pluginManagerTabFromURL(this.window?.location?.href ?? "/settings?tab=plugins");
     let storedViewMode;
+    let storedInstalledStatus;
+    let storedInstalledSort;
     try {
       storedViewMode = this.storage?.getItem("spme.viewMode");
+      storedInstalledStatus = this.storage?.getItem("spme.installedStatus");
+      storedInstalledSort = this.storage?.getItem("spme.installedSort");
     } catch {
       storedViewMode = undefined;
+      storedInstalledStatus = undefined;
+      storedInstalledSort = undefined;
     }
     this.viewMode = storedViewMode === "table" ? "table" : "cards";
+    const installedEnabled = storedInstalledStatus === "true" ? true : storedInstalledStatus === "false" ? false : undefined;
+    const installedSort = ["name", "last-commit", "last-commit-oldest"].includes(storedInstalledSort) ? storedInstalledSort : "name";
     this.inventory = undefined;
     this.available = undefined;
     this.coreSections = [];
     this.selectedInstalled = new Set();
     this.selectedAvailable = new Set();
     this.filters = {
-      installed: { query: "", enabled: undefined, updatesOnly: false, sort: "name" },
+      installed: { query: "", enabled: installedEnabled, updatesOnly: false, sort: installedSort },
       browse: { query: "", source: "", sort: "last-commit" },
       sources: { sort: "packages-desc" },
       configuration: { query: "", enabled: true },
@@ -875,6 +883,13 @@ export class EnhancedPluginManager {
     if (target.dataset.filterSelect === "installed-sort" || target.dataset.filterSelect === "browse-sort") {
       const kind = target.dataset.filterSelect.startsWith("installed") ? "installed" : "browse";
       this.filters[kind].sort = ["last-commit", "last-commit-oldest"].includes(target.value) ? target.value : "name";
+      if (kind === "installed") {
+        try {
+          this.storage?.setItem("spme.installedSort", this.filters.installed.sort);
+        } catch {
+          // Storage may be unavailable in privacy-restricted browser contexts.
+        }
+      }
       if (kind === "browse") this.browseLimit = 50;
       return this.render();
     }
@@ -882,6 +897,13 @@ export class EnhancedPluginManager {
       const value = target.value === "" ? undefined : target.value === "true";
       const kind = target.dataset.filterSelect.startsWith("installed") ? "installed" : "configuration";
       this.filters[kind].enabled = value;
+      if (kind === "installed") {
+        try {
+          this.storage?.setItem("spme.installedStatus", target.value);
+        } catch {
+          // Storage may be unavailable in privacy-restricted browser contexts.
+        }
+      }
       return this.render();
     }
     if (target.dataset.filterSelect === "browse-source") {
