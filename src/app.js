@@ -140,7 +140,7 @@ export class EnhancedPluginManager {
       installed: { query: "", enabled: undefined, updatesOnly: false, sort: "name" },
       browse: { query: "", source: "", sort: "last-commit" },
       sources: { sort: "packages-desc" },
-      configuration: { query: "", enabled: undefined },
+      configuration: { query: "", enabled: true },
     };
     this.message = undefined;
     this.busy = false;
@@ -252,7 +252,17 @@ export class EnhancedPluginManager {
     if (this.activeTab !== "configuration" || !this.window?.location?.hash) return false;
     const anchorID = this.window.location.hash.slice(1);
     if (!/^spme-config-[0-9a-f]{8}$/.test(anchorID)) return false;
-    const target = this.document.getElementById(anchorID);
+    let target = this.document.getElementById(anchorID);
+    if (!target || !this.root?.contains(target)) {
+      const pkg = this.inventory?.packages.find(
+        (candidate) => candidate.plugin && configurationAnchorID(candidate.plugin.id) === anchorID
+      );
+      if (!pkg) return false;
+      this.filters.configuration.query = "";
+      this.filters.configuration.enabled = pkg.enabled === true;
+      this.render();
+      target = this.document.getElementById(anchorID);
+    }
     if (!target || !this.root?.contains(target)) return false;
     target.open = true;
     target.scrollIntoView?.({ behavior, block: "center" });

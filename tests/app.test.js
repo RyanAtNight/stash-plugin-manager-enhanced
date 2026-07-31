@@ -642,13 +642,50 @@ describe("EnhancedPluginManager", () => {
 
   it("collapses configuration by plugin and shows hooks and settings on demand", async () => {
     const { app } = await mountApp();
+    app.inventory.packages.push({
+      ...app.inventory.packages[0],
+      package_id: "disabled-config",
+      name: "Disabled Config",
+      enabled: false,
+      plugin: {
+        ...app.inventory.packages[0].plugin,
+        id: "disabled-config",
+        name: "Disabled Config",
+      },
+    });
     await app.setTab("configuration");
 
+    expect(document.querySelector('[data-filter-select="configuration-enabled"]').value).toBe("true");
+    expect(document.querySelector('[data-plugin-id="disabled-config"]')).toBeNull();
     const details = document.querySelector("details.spme-plugin-config");
     expect(details).not.toBeNull();
     expect(details?.open).toBe(false);
     expect(details?.textContent).toContain("Scene.Update.Post");
     expect(details?.querySelector('input[type="checkbox"]')).not.toBeNull();
+  });
+
+  it("reveals a disabled plugin when its Configure link targets the filtered Configuration page", async () => {
+    const { app } = await mountApp();
+    app.inventory.packages.push({
+      ...app.inventory.packages[0],
+      package_id: "disabled-config",
+      name: "Disabled Config",
+      enabled: false,
+      plugin: {
+        ...app.inventory.packages[0].plugin,
+        id: "disabled-config",
+        name: "Disabled Config",
+      },
+    });
+    app.render();
+
+    document.querySelector('[data-package-id="disabled-config"] [data-action="open-configuration"]').click();
+
+    await vi.waitFor(() => expect(app.activeTab).toBe("configuration"));
+    expect(document.querySelector('[data-filter-select="configuration-enabled"]').value).toBe("false");
+    const panel = document.getElementById(configurationAnchorID("disabled-config"));
+    expect(panel?.open).toBe(true);
+    expect(document.activeElement).toBe(panel);
   });
 
   it("removes a blank numeric setting instead of coercing it to zero", async () => {
