@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { EnhancedPluginManager } from "../src/app.js";
-import { sourceAnchorID } from "../src/core.js";
+import { configurationAnchorID, sourceAnchorID } from "../src/core.js";
 
 function pageFixture() {
   document.body.innerHTML = `
@@ -351,6 +351,45 @@ describe("EnhancedPluginManager", () => {
     document.querySelector('[data-action="set-view"][data-view-mode="cards"]').click();
     link = document.querySelector('a[aria-label="Open Beta Helper GitHub repository"]');
     expectGitHubButton(link);
+  });
+
+  it("links configurable Installed plugins to their expanded Configuration panel", async () => {
+    const { app } = await mountApp();
+    app.inventory.packages.push({
+      ...app.inventory.packages[0],
+      package_id: "plain",
+      name: "Plain Plugin",
+      plugin: { id: "plain", name: "Plain Plugin", settings: [] },
+    });
+    app.render();
+
+    expect(document.querySelector('[data-package-id="alpha"] [data-action="open-configuration"]')).not.toBeNull();
+    expect(document.querySelector('[data-package-id="plain"] [data-action="open-configuration"]')).toBeNull();
+    document.querySelector('[data-action="set-view"][data-view-mode="table"]').click();
+    const configure = document.querySelector('[data-package-id="alpha"] [data-action="open-configuration"]');
+    expect(configure?.textContent).toBe("Configure");
+    expect(configure?.getAttribute("href")).toContain(`pluginManagerTab=configuration#${configurationAnchorID("alpha")}`);
+    configure.click();
+
+    await vi.waitFor(() => expect(app.activeTab).toBe("configuration"));
+    const panel = document.getElementById(configurationAnchorID("alpha"));
+    expect(panel?.open).toBe(true);
+    expect(document.activeElement).toBe(panel);
+    expect(window.location.hash).toBe(`#${configurationAnchorID("alpha")}`);
+  });
+
+  it("restores and opens a configuration anchor on direct navigation", async () => {
+    const anchorID = configurationAnchorID("alpha");
+    const scrollIntoView = vi.fn();
+    window.HTMLElement.prototype.scrollIntoView = scrollIntoView;
+    window.history.replaceState({}, "", `/settings?tab=plugins&pluginManagerTab=configuration#${anchorID}`);
+
+    const { app } = await mountApp();
+    const panel = document.getElementById(anchorID);
+    expect(app.activeTab).toBe("configuration");
+    expect(panel?.open).toBe(true);
+    expect(scrollIntoView).toHaveBeenCalled();
+    expect(document.activeElement).toBe(panel);
   });
 
   it("links Installed and Browse source labels to stable source anchors in Cards and Table views", async () => {

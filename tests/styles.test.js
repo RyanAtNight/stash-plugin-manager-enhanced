@@ -55,6 +55,12 @@ describe("package view responsive styles", () => {
     expect(css).toMatch(/#spme-root \.spme-repo-link:hover[\s\S]*text-decoration:\s*none/);
   });
 
+  it("styles Configure links as primary actions and highlights their target panel", () => {
+    expect(css).toMatch(/#spme-root \.spme-config-link\s*\{[^}]*text-decoration:\s*none/);
+    expect(css).toMatch(/#spme-root \.spme-config-link:hover\s*\{[^}]*background:\s*#10659a/);
+    expect(css).toMatch(/\.spme-plugin-config:target,[\s\S]*\.spme-plugin-config:focus\s*\{[^}]*border-color:\s*var\(--spme-accent\)/);
+  });
+
   it("matches Stash primary button hover and mouse-down interaction states", () => {
     expect(css).toMatch(/#spme-root button,[\s\S]*transition:[^;]*0\.15s ease-in-out/);
     expect(css).toMatch(/#spme-root button:not\(:disabled\):hover\s*\{[\s\S]*background:\s*#10659a[\s\S]*border-color:\s*#0e5e8f/);

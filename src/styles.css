@@ -85,7 +85,7 @@
 #spme-root button:disabled { opacity:.45; cursor:not-allowed; }
 #spme-root button:not(:disabled):hover { background:#10659a; border-color:#0e5e8f; color:#fff; }
 #spme-root button:not(:disabled):active { background:#0e5e8f; border-color:#0d5683; box-shadow:0 0 0 .2rem rgba(54,144,199,.5); outline:0; }
-#spme-root button:focus-visible, #spme-root .spme-repo-link:focus-visible { box-shadow:0 0 0 .2rem rgba(54,144,199,.5); outline:0; }
+#spme-root button:focus-visible, #spme-root .spme-repo-link:focus-visible, #spme-root .spme-config-link:focus-visible { box-shadow:0 0 0 .2rem rgba(54,144,199,.5); outline:0; }
 #spme-root button.danger { background:var(--spme-danger); }
 #spme-root button.danger:not(:disabled):hover { background:#b94350; border-color:#ac3e4a; }
 #spme-root button.danger:not(:disabled):active { background:#a33a46; border-color:#963640; box-shadow:0 0 0 .2rem rgba(220,82,96,.5); }
@@ -95,6 +95,9 @@
 #spme-root .spme-repo-link { background:transparent; border-color:var(--spme-border); color:#fff; text-decoration:none; }
 #spme-root .spme-repo-link:hover { background:#10659a; border-color:#0e5e8f; color:#fff; text-decoration:none; }
 #spme-root .spme-repo-link:active { background:#0e5e8f; border-color:#0d5683; color:#fff; text-decoration:none; box-shadow:0 0 0 .2rem rgba(54,144,199,.5); outline:0; }
+#spme-root .spme-config-link { display:inline-flex; align-items:center; justify-content:center; border:1px solid #137cbd; border-radius:.35rem; padding:.45rem .65rem; background:#137cbd; color:#fff; text-align:center; text-decoration:none; cursor:pointer; transition:color .15s ease-in-out, background-color .15s ease-in-out, border-color .15s ease-in-out, box-shadow .15s ease-in-out; }
+#spme-root .spme-config-link:hover { background:#10659a; border-color:#0e5e8f; color:#fff; text-decoration:none; }
+#spme-root .spme-config-link:active { background:#0e5e8f; border-color:#0d5683; color:#fff; text-decoration:none; box-shadow:0 0 0 .2rem rgba(54,144,199,.5); outline:0; }
 .spme-github-icon { flex:0 0 auto; fill:currentColor; }
 .spme-external-icon { flex:0 0 auto; font-size:.95em; line-height:1; }
 .spme-repo-missing { color:var(--spme-text-muted); font-size:.78rem; text-align:center; }
@@ -169,6 +172,9 @@
 .spme-source-form h2, .spme-source-form .spme-help, .spme-source-form > div { grid-column:1/-1; }
 .spme-source-form-actions { display:flex; flex-wrap:wrap; gap:.5rem; }
 .spme-plugin-config > summary { display:flex; justify-content:space-between; align-items:center; gap:1rem; cursor:pointer; padding:1rem; }
+.spme-plugin-config { scroll-margin-top:5rem; }
+.spme-plugin-config:target,
+.spme-plugin-config:focus { border-color:var(--spme-accent); box-shadow:0 0 0 2px rgba(25,153,214,.3); outline:none; }
 .spme-config-body { border-top:1px solid var(--spme-border); padding:1rem; }
 .spme-setting { display:grid; grid-template-columns:minmax(0,1fr) minmax(8rem,18rem); align-items:center; gap:1rem; padding:.75rem 0; border-bottom:1px solid var(--spme-border); }
 .spme-setting span { display:grid; }

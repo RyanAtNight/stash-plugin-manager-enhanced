@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   capabilitySummary,
+  configurationAnchorHref,
+  configurationAnchorID,
   deriveGithubUrl,
   deriveSourceGithubUrl,
   filterPackages,
@@ -11,6 +13,7 @@ import {
   safeExternalUrl,
   sourceAnchorHref,
   sourceAnchorID,
+  withoutPluginManagerConfigurationAnchor,
   withoutPluginManagerSourceAnchor,
   sourceTrust,
   sortPackages,
@@ -66,6 +69,20 @@ describe("source anchors", () => {
     expect(withoutPluginManagerSourceAnchor("/settings?tab=plugins#other-anchor")).toBe(
       "/settings?tab=plugins#other-anchor"
     );
+  });
+});
+
+describe("configuration anchors", () => {
+  it("derives stable IDs and builds a Configuration-subtab URL", () => {
+    expect(configurationAnchorID("alpha")).toMatch(/^spme-config-[0-9a-f]{8}$/);
+    expect(configurationAnchorHref("/settings?foo=1&tab=plugins&pluginManagerTab=installed", "alpha")).toBe(
+      `/settings?foo=1&tab=plugins&pluginManagerTab=configuration#${configurationAnchorID("alpha")}`
+    );
+  });
+
+  it("removes only plugin-owned configuration anchors", () => {
+    expect(withoutPluginManagerConfigurationAnchor(`/settings?tab=plugins#${configurationAnchorID("alpha")}`)).toBe("/settings?tab=plugins");
+    expect(withoutPluginManagerConfigurationAnchor("/settings?tab=plugins#other-anchor")).toBe("/settings?tab=plugins#other-anchor");
   });
 });
 

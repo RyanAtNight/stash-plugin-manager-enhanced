@@ -1,4 +1,6 @@
 import {
+  configurationAnchorHref,
+  configurationAnchorID,
   deriveSourceGithubUrl,
   filterPackages,
   packageLastCommitDate,
@@ -7,6 +9,7 @@ import {
   sourceAnchorHref,
   sourceAnchorID,
   sortPackages,
+  withoutPluginManagerConfigurationAnchor,
   withoutPluginManagerSourceAnchor,
   withPluginManagerTab,
 } from "./core.js";
@@ -179,6 +182,7 @@ export class EnhancedPluginManager {
       }
       this.render();
       this.scrollToSourceFromURL({ behavior: "auto" });
+      this.scrollToConfigurationFromURL({ behavior: "auto" });
       return true;
     } catch (error) {
       this.renderFatal(error);
@@ -227,12 +231,30 @@ export class EnhancedPluginManager {
     return `<a class="spme-source-link" data-action="open-source" href="${escapeHTML(href)}" aria-label="Open source ${escapeHTML(source.name || source.url)} in Sources">${escapeHTML(label)}</a>`;
   }
 
+  configurationReferenceHTML(pkg) {
+    if (!pkg.plugin?.settings?.length || !this.window?.location) return "";
+    const href = configurationAnchorHref(this.window.location.href, pkg.plugin.id);
+    return `<a class="spme-config-link" data-action="open-configuration" href="${escapeHTML(href)}" aria-label="Configure ${escapeHTML(pkg.name)}">Configure</a>`;
+  }
+
   scrollToSourceFromURL({ behavior = "smooth" } = {}) {
     if (this.activeTab !== "sources" || !this.window?.location?.hash) return false;
     const anchorID = this.window.location.hash.slice(1);
     if (!/^spme-source-[0-9a-f]{8}$/.test(anchorID)) return false;
     const target = this.document.getElementById(anchorID);
     if (!target || !this.root?.contains(target)) return false;
+    target.scrollIntoView?.({ behavior, block: "center" });
+    target.focus({ preventScroll: true });
+    return true;
+  }
+
+  scrollToConfigurationFromURL({ behavior = "smooth" } = {}) {
+    if (this.activeTab !== "configuration" || !this.window?.location?.hash) return false;
+    const anchorID = this.window.location.hash.slice(1);
+    if (!/^spme-config-[0-9a-f]{8}$/.test(anchorID)) return false;
+    const target = this.document.getElementById(anchorID);
+    if (!target || !this.root?.contains(target)) return false;
+    target.open = true;
     target.scrollIntoView?.({ behavior, block: "center" });
     target.focus({ preventScroll: true });
     return true;
@@ -291,7 +313,7 @@ export class EnhancedPluginManager {
     if (this.root) this.root.dataset.activeTab = tab;
     this.message = undefined;
     if (updateURL && this.window?.history && this.window?.location) {
-      const nextURL = withoutPluginManagerSourceAnchor(withPluginManagerTab(this.window.location.href, tab));
+      const nextURL = withoutPluginManagerConfigurationAnchor(withoutPluginManagerSourceAnchor(withPluginManagerTab(this.window.location.href, tab)));
       const currentURL = `${this.window.location.pathname}${this.window.location.search}${this.window.location.hash}`;
       if (nextURL !== currentURL) this.window.history.pushState({}, "", nextURL);
     }
@@ -308,12 +330,14 @@ export class EnhancedPluginManager {
     }
     this.render();
     this.scrollToSourceFromURL();
+    this.scrollToConfigurationFromURL();
   }
 
   syncFromURL() {
     const tab = pluginManagerTabFromURL(this.window?.location?.href ?? "");
     if (tab !== this.activeTab) return this.setTab(tab, { updateURL: false });
     this.scrollToSourceFromURL({ behavior: "auto" });
+    this.scrollToConfigurationFromURL({ behavior: "auto" });
   }
 
   tabsHTML() {
@@ -444,7 +468,7 @@ export class EnhancedPluginManager {
         <dl><div><dt>Version</dt><dd>${version}</dd></div><div><dt>Last commit</dt><dd>${packageCommitDateHTML(pkg)}</dd></div><div><dt>Source</dt><dd>${this.sourceReferenceHTML(pkg)}</dd></div></dl>
         ${capabilities}
       </div>
-      <div class="spme-card-actions">${githubLink(pkg)}${actions}</div>
+      <div class="spme-card-actions">${githubLink(pkg)}${this.configurationReferenceHTML(pkg)}${actions}</div>
     </article>`;
   }
 
@@ -499,7 +523,7 @@ export class EnhancedPluginManager {
       <td data-label="Last commit">${packageCommitDateHTML(pkg)}</td>
       <td data-label="Source">${this.sourceReferenceHTML(pkg)}</td>
       <td data-label="Status"><div class="spme-badges">${status}${state}${trustBadge(pkg.trust)}</div></td>
-      <td data-label="Actions"><div class="spme-table-actions">${githubLink(pkg)}${actions}</div></td>
+      <td data-label="Actions"><div class="spme-table-actions">${githubLink(pkg)}${this.configurationReferenceHTML(pkg)}${actions}</div></td>
     </tr>`;
   }
 
@@ -625,7 +649,7 @@ export class EnhancedPluginManager {
       }
       return `<label class="spme-setting"><span><strong>${escapeHTML(label)}</strong><small>${escapeHTML(setting.description || setting.name)}</small></span>${input}</label>`;
     }).join("");
-    return `<details class="spme-plugin-config" data-plugin-id="${escapeHTML(plugin.id)}"><summary><span><strong>${escapeHTML(plugin.name)}</strong> <code>${escapeHTML(plugin.id)}</code></span><span class="spme-badges"><span class="spme-badge ${pkg.enabled ? "spme-enabled" : "spme-disabled"}">${pkg.enabled ? "Enabled" : "Disabled"}</span>${githubLink(pkg)}</span></summary><div class="spme-config-body">${plugin.description ? `<p>${escapeHTML(plugin.description)}</p>` : ""}${hooks ? `<section><h3>Hooks</h3>${hooks}</section>` : ""}${settings ? `<section><h3>Settings</h3>${settings}</section>` : '<p>No configurable settings.</p>'}<div class="spme-actions"><button type="button" data-action="save-config" data-id="${escapeHTML(plugin.id)}">Save changes</button><button type="button" data-action="reset-config" data-id="${escapeHTML(plugin.id)}">Reset stored settings</button></div><p class="spme-help">Stash plugin manifests do not declare filesystem or network permissions, compatibility ranges, or setting defaults. This page does not infer them.</p></div></details>`;
+    return `<details id="${configurationAnchorID(plugin.id)}" class="spme-plugin-config" data-plugin-id="${escapeHTML(plugin.id)}" tabindex="-1"><summary><span><strong>${escapeHTML(plugin.name)}</strong> <code>${escapeHTML(plugin.id)}</code></span><span class="spme-badges"><span class="spme-badge ${pkg.enabled ? "spme-enabled" : "spme-disabled"}">${pkg.enabled ? "Enabled" : "Disabled"}</span>${githubLink(pkg)}</span></summary><div class="spme-config-body">${plugin.description ? `<p>${escapeHTML(plugin.description)}</p>` : ""}${hooks ? `<section><h3>Hooks</h3>${hooks}</section>` : ""}${settings ? `<section><h3>Settings</h3>${settings}</section>` : '<p>No configurable settings.</p>'}<div class="spme-actions"><button type="button" data-action="save-config" data-id="${escapeHTML(plugin.id)}">Save changes</button><button type="button" data-action="reset-config" data-id="${escapeHTML(plugin.id)}">Reset stored settings</button></div><p class="spme-help">Stash plugin manifests do not declare filesystem or network permissions, compatibility ranges, or setting defaults. This page does not infer them.</p></div></details>`;
   }
 
   render() {
@@ -678,13 +702,13 @@ export class EnhancedPluginManager {
     const button = event.target.closest("[data-action]");
     if (!button) return;
     const action = button.dataset.action;
-    if (action === "open-source") {
+    if (action === "open-source" || action === "open-configuration") {
       if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
       event.preventDefault();
       const nextURL = button.getAttribute("href");
       const currentURL = `${this.window.location.pathname}${this.window.location.search}${this.window.location.hash}`;
       if (nextURL && nextURL !== currentURL) this.window.history.pushState({}, "", nextURL);
-      return this.setTab("sources", { updateURL: false });
+      return this.setTab(action === "open-source" ? "sources" : "configuration", { updateURL: false });
     }
     if (action === "tab") return this.setTab(button.dataset.tab);
     if (action === "dismiss-message") {
