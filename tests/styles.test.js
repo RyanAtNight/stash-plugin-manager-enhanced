@@ -37,6 +37,12 @@ describe("package view responsive styles", () => {
     expect(css).toMatch(/data-active-tab="browse"[\s\S]*\.spme-table-actions\s*\{[\s\S]*flex-wrap:\s*nowrap/);
   });
 
+  it("aligns Browse GitHub and Install controls without resizing Installed actions", () => {
+    expect(css).toMatch(/#spme-root\[data-active-tab="browse"\] \.spme-card-actions > \.spme-repo-link,[\s\S]*#spme-root\[data-active-tab="browse"\] \.spme-table-actions > button\[data-action="install-one"\]\s*\{\s*height:\s*2\.15rem/);
+    expect(css).toMatch(/#spme-root\[data-active-tab="browse"\] \.spme-table-actions\s*\{[^}]*align-items:\s*center/);
+    expect(css).not.toMatch(/#spme-root\[data-active-tab="installed"\][^{]*install-one/);
+  });
+
   it("gives Installed actions a compact fixed width independent of Browse", () => {
     expect(css).toMatch(/#spme-root\[data-active-tab="installed"\] \.spme-package-table th:nth-child\(3\)\s*\{\s*width:\s*auto/);
     expect(css).toMatch(/#spme-root\[data-active-tab="installed"\] \.spme-package-table th:nth-child\(8\)\s*\{\s*width:\s*13\.5rem/);

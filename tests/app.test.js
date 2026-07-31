@@ -493,7 +493,10 @@ describe("EnhancedPluginManager", () => {
     const { app } = await mountApp();
 
     const expectGitHubButton = (link, name) => {
-      expect(link?.querySelector("svg.spme-github-icon")?.getAttribute("aria-hidden")).toBe("true");
+      const icon = link?.querySelector("svg.spme-github-icon");
+      expect(icon?.getAttribute("aria-hidden")).toBe("true");
+      expect(icon?.getAttribute("width")).toBe("19");
+      expect(icon?.getAttribute("height")).toBe("19");
       expect(link?.textContent.trim()).toBe("");
       expect(link?.getAttribute("aria-label")).toBe(`Open ${name} GitHub repository`);
       expect(link?.getAttribute("title")).toBe(`Open ${name} GitHub repository`);

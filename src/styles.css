@@ -138,7 +138,11 @@
 .spme-columns-browse .spme-col-source { width:12%; }
 .spme-columns-browse .spme-col-status { width:13%; }
 .spme-columns-browse .spme-col-actions { width:12.8rem; }
-#spme-root[data-active-tab="browse"] .spme-table-actions { flex-wrap:nowrap; }
+#spme-root[data-active-tab="browse"] .spme-card-actions > .spme-repo-link,
+#spme-root[data-active-tab="browse"] .spme-card-actions > button[data-action="install-one"],
+#spme-root[data-active-tab="browse"] .spme-table-actions > .spme-repo-link,
+#spme-root[data-active-tab="browse"] .spme-table-actions > button[data-action="install-one"] { height:2.15rem; }
+#spme-root[data-active-tab="browse"] .spme-table-actions { align-items:center; flex-wrap:nowrap; }
 #spme-root[data-active-tab="sources"] .spme-package-table th { width:auto; }
 .spme-columns-sources .spme-col-source-name { width:auto; }
 .spme-columns-sources .spme-col-source-count { width:7rem; }
