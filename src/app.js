@@ -91,6 +91,12 @@ function sourceDeleteAction(source, index) {
   return `<button type="button" class="danger spme-icon-action spme-uninstall-action spme-source-delete-action" data-action="delete-source" data-index="${index}" aria-label="${escapeHTML(label)}" title="${escapeHTML(label)}">${TRASH_ICON}</button>`;
 }
 
+function packageSelectionCheckbox(pkg, installed, selectKey, selected) {
+  const unavailable = pkg.runtimeOnly ? 'disabled title="Runtime-only plugins are not available for package operations."' : "";
+  const id = `spme-select-${installed ? "installed" : "available"}-${encodeURIComponent(selectKey)}`;
+  return `<div class="spme-select spme-checkbox custom-control custom-checkbox"><input id="${escapeHTML(id)}" class="custom-control-input" type="checkbox" data-select-package="${installed ? "installed" : "available"}" data-key="${escapeHTML(selectKey)}" aria-label="Select ${escapeHTML(pkg.name)}" ${selected ? "checked" : ""} ${unavailable}><label class="custom-control-label" for="${escapeHTML(id)}" aria-hidden="true"></label></div>`;
+}
+
 function trustBadge(trust = { level: "unverified", label: "Unverified source" }) {
   const visibleLabel = trust.level === "official" ? "Official" : trust.level === "community" ? "Community" : trust.label;
   return `<span class="spme-badge spme-trust-${escapeHTML(
@@ -612,9 +618,9 @@ export class EnhancedPluginManager {
     }>Enabled</option><option value="false" ${
       this.filters.installed.enabled === false ? "selected" : ""
     }>Disabled</option></select></label>
-      <label class="spme-check"><input type="checkbox" data-filter-check="updates" ${
+      <div class="spme-check spme-checkbox custom-control custom-checkbox"><input id="spme-updates-only" class="custom-control-input" type="checkbox" data-filter-check="updates" ${
         this.filters.installed.updatesOnly ? "checked" : ""
-      }> Updates only</label>`;
+      }><label class="custom-control-label" for="spme-updates-only">Updates only</label></div>`;
     return `<section class="spme-panel" role="tabpanel">
       <div class="spme-actions spme-sticky">
         <button type="button" data-action="check-updates" ${this.busy ? "disabled" : ""}>Check for updates</button>
@@ -660,7 +666,7 @@ export class EnhancedPluginManager {
       : "";
     const actions = this.packageActionsHTML(pkg, installed, selectKey, "cards");
     return `<article${installed ? ` id="${installedAnchorID(pkg.package_id)}" tabindex="-1"` : ""} class="spme-package-card${installed ? " spme-installed-target" : ""}" data-package-id="${escapeHTML(pkg.package_id)}">
-      <label class="spme-select"><input type="checkbox" data-select-package="${installed ? "installed" : "available"}" data-key="${escapeHTML(selectKey)}" aria-label="Select ${escapeHTML(pkg.name)}" ${selected ? "checked" : ""} ${pkg.runtimeOnly ? 'disabled title="Runtime-only plugins are not available for package operations."' : ""}></label>
+      ${packageSelectionCheckbox(pkg, installed, selectKey, selected)}
       <div class="spme-package-main">
         <div class="spme-package-title"><div><h2>${escapeHTML(pkg.name)}</h2><code>${escapeHTML(pkg.package_id)}</code></div><div class="spme-badges">${status}${dependencyStatus}${trustBadge(pkg.trust)}</div></div>
         <p>${escapeHTML(packageDescription(pkg))}</p>
@@ -707,7 +713,7 @@ export class EnhancedPluginManager {
       ? `<details class="spme-table-capabilities"><summary>Capabilities</summary><ul>${pkg.capabilities.map((item) => `<li>${escapeHTML(item)}</li>`).join("")}</ul></details>`
       : "";
     return `<tr${installed ? ` id="${installedAnchorID(pkg.package_id)}" tabindex="-1"` : ""} class="${installed ? "spme-installed-target" : ""}" data-package-id="${escapeHTML(pkg.package_id)}">
-      <td class="spme-table-select"><input type="checkbox" data-select-package="${installed ? "installed" : "available"}" data-key="${escapeHTML(selectKey)}" aria-label="Select ${escapeHTML(pkg.name)}" ${selected ? "checked" : ""} ${pkg.runtimeOnly ? 'disabled title="Runtime-only plugins are not available for package operations."' : ""}></td>
+      <td class="spme-table-select">${packageSelectionCheckbox(pkg, installed, selectKey, selected)}</td>
       <td data-label="Plugin"><div class="spme-table-plugin"><strong>${escapeHTML(pkg.name)}</strong><code>${escapeHTML(pkg.package_id)}</code>${capabilities}</div></td>
       <td data-label="Description" class="spme-table-description">${escapeHTML(packageDescription(pkg))}</td>
       <td data-label="Version">${version}</td>
