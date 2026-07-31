@@ -10,6 +10,17 @@ The integration is intentionally progressive because Stash's `SettingsPluginsPan
 
 ## Features
 
+### Highlights
+
+- Manage installed plugins, discover new ones, maintain sources, and edit configuration from one focused interface
+- Switch between responsive **Cards** and information-dense **Table** presentations
+- Find plugins quickly with search, sorting, filters, source links, and clear status counts
+- Install, update, enable, disable, configure, or uninstall plugins individually or in bulk
+- Inspect source health, trust, package coverage, update status, commit dates, and GitHub repositories
+- Keep your place through refreshes and browser Back/Forward with URL-addressable tabs and source links
+
+### Advanced and detailed features
+
 - Separate **Installed**, **Browse**, **Sources**, and **Configuration** views
 - Subtab URLs such as `?tab=plugins&pluginManagerTab=configuration` survive refresh and browser history
 - Browse renders 50 packages initially with progressive **Load more** controls
