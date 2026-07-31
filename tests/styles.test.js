@@ -16,8 +16,8 @@ describe("package view responsive styles", () => {
     expect(css).toMatch(/#spme-root \.spme-tabs button\.active\s*\{[\s\S]*background:\s*var\(--spme-accent\)/);
   });
 
-  it("keeps whitespace between Cards and Table in every view toggle", () => {
-    expect(css).toMatch(/\.spme-view-toggle\s*\{[^}]*gap:\s*\.25rem/);
+  it("joins Cards and Table into a compact segmented control", () => {
+    expect(css).toMatch(/\.spme-view-toggle\s*\{[^}]*gap:\s*0(?:;|\s)/);
   });
 
   it("wraps table descriptions instead of truncating them", () => {
