@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { EnhancedPluginManager } from "../src/app.js";
-import { configurationAnchorID, sourceAnchorID } from "../src/core.js";
+import { configurationAnchorID, installedAnchorID, sourceAnchorID } from "../src/core.js";
 
 function pageFixture() {
   document.body.innerHTML = `
@@ -390,6 +390,40 @@ describe("EnhancedPluginManager", () => {
     expect(panel?.open).toBe(true);
     expect(scrollIntoView).toHaveBeenCalled();
     expect(document.activeElement).toBe(panel);
+  });
+
+  it("links every Configuration panel back to its highlighted Installed item", async () => {
+    const scrollIntoView = vi.fn();
+    window.HTMLElement.prototype.scrollIntoView = scrollIntoView;
+    const { app } = await mountApp();
+    await app.setTab("configuration");
+    const panels = [...document.querySelectorAll(".spme-plugin-config")];
+    expect(panels.length).toBeGreaterThan(0);
+    expect(panels.every((panel) => panel.querySelector('[data-action="open-installed"]'))).toBe(true);
+    const manage = panels[0].querySelector('[data-action="open-installed"]');
+    expect(manage.textContent).toBe("Manage");
+    expect(manage.getAttribute("href")).toContain(`pluginManagerTab=installed#${installedAnchorID("alpha")}`);
+
+    manage.click();
+
+    await vi.waitFor(() => expect(app.activeTab).toBe("installed"));
+    const target = document.getElementById(installedAnchorID("alpha"));
+    expect(target).not.toBeNull();
+    expect(document.activeElement).toBe(target);
+    expect(scrollIntoView).toHaveBeenCalled();
+  });
+
+  it("restores an Installed plugin anchor in Table view on direct navigation", async () => {
+    const anchorID = installedAnchorID("alpha");
+    window.localStorage.setItem("spme.viewMode", "table");
+    window.history.replaceState({}, "", `/settings?tab=plugins&pluginManagerTab=installed#${anchorID}`);
+
+    const { app } = await mountApp();
+    const target = document.getElementById(anchorID);
+    expect(app.activeTab).toBe("installed");
+    expect(app.viewMode).toBe("table");
+    expect(target?.tagName).toBe("TR");
+    expect(document.activeElement).toBe(target);
   });
 
   it("links Installed and Browse source labels to stable source anchors in Cards and Table views", async () => {

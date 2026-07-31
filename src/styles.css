@@ -150,6 +150,9 @@
 .spme-package-table .spme-badges,
 .spme-package-table .spme-table-actions { justify-content:flex-start; }
 .spme-table-actions > * { flex:0 0 auto; }
+.spme-installed-target { scroll-margin-top:5rem; }
+.spme-installed-target:target,
+.spme-installed-target:focus { border-color:var(--spme-accent); box-shadow:inset 0 0 0 2px rgba(25,153,214,.45); outline:none; }
 .spme-table-capabilities { margin-top:.45rem; font-size:.8rem; }
 .spme-table-capabilities ul { margin:.4rem 0 0; padding-left:1.1rem; }
 .spme-source-card { display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:1rem; align-items:center; padding:1rem; scroll-margin-top:5rem; }

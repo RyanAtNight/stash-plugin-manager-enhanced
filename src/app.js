@@ -3,6 +3,8 @@ import {
   configurationAnchorID,
   deriveSourceGithubUrl,
   filterPackages,
+  installedAnchorHref,
+  installedAnchorID,
   packageLastCommitDate,
   pluginManagerTabFromURL,
   safeExternalUrl,
@@ -10,6 +12,7 @@ import {
   sourceAnchorID,
   sortPackages,
   withoutPluginManagerConfigurationAnchor,
+  withoutPluginManagerInstalledAnchor,
   withoutPluginManagerSourceAnchor,
   withPluginManagerTab,
 } from "./core.js";
@@ -181,6 +184,7 @@ export class EnhancedPluginManager {
         await this.loadAvailable();
       }
       this.render();
+      this.scrollToInstalledFromURL({ behavior: "auto" });
       this.scrollToSourceFromURL({ behavior: "auto" });
       this.scrollToConfigurationFromURL({ behavior: "auto" });
       return true;
@@ -235,6 +239,32 @@ export class EnhancedPluginManager {
     if (!pkg.plugin?.settings?.length || !this.window?.location) return "";
     const href = configurationAnchorHref(this.window.location.href, pkg.plugin.id);
     return `<a class="spme-config-link" data-action="open-configuration" href="${escapeHTML(href)}" aria-label="Configure ${escapeHTML(pkg.name)}">Configure</a>`;
+  }
+
+  installedReferenceHTML(pkg) {
+    if (!this.window?.location) return "";
+    const href = installedAnchorHref(this.window.location.href, pkg.package_id);
+    return `<a class="spme-config-link spme-manage-link" data-action="open-installed" href="${escapeHTML(href)}" aria-label="Manage ${escapeHTML(pkg.name)} in Installed">Manage</a>`;
+  }
+
+  scrollToInstalledFromURL({ behavior = "smooth" } = {}) {
+    if (this.activeTab !== "installed" || !this.window?.location?.hash) return false;
+    const anchorID = this.window.location.hash.slice(1);
+    if (!/^spme-installed-[0-9a-f]{8}$/.test(anchorID)) return false;
+    let target = this.document.getElementById(anchorID);
+    if (!target || !this.root?.contains(target)) {
+      const pkg = this.inventory?.packages.find((candidate) => installedAnchorID(candidate.package_id) === anchorID);
+      if (!pkg) return false;
+      this.filters.installed.query = "";
+      this.filters.installed.enabled = undefined;
+      this.filters.installed.updatesOnly = false;
+      this.render();
+      target = this.document.getElementById(anchorID);
+    }
+    if (!target || !this.root?.contains(target)) return false;
+    target.scrollIntoView?.({ behavior, block: "center" });
+    target.focus({ preventScroll: true });
+    return true;
   }
 
   scrollToSourceFromURL({ behavior = "smooth" } = {}) {
@@ -323,7 +353,7 @@ export class EnhancedPluginManager {
     if (this.root) this.root.dataset.activeTab = tab;
     this.message = undefined;
     if (updateURL && this.window?.history && this.window?.location) {
-      const nextURL = withoutPluginManagerConfigurationAnchor(withoutPluginManagerSourceAnchor(withPluginManagerTab(this.window.location.href, tab)));
+      const nextURL = withoutPluginManagerInstalledAnchor(withoutPluginManagerConfigurationAnchor(withoutPluginManagerSourceAnchor(withPluginManagerTab(this.window.location.href, tab))));
       const currentURL = `${this.window.location.pathname}${this.window.location.search}${this.window.location.hash}`;
       if (nextURL !== currentURL) this.window.history.pushState({}, "", nextURL);
     }
@@ -339,6 +369,7 @@ export class EnhancedPluginManager {
       }
     }
     this.render();
+    this.scrollToInstalledFromURL();
     this.scrollToSourceFromURL();
     this.scrollToConfigurationFromURL();
   }
@@ -346,6 +377,7 @@ export class EnhancedPluginManager {
   syncFromURL() {
     const tab = pluginManagerTabFromURL(this.window?.location?.href ?? "");
     if (tab !== this.activeTab) return this.setTab(tab, { updateURL: false });
+    this.scrollToInstalledFromURL({ behavior: "auto" });
     this.scrollToSourceFromURL({ behavior: "auto" });
     this.scrollToConfigurationFromURL({ behavior: "auto" });
   }
@@ -470,7 +502,7 @@ export class EnhancedPluginManager {
          <button type="button" data-action="update-one" data-id="${escapeHTML(pkg.package_id)}" ${pkg.status !== "update" ? "disabled" : ""}>Update</button>
          <button type="button" class="danger subtle" data-action="uninstall-one" data-id="${escapeHTML(pkg.package_id)}">Uninstall</button>`
       : `<button type="button" data-action="install-one" data-key="${escapeHTML(selectKey)}">Install</button>`;
-    return `<article class="spme-package-card" data-package-id="${escapeHTML(pkg.package_id)}">
+    return `<article${installed ? ` id="${installedAnchorID(pkg.package_id)}" tabindex="-1"` : ""} class="spme-package-card${installed ? " spme-installed-target" : ""}" data-package-id="${escapeHTML(pkg.package_id)}">
       <label class="spme-select"><input type="checkbox" data-select-package="${installed ? "installed" : "available"}" data-key="${escapeHTML(selectKey)}" aria-label="Select ${escapeHTML(pkg.name)}" ${selected ? "checked" : ""} ${pkg.runtimeOnly ? 'disabled title="Runtime-only plugins are not available for package operations."' : ""}></label>
       <div class="spme-package-main">
         <div class="spme-package-title"><div><h2>${escapeHTML(pkg.name)}</h2><code>${escapeHTML(pkg.package_id)}</code></div><div class="spme-badges">${status}${state}${trustBadge(pkg.trust)}</div></div>
@@ -525,7 +557,7 @@ export class EnhancedPluginManager {
     const capabilities = installed && pkg.capabilities?.length
       ? `<details class="spme-table-capabilities"><summary>Capabilities</summary><ul>${pkg.capabilities.map((item) => `<li>${escapeHTML(item)}</li>`).join("")}</ul></details>`
       : "";
-    return `<tr data-package-id="${escapeHTML(pkg.package_id)}">
+    return `<tr${installed ? ` id="${installedAnchorID(pkg.package_id)}" tabindex="-1"` : ""} class="${installed ? "spme-installed-target" : ""}" data-package-id="${escapeHTML(pkg.package_id)}">
       <td class="spme-table-select"><input type="checkbox" data-select-package="${installed ? "installed" : "available"}" data-key="${escapeHTML(selectKey)}" aria-label="Select ${escapeHTML(pkg.name)}" ${selected ? "checked" : ""} ${pkg.runtimeOnly ? 'disabled title="Runtime-only plugins are not available for package operations."' : ""}></td>
       <td data-label="Plugin"><div class="spme-table-plugin"><strong>${escapeHTML(pkg.name)}</strong><code>${escapeHTML(pkg.package_id)}</code>${capabilities}</div></td>
       <td data-label="Description" class="spme-table-description">${escapeHTML(packageDescription(pkg))}</td>
@@ -659,7 +691,7 @@ export class EnhancedPluginManager {
       }
       return `<label class="spme-setting"><span><strong>${escapeHTML(label)}</strong><small>${escapeHTML(setting.description || setting.name)}</small></span>${input}</label>`;
     }).join("");
-    return `<details id="${configurationAnchorID(plugin.id)}" class="spme-plugin-config" data-plugin-id="${escapeHTML(plugin.id)}" tabindex="-1"><summary><span><strong>${escapeHTML(plugin.name)}</strong> <code>${escapeHTML(plugin.id)}</code></span><span class="spme-badges"><span class="spme-badge ${pkg.enabled ? "spme-enabled" : "spme-disabled"}">${pkg.enabled ? "Enabled" : "Disabled"}</span>${githubLink(pkg)}</span></summary><div class="spme-config-body">${plugin.description ? `<p>${escapeHTML(plugin.description)}</p>` : ""}${hooks ? `<section><h3>Hooks</h3>${hooks}</section>` : ""}${settings ? `<section><h3>Settings</h3>${settings}</section>` : '<p>No configurable settings.</p>'}<div class="spme-actions"><button type="button" data-action="save-config" data-id="${escapeHTML(plugin.id)}">Save changes</button><button type="button" data-action="reset-config" data-id="${escapeHTML(plugin.id)}">Reset stored settings</button></div><p class="spme-help">Stash plugin manifests do not declare filesystem or network permissions, compatibility ranges, or setting defaults. This page does not infer them.</p></div></details>`;
+    return `<details id="${configurationAnchorID(plugin.id)}" class="spme-plugin-config" data-plugin-id="${escapeHTML(plugin.id)}" tabindex="-1"><summary><span><strong>${escapeHTML(plugin.name)}</strong> <code>${escapeHTML(plugin.id)}</code></span><span class="spme-badges"><span class="spme-badge ${pkg.enabled ? "spme-enabled" : "spme-disabled"}">${pkg.enabled ? "Enabled" : "Disabled"}</span>${githubLink(pkg)}${this.installedReferenceHTML(pkg)}</span></summary><div class="spme-config-body">${plugin.description ? `<p>${escapeHTML(plugin.description)}</p>` : ""}${hooks ? `<section><h3>Hooks</h3>${hooks}</section>` : ""}${settings ? `<section><h3>Settings</h3>${settings}</section>` : '<p>No configurable settings.</p>'}<div class="spme-actions"><button type="button" data-action="save-config" data-id="${escapeHTML(plugin.id)}">Save changes</button><button type="button" data-action="reset-config" data-id="${escapeHTML(plugin.id)}">Reset stored settings</button></div><p class="spme-help">Stash plugin manifests do not declare filesystem or network permissions, compatibility ranges, or setting defaults. This page does not infer them.</p></div></details>`;
   }
 
   render() {
@@ -712,13 +744,14 @@ export class EnhancedPluginManager {
     const button = event.target.closest("[data-action]");
     if (!button) return;
     const action = button.dataset.action;
-    if (action === "open-source" || action === "open-configuration") {
+    if (action === "open-source" || action === "open-configuration" || action === "open-installed") {
       if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
       event.preventDefault();
       const nextURL = button.getAttribute("href");
       const currentURL = `${this.window.location.pathname}${this.window.location.search}${this.window.location.hash}`;
       if (nextURL && nextURL !== currentURL) this.window.history.pushState({}, "", nextURL);
-      return this.setTab(action === "open-source" ? "sources" : "configuration", { updateURL: false });
+      const tab = action === "open-source" ? "sources" : action === "open-configuration" ? "configuration" : "installed";
+      return this.setTab(tab, { updateURL: false });
     }
     if (action === "tab") return this.setTab(button.dataset.tab);
     if (action === "dismiss-message") {

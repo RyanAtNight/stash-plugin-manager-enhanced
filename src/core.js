@@ -71,6 +71,28 @@ export function withoutPluginManagerConfigurationAnchor(value) {
   return `${url.pathname}${url.search}${url.hash}`;
 }
 
+export function installedAnchorID(packageID = "") {
+  let hash = 0x811c9dc5;
+  for (const character of String(packageID)) {
+    hash ^= character.charCodeAt(0);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return `spme-installed-${(hash >>> 0).toString(16).padStart(8, "0")}`;
+}
+
+export function installedAnchorHref(value, packageID) {
+  const url = new URL(value, "http://stash.local");
+  url.searchParams.set("pluginManagerTab", "installed");
+  url.hash = installedAnchorID(packageID);
+  return `${url.pathname}${url.search}${url.hash}`;
+}
+
+export function withoutPluginManagerInstalledAnchor(value) {
+  const url = new URL(value, "http://stash.local");
+  if (/^#spme-installed-[0-9a-f]{8}$/.test(url.hash)) url.hash = "";
+  return `${url.pathname}${url.search}${url.hash}`;
+}
+
 function normaliseGithubUrl(value) {
   if (typeof value !== "string") return undefined;
   const match = value.trim().match(GITHUB_URL);

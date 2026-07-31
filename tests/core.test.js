@@ -6,6 +6,8 @@ import {
   deriveGithubUrl,
   deriveSourceGithubUrl,
   filterPackages,
+  installedAnchorHref,
+  installedAnchorID,
   isPluginsSettingsRoute,
   pluginManagerTabFromURL,
   packageLastCommitDate,
@@ -14,6 +16,7 @@ import {
   sourceAnchorHref,
   sourceAnchorID,
   withoutPluginManagerConfigurationAnchor,
+  withoutPluginManagerInstalledAnchor,
   withoutPluginManagerSourceAnchor,
   sourceTrust,
   sortPackages,
@@ -83,6 +86,20 @@ describe("configuration anchors", () => {
   it("removes only plugin-owned configuration anchors", () => {
     expect(withoutPluginManagerConfigurationAnchor(`/settings?tab=plugins#${configurationAnchorID("alpha")}`)).toBe("/settings?tab=plugins");
     expect(withoutPluginManagerConfigurationAnchor("/settings?tab=plugins#other-anchor")).toBe("/settings?tab=plugins#other-anchor");
+  });
+});
+
+describe("installed plugin anchors", () => {
+  it("derives stable IDs and builds an Installed-subtab URL", () => {
+    expect(installedAnchorID("alpha")).toMatch(/^spme-installed-[0-9a-f]{8}$/);
+    expect(installedAnchorHref("/settings?foo=1&tab=plugins&pluginManagerTab=configuration", "alpha")).toBe(
+      `/settings?foo=1&tab=plugins&pluginManagerTab=installed#${installedAnchorID("alpha")}`
+    );
+  });
+
+  it("removes only plugin-owned Installed anchors", () => {
+    expect(withoutPluginManagerInstalledAnchor(`/settings?tab=plugins#${installedAnchorID("alpha")}`)).toBe("/settings?tab=plugins");
+    expect(withoutPluginManagerInstalledAnchor("/settings?tab=plugins#other-anchor")).toBe("/settings?tab=plugins#other-anchor");
   });
 });
 
