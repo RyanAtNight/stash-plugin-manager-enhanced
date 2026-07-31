@@ -231,11 +231,22 @@ describe("EnhancedPluginManager", () => {
       expect(uninstall?.querySelector("svg.spme-trash-icon")?.getAttribute("aria-hidden")).toBe("true");
       expect(uninstall?.getAttribute("aria-label")).toBe("Uninstall Current Plugin");
       expect(uninstall?.getAttribute("title")).toBe("Uninstall Current Plugin");
+      expect(uninstall?.classList.contains("spme-uninstall-action")).toBe(true);
+      expect(uninstall?.classList.contains("subtle")).toBe(false);
 
       const actionOrder = (packageID) => [...document.querySelector(`[data-package-id="${packageID}"] .spme-card-actions, [data-package-id="${packageID}"] .spme-table-actions`).children]
         .map((action) => action.dataset.action || (action.querySelector(".spme-github-icon") ? "github" : "unknown"));
-      expect(actionOrder("current-plugin")).toEqual(["toggle-enabled", "github", "uninstall-one", "open-configuration"]);
-      expect(actionOrder("alpha")).toEqual(["toggle-enabled", "github", "update-one", "uninstall-one", "open-configuration"]);
+      const expected = app.viewMode === "cards"
+        ? {
+            current: ["open-configuration", "uninstall-one", "github", "toggle-enabled"],
+            update: ["open-configuration", "uninstall-one", "update-one", "github", "toggle-enabled"],
+          }
+        : {
+            current: ["toggle-enabled", "github", "uninstall-one", "open-configuration"],
+            update: ["toggle-enabled", "github", "update-one", "uninstall-one", "open-configuration"],
+          };
+      expect(actionOrder("current-plugin")).toEqual(expected.current);
+      expect(actionOrder("alpha")).toEqual(expected.update);
     };
     assertUpdateActions();
 

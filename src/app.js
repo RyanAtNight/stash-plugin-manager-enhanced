@@ -284,17 +284,19 @@ export class EnhancedPluginManager {
 
   uninstallActionHTML(pkg) {
     const label = `Uninstall ${pkg.name}`;
-    return `<button type="button" class="danger subtle spme-icon-action" data-action="uninstall-one" data-id="${escapeHTML(pkg.package_id)}" aria-label="${escapeHTML(label)}" title="${escapeHTML(label)}">${TRASH_ICON}</button>`;
+    return `<button type="button" class="danger spme-icon-action spme-uninstall-action" data-action="uninstall-one" data-id="${escapeHTML(pkg.package_id)}" aria-label="${escapeHTML(label)}" title="${escapeHTML(label)}">${TRASH_ICON}</button>`;
   }
 
-  packageActionsHTML(pkg, installed, selectKey) {
+  packageActionsHTML(pkg, installed, selectKey, presentation) {
     const repository = githubLink(pkg);
     const configure = this.configurationReferenceHTML(pkg);
     if (!installed) {
       return `${repository}${configure}<button type="button" data-action="install-one" data-key="${escapeHTML(selectKey)}">Install</button>`;
     }
-    if (pkg.runtimeOnly) return `${this.enableToggleHTML(pkg)}${repository}${configure}`;
-    return `${this.enableToggleHTML(pkg)}${repository}${this.updateActionHTML(pkg)}${this.uninstallActionHTML(pkg)}${configure}`;
+    const controls = pkg.runtimeOnly
+      ? [this.enableToggleHTML(pkg), repository, configure]
+      : [this.enableToggleHTML(pkg), repository, this.updateActionHTML(pkg), this.uninstallActionHTML(pkg), configure];
+    return (presentation === "cards" ? controls.reverse() : controls).join("");
   }
 
   saveCurrentInstallAssumptions() {
@@ -578,7 +580,7 @@ export class EnhancedPluginManager {
     const capabilities = installed && pkg.capabilities?.length
       ? `<details class="spme-capabilities"><summary>Capabilities</summary><ul>${pkg.capabilities.map((item) => `<li>${escapeHTML(item)}</li>`).join("")}</ul></details>`
       : "";
-    const actions = this.packageActionsHTML(pkg, installed, selectKey);
+    const actions = this.packageActionsHTML(pkg, installed, selectKey, "cards");
     return `<article${installed ? ` id="${installedAnchorID(pkg.package_id)}" tabindex="-1"` : ""} class="spme-package-card${installed ? " spme-installed-target" : ""}" data-package-id="${escapeHTML(pkg.package_id)}">
       <label class="spme-select"><input type="checkbox" data-select-package="${installed ? "installed" : "available"}" data-key="${escapeHTML(selectKey)}" aria-label="Select ${escapeHTML(pkg.name)}" ${selected ? "checked" : ""} ${pkg.runtimeOnly ? 'disabled title="Runtime-only plugins are not available for package operations."' : ""}></label>
       <div class="spme-package-main">
@@ -621,7 +623,7 @@ export class EnhancedPluginManager {
     const version = installed && pkg.source_package
       ? `${escapeHTML(pkg.version || "Unknown")} → ${escapeHTML(pkg.source_package.version || "Unknown")}`
       : escapeHTML(pkg.version || "Unknown");
-    const actions = this.packageActionsHTML(pkg, installed, selectKey);
+    const actions = this.packageActionsHTML(pkg, installed, selectKey, "table");
     const capabilities = installed && pkg.capabilities?.length
       ? `<details class="spme-table-capabilities"><summary>Capabilities</summary><ul>${pkg.capabilities.map((item) => `<li>${escapeHTML(item)}</li>`).join("")}</ul></details>`
       : "";

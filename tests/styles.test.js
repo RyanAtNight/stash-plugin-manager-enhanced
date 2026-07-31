@@ -53,8 +53,10 @@ describe("package view responsive styles", () => {
 
   it("styles repository links as icon buttons rather than underlined text links", () => {
     expect(css).toMatch(/#spme-root \.spme-repo-link\s*\{[\s\S]*display:\s*inline-flex[\s\S]*text-decoration:\s*none/);
+    expect(css).toMatch(/#spme-root \.spme-repo-link\s*\{[^}]*background:\s*#fff[^}]*border-color:\s*#fff[^}]*color:\s*#24292f/);
     expect(css).toMatch(/\.spme-github-icon\s*\{[\s\S]*fill:\s*currentColor/);
     expect(css).toMatch(/#spme-root \.spme-repo-link:hover[\s\S]*text-decoration:\s*none/);
+    expect(css).toMatch(/#spme-root button\.spme-uninstall-action\s*\{[^}]*background:\s*var\(--spme-danger\)[^}]*border-color:\s*var\(--spme-danger\)[^}]*color:\s*#fff/);
   });
 
   it("styles Configure links as primary actions and highlights their target panel", () => {
