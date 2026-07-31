@@ -130,18 +130,30 @@ export class EnhancedPluginManager {
     let storedViewMode;
     let storedInstalledStatus;
     let storedInstalledSort;
+    let storedCurrentInstalls;
     try {
       storedViewMode = this.storage?.getItem("spme.viewMode");
       storedInstalledStatus = this.storage?.getItem("spme.installedStatus");
       storedInstalledSort = this.storage?.getItem("spme.installedSort");
+      storedCurrentInstalls = this.storage?.getItem("spme.currentInstalls");
     } catch {
       storedViewMode = undefined;
       storedInstalledStatus = undefined;
       storedInstalledSort = undefined;
+      storedCurrentInstalls = undefined;
     }
     this.viewMode = storedViewMode === "table" ? "table" : "cards";
     const installedEnabled = storedInstalledStatus === "true" ? true : storedInstalledStatus === "false" ? false : undefined;
     const installedSort = ["name", "last-commit", "last-commit-oldest"].includes(storedInstalledSort) ? storedInstalledSort : "name";
+    try {
+      const parsed = JSON.parse(storedCurrentInstalls ?? "{}");
+      this.currentInstalls = Object.fromEntries(
+        Object.entries(parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {})
+          .filter(([packageID, version]) => packageID && typeof version === "string" && version)
+      );
+    } catch {
+      this.currentInstalls = {};
+    }
     this.inventory = undefined;
     this.available = undefined;
     this.coreSections = [];
@@ -188,6 +200,7 @@ export class EnhancedPluginManager {
 
     try {
       this.inventory = await this.service.loadInstalled({ checkUpdates: false });
+      this.applyCurrentInstallAssumptions();
       if (this.activeTab === "browse" || this.activeTab === "sources") {
         await this.loadAvailable();
       }
@@ -253,6 +266,46 @@ export class EnhancedPluginManager {
     if (!this.window?.location) return "";
     const href = installedAnchorHref(this.window.location.href, pkg.package_id);
     return `<a class="spme-config-link spme-manage-link" data-action="open-installed" href="${escapeHTML(href)}" aria-label="Manage ${escapeHTML(pkg.name)} in Installed">Manage</a>`;
+  }
+
+  enableToggleHTML(pkg) {
+    const state = pkg.enabled ? "Enabled" : "Disabled";
+    return `<button type="button" class="spme-enable-toggle" role="switch" aria-checked="${pkg.enabled ? "true" : "false"}" aria-label="${escapeHTML(pkg.name)} is ${state.toLowerCase()}. Toggle plugin enablement." data-action="toggle-enabled" data-id="${escapeHTML(pkg.package_id)}"><span class="spme-enable-toggle-track" aria-hidden="true"><span class="spme-enable-toggle-knob"></span></span><span class="spme-enable-toggle-label">${state}</span></button>`;
+  }
+
+  saveCurrentInstallAssumptions() {
+    try {
+      if (Object.keys(this.currentInstalls).length) {
+        this.storage?.setItem("spme.currentInstalls", JSON.stringify(this.currentInstalls));
+      } else {
+        this.storage?.removeItem("spme.currentInstalls");
+      }
+    } catch {
+      // Storage may be unavailable in privacy-restricted browser contexts.
+    }
+  }
+
+  applyCurrentInstallAssumptions() {
+    if (!this.inventory) return;
+    if (this.inventory.checkedUpdates) {
+      if (Object.keys(this.currentInstalls).length) {
+        this.currentInstalls = {};
+        this.saveCurrentInstallAssumptions();
+      }
+      return;
+    }
+    let changed = false;
+    const packages = new Map(this.inventory.packages.map((pkg) => [pkg.package_id, pkg]));
+    Object.entries(this.currentInstalls).forEach(([packageID, version]) => {
+      const pkg = packages.get(packageID);
+      if (!pkg || pkg.version !== version) {
+        delete this.currentInstalls[packageID];
+        changed = true;
+      } else if (pkg.status === "unchecked") {
+        pkg.status = "current";
+      }
+    });
+    if (changed) this.saveCurrentInstallAssumptions();
   }
 
   scrollToInstalledFromURL({ behavior = "smooth" } = {}) {
@@ -328,6 +381,7 @@ export class EnhancedPluginManager {
     this.render();
     try {
       this.inventory = await this.service.loadInstalled({ checkUpdates });
+      this.applyCurrentInstallAssumptions();
       if (this.activeTab === "browse" || this.activeTab === "sources") {
         await this.loadAvailable(true);
       }
@@ -505,8 +559,8 @@ export class EnhancedPluginManager {
       : "";
     const actions = installed
       ? pkg.runtimeOnly
-        ? `<button type="button" class="${pkg.enabled ? "spme-disable-action" : "spme-enable-action"}" data-action="toggle-enabled" data-id="${escapeHTML(pkg.package_id)}">${pkg.enabled ? "Disable" : "Enable"}</button>`
-        : `<button type="button" class="${pkg.enabled ? "spme-disable-action" : "spme-enable-action"}" data-action="toggle-enabled" data-id="${escapeHTML(pkg.package_id)}">${pkg.enabled ? "Disable" : "Enable"}</button>
+        ? this.enableToggleHTML(pkg)
+        : `${this.enableToggleHTML(pkg)}
          <button type="button" data-action="update-one" data-id="${escapeHTML(pkg.package_id)}" ${pkg.status !== "update" ? "disabled" : ""}>Update</button>
          <button type="button" class="danger subtle" data-action="uninstall-one" data-id="${escapeHTML(pkg.package_id)}">Uninstall</button>`
       : `<button type="button" data-action="install-one" data-key="${escapeHTML(selectKey)}">Install</button>`;
@@ -557,8 +611,8 @@ export class EnhancedPluginManager {
       : escapeHTML(pkg.version || "Unknown");
     const actions = installed
       ? pkg.runtimeOnly
-        ? `<button type="button" class="${pkg.enabled ? "spme-disable-action" : "spme-enable-action"}" data-action="toggle-enabled" data-id="${escapeHTML(pkg.package_id)}">${pkg.enabled ? "Disable" : "Enable"}</button>`
-        : `<button type="button" class="${pkg.enabled ? "spme-disable-action" : "spme-enable-action"}" data-action="toggle-enabled" data-id="${escapeHTML(pkg.package_id)}">${pkg.enabled ? "Disable" : "Enable"}</button>
+        ? this.enableToggleHTML(pkg)
+        : `${this.enableToggleHTML(pkg)}
          <button type="button" data-action="update-one" data-id="${escapeHTML(pkg.package_id)}" ${pkg.status !== "update" ? "disabled" : ""}>Update</button>
          <button type="button" class="danger subtle" data-action="uninstall-one" data-id="${escapeHTML(pkg.package_id)}">Uninstall</button>`
       : `<button type="button" data-action="install-one" data-key="${escapeHTML(selectKey)}">Install</button>`;
@@ -721,7 +775,8 @@ export class EnhancedPluginManager {
     return this.available?.packages.find((pkg) => `${pkg.sourceURL}|${pkg.package_id}` === key);
   }
 
-  async runOperation(label, fn) {
+  async runOperation(label, fn, { checkUpdatesAfter = true, rememberNewInstalls = false } = {}) {
+    const installedBefore = new Set(this.inventory?.packages.map((pkg) => pkg.package_id) ?? []);
     this.busy = true;
     this.message = { type: "info", text: `${label}…` };
     this.render();
@@ -733,7 +788,16 @@ export class EnhancedPluginManager {
         this.render();
         await this.service.waitForJob(result);
       }
-      this.inventory = await this.service.loadInstalled({ checkUpdates: true });
+      this.inventory = await this.service.loadInstalled({ checkUpdates: checkUpdatesAfter });
+      if (rememberNewInstalls) {
+        this.inventory.packages.forEach((pkg) => {
+          if (!installedBefore.has(pkg.package_id) && typeof pkg.version === "string" && pkg.version) {
+            this.currentInstalls[pkg.package_id] = pkg.version;
+          }
+        });
+        this.saveCurrentInstallAssumptions();
+      }
+      this.applyCurrentInstallAssumptions();
       if (this.activeTab === "browse" || this.activeTab === "sources") {
         await this.loadAvailable(true);
       }
@@ -804,14 +868,14 @@ export class EnhancedPluginManager {
     const availableSelected = this.available?.packages.filter((pkg) => this.selectedAvailable.has(`${pkg.sourceURL}|${pkg.package_id}`)) ?? [];
     if (action === "update-all") return this.runOperation("Updating all available plugins", () => this.service.update(this.inventory.packages.filter((pkg) => pkg.status === "update")));
     if (action === "update-selected") return this.runOperation("Updating selected plugins", () => this.service.update(installedSelected));
-    if (action === "install-selected") return this.runOperation("Installing selected plugins", () => this.service.install(availableSelected));
+    if (action === "install-selected") return this.runOperation("Installing selected plugins", () => this.service.install(availableSelected), { checkUpdatesAfter: false, rememberNewInstalls: true });
     if (action === "update-one") {
       const pkg = this.packageByID(button.dataset.id);
       return this.runOperation(`Updating ${pkg.name}`, () => this.service.update([pkg]));
     }
     if (action === "install-one") {
       const pkg = this.availableByKey(button.dataset.key);
-      return this.runOperation(`Installing ${pkg.name}`, () => this.service.install([pkg]));
+      return this.runOperation(`Installing ${pkg.name}`, () => this.service.install([pkg]), { checkUpdatesAfter: false, rememberNewInstalls: true });
     }
     if (action === "uninstall-one" || action === "uninstall-selected") {
       const packages = action === "uninstall-one" ? [this.packageByID(button.dataset.id)] : installedSelected;

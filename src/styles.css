@@ -95,10 +95,14 @@
 #spme-root button.subtle { background:transparent; border-color:var(--spme-danger); color:#ff9aa4; }
 #spme-root button.subtle:not(:disabled):hover { background:rgba(220,82,96,.14); border-color:#b94350; color:#ffb0b8; }
 #spme-root button.subtle:not(:disabled):active { background:rgba(220,82,96,.25); border-color:#a33a46; box-shadow:0 0 0 .2rem rgba(220,82,96,.5); }
-#spme-root button.spme-enable-action { background:#137cbd; border-color:#137cbd; color:#fff; }
-#spme-root button.spme-disable-action { background:transparent; border-color:var(--spme-border); color:#dce5ea; }
-#spme-root button.spme-disable-action:not(:disabled):hover { background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.3); color:#fff; }
-#spme-root button.spme-disable-action:not(:disabled):active { background:rgba(255,255,255,.14); border-color:rgba(255,255,255,.38); box-shadow:0 0 0 .2rem rgba(145,163,175,.35); }
+#spme-root button.spme-enable-toggle { min-width:7.8rem; justify-content:flex-start; background:var(--spme-panel-2); border-color:rgba(255,255,255,.2); color:#dce5ea; }
+#spme-root button.spme-enable-toggle:not(:disabled):hover { background:#314856; border-color:rgba(255,255,255,.32); color:#fff; }
+.spme-enable-toggle-track { position:relative; flex:0 0 auto; width:2rem; height:1.05rem; border:1px solid rgba(255,255,255,.2); border-radius:99px; background:#687985; transition:background-color .18s ease-in-out, border-color .18s ease-in-out; }
+.spme-enable-toggle-knob { position:absolute; top:.13rem; left:.13rem; width:.7rem; height:.7rem; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.55); transition:transform .18s ease-in-out; }
+.spme-enable-toggle-label { font-weight:600; }
+#spme-root button.spme-enable-toggle[aria-checked="true"] { border-color:rgba(56,178,109,.55); }
+#spme-root button.spme-enable-toggle[aria-checked="true"] .spme-enable-toggle-track { background:var(--spme-success); border-color:#55cf88; }
+#spme-root button.spme-enable-toggle[aria-checked="true"] .spme-enable-toggle-knob { transform:translateX(.95rem); }
 #spme-root .spme-repo-link { background:transparent; border-color:var(--spme-border); color:#fff; text-decoration:none; }
 #spme-root .spme-repo-link:hover { background:#10659a; border-color:#0e5e8f; color:#fff; text-decoration:none; }
 #spme-root .spme-repo-link:active { background:#0e5e8f; border-color:#0d5683; color:#fff; text-decoration:none; box-shadow:0 0 0 .2rem rgba(54,144,199,.5); outline:0; }

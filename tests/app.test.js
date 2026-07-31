@@ -219,6 +219,56 @@ describe("EnhancedPluginManager", () => {
     expect(row.querySelector('a[aria-label="Open Beta Helper GitHub repository"]')).not.toBeNull();
   });
 
+  it("marks freshly installed plugin versions Current without checking for updates", async () => {
+    pageFixture();
+    const service = serviceFixture();
+    const initial = await service.loadInstalled();
+    const installed = {
+      ...initial,
+      packages: [
+        ...initial.packages,
+        {
+          package_id: "beta",
+          name: "Beta Helper",
+          version: "2.0.0",
+          date: "2025-02-01T00:00:00Z",
+          sourceURL: "https://stashapp.github.io/CommunityScripts/stable/index.yml",
+          sourceName: "Community (stable)",
+          status: "unchecked",
+          enabled: true,
+          trust: { level: "official", label: "Official Stash source" },
+          metadata: { description: "Adds controls" },
+          plugin: { id: "beta", name: "Beta Helper", enabled: true, settings: [] },
+        },
+      ],
+      checkedUpdates: false,
+    };
+    service.loadInstalled.mockReset().mockResolvedValueOnce(initial).mockResolvedValue(installed);
+    const app = new EnhancedPluginManager(service, { confirm: () => true });
+    await app.mount();
+    await app.setTab("browse");
+
+    document.querySelector('[data-action="install-one"]').click();
+    await vi.waitFor(() => expect(app.inventory.packages.some((pkg) => pkg.package_id === "beta")).toBe(true));
+
+    expect(service.loadInstalled).toHaveBeenLastCalledWith({ checkUpdates: false });
+    expect(app.packageByID("beta").status).toBe("current");
+    expect(JSON.parse(window.localStorage.getItem("spme.currentInstalls"))).toEqual({ beta: "2.0.0" });
+
+    app.unmount();
+    pageFixture();
+    const reopened = new EnhancedPluginManager(service, { confirm: () => true });
+    await reopened.mount();
+    expect(reopened.packageByID("beta").status).toBe("current");
+
+    service.loadInstalled.mockImplementation(async ({ checkUpdates = false } = {}) => ({
+      ...installed,
+      checkedUpdates: checkUpdates,
+    }));
+    await reopened.refresh({ checkUpdates: true });
+    expect(window.localStorage.getItem("spme.currentInstalls")).toBeNull();
+  });
+
   it("shows and sorts last commit dates in Installed and Browse Cards and Table views", async () => {
     const { app } = await mountApp();
     const installedTemplate = app.inventory.packages[0];
@@ -343,12 +393,13 @@ describe("EnhancedPluginManager", () => {
 
     const enabledPlugin = document.querySelector('[data-package-id="alpha"]');
     expect(enabledPlugin.querySelector(".spme-enabled")?.textContent).toBe("Enabled");
-    expect(enabledPlugin.querySelector('[data-action="toggle-enabled"]')?.classList.contains("spme-disable-action")).toBe(true);
+    expect(enabledPlugin.querySelector('[role="switch"]')?.getAttribute("aria-checked")).toBe("true");
+    expect(enabledPlugin.querySelector('[role="switch"] .spme-enable-toggle-label')?.textContent).toBe("Enabled");
     let plugin = document.querySelector('[data-package-id="dev-helper"]');
     expect(plugin.querySelector(".spme-runtime-only")?.textContent).toBe("Runtime-only");
     expect(plugin.querySelector('[data-select-package="installed"]').disabled).toBe(true);
-    expect(plugin.querySelector('[data-action="toggle-enabled"]')?.textContent).toBe("Enable");
-    expect(plugin.querySelector('[data-action="toggle-enabled"]')?.classList.contains("spme-enable-action")).toBe(true);
+    expect(plugin.querySelector('[data-action="toggle-enabled"]')?.textContent).toContain("Disabled");
+    expect(plugin.querySelector('[role="switch"]')?.getAttribute("aria-checked")).toBe("false");
     expect(plugin.querySelector(".spme-disabled")?.textContent).toBe("Disabled");
     expect(plugin.querySelector('[data-action="update-one"]')).toBeNull();
     expect(plugin.querySelector('[data-action="uninstall-one"]')).toBeNull();
@@ -359,7 +410,7 @@ describe("EnhancedPluginManager", () => {
     expect(plugin.querySelector('[data-select-package="installed"]').disabled).toBe(true);
     expect(plugin.querySelector('[data-action="update-one"]')).toBeNull();
     expect(plugin.querySelector('[data-action="uninstall-one"]')).toBeNull();
-    expect(plugin.querySelector('[data-action="toggle-enabled"]')?.classList.contains("spme-enable-action")).toBe(true);
+    expect(plugin.querySelector('[role="switch"]')?.getAttribute("aria-checked")).toBe("false");
 
     plugin.querySelector('[data-action="toggle-enabled"]').click();
     await vi.waitFor(() => expect(service.setEnabled).toHaveBeenCalledWith("dev-helper", true));

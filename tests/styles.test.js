@@ -75,13 +75,16 @@ describe("package view responsive styles", () => {
     expect(css).toMatch(/#spme-root button\.subtle:not\(:disabled\):active/);
   });
 
-  it("visually distinguishes enabled and disabled plugin states and actions", () => {
+  it("visually distinguishes enabled and disabled plugin states with a true switch", () => {
     expect(css).toMatch(/\.spme-enabled\s*\{[^}]*background:\s*rgba\(56,178,109,/);
     expect(css).toMatch(/\.spme-enabled::before\s*\{[^}]*content:\s*"✓"/);
     expect(css).toMatch(/\.spme-disabled\s*\{[^}]*background:\s*rgba\(255,255,255,/);
     expect(css).toMatch(/\.spme-disabled::before\s*\{[^}]*content:\s*"○"/);
-    expect(css).toMatch(/#spme-root button\.spme-disable-action\s*\{[^}]*background:\s*transparent[^}]*border-color:\s*var\(--spme-border\)/);
-    expect(css).toMatch(/#spme-root button\.spme-enable-action\s*\{[^}]*background:\s*#137cbd/);
+    expect(css).toMatch(/#spme-root button\.spme-enable-toggle\s*\{[^}]*background:\s*var\(--spme-panel-2\)/);
+    expect(css).toMatch(/\.spme-enable-toggle-track\s*\{[^}]*border-radius:\s*99px[^}]*background:\s*#687985/);
+    expect(css).toMatch(/\.spme-enable-toggle-knob\s*\{[^}]*border-radius:\s*50%[^}]*transition:/);
+    expect(css).toMatch(/#spme-root button\.spme-enable-toggle\[aria-checked="true"\][\s\S]*\.spme-enable-toggle-track\s*\{[^}]*background:\s*var\(--spme-success\)/);
+    expect(css).toMatch(/#spme-root button\.spme-enable-toggle\[aria-checked="true"\][\s\S]*\.spme-enable-toggle-knob\s*\{[^}]*transform:\s*translateX/);
   });
 
   it("places a compact interactive dismiss button at the far right of alerts", () => {
