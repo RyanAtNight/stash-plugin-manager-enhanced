@@ -69,7 +69,7 @@ function findCoreSections(documentRef) {
 }
 
 const GITHUB_BUTTON_CONTENT = `<svg class="spme-github-icon" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82A7.65 7.65 0 0 1 8 3.87c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path></svg>`;
-const GEAR_ICON = `<svg class="spme-gear-icon" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false"><path d="M12 15.25A3.25 3.25 0 1 0 12 8.75a3.25 3.25 0 0 0 0 6.5Z"></path><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06-2.12 2.12-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V20.2h-3v-.08a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06-2.12-2.12.06-.06A1.65 1.65 0 0 0 7.2 15a1.65 1.65 0 0 0-1.51-1H5.6v-3h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06L8.93 6l.06.06a1.65 1.65 0 0 0 1.82.33 1.65 1.65 0 0 0 1-1.51V4.8h3v.08a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06 2.12 2.12-.06.06A1.65 1.65 0 0 0 19.4 10a1.65 1.65 0 0 0 1.51 1H21v3h-.09a1.65 1.65 0 0 0-1.51 1Z"></path></svg>`;
+const CONFIGURE_ICON = `<svg class="spme-configure-icon" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false"><path d="M4 6h5M15 6h5M4 12h10M18 12h2M4 18h2M12 18h8"></path><circle cx="12" cy="6" r="2"></circle><circle cx="16" cy="12" r="2"></circle><circle cx="9" cy="18" r="2"></circle></svg>`;
 const TRASH_ICON = `<svg class="spme-trash-icon" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false"><path d="M4 7h16"></path><path d="M9 7V4h6v3"></path><path d="m6 7 1 13h10l1-13"></path><path d="M10 11v5M14 11v5"></path></svg>`;
 
 function githubRepositoryLink(url, name) {
@@ -263,7 +263,7 @@ export class EnhancedPluginManager {
     if (!pkg.plugin?.settings?.length || !this.window?.location) return "";
     const href = configurationAnchorHref(this.window.location.href, pkg.plugin.id);
     const label = `Configure ${pkg.name}`;
-    return `<a class="spme-config-link spme-icon-action" data-action="open-configuration" href="${escapeHTML(href)}" aria-label="${escapeHTML(label)}" title="${escapeHTML(label)}">${GEAR_ICON}</a>`;
+    return `<a class="spme-config-link spme-icon-action" data-action="open-configuration" href="${escapeHTML(href)}" aria-label="${escapeHTML(label)}" title="${escapeHTML(label)}">${CONFIGURE_ICON}</a>`;
   }
 
   installedReferenceHTML(pkg) {
@@ -274,7 +274,7 @@ export class EnhancedPluginManager {
 
   enableToggleHTML(pkg) {
     const state = pkg.enabled ? "Enabled" : "Disabled";
-    return `<button type="button" class="spme-enable-toggle" role="switch" aria-checked="${pkg.enabled ? "true" : "false"}" aria-label="${escapeHTML(pkg.name)} is ${state.toLowerCase()}. Toggle plugin enablement." data-action="toggle-enabled" data-id="${escapeHTML(pkg.package_id)}"><span class="spme-enable-toggle-track" aria-hidden="true"><span class="spme-enable-toggle-knob"></span></span><span class="spme-enable-toggle-label">${state}</span></button>`;
+    return `<button type="button" class="spme-enable-toggle" role="switch" aria-checked="${pkg.enabled ? "true" : "false"}" aria-label="${escapeHTML(pkg.name)} is ${state.toLowerCase()}. Toggle plugin enablement." title="${state}" data-action="toggle-enabled" data-id="${escapeHTML(pkg.package_id)}"><span class="spme-enable-toggle-track" aria-hidden="true"><span class="spme-enable-toggle-knob"></span></span></button>`;
   }
 
   updateActionHTML(pkg) {
