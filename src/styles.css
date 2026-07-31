@@ -151,11 +151,12 @@
 #spme-root[data-active-tab="browse"] .spme-table-actions > button[data-action="install-one"] { height:2.15rem; }
 #spme-root[data-active-tab="browse"] .spme-table-actions { align-items:center; flex-wrap:nowrap; }
 #spme-root[data-active-tab="sources"] .spme-package-table th { width:auto; }
-.spme-columns-sources .spme-col-source-name { width:auto; }
-.spme-columns-sources .spme-col-source-count { width:7rem; }
-.spme-columns-sources .spme-col-source-checked { width:10.5rem; }
-.spme-columns-sources .spme-col-source-status { width:20rem; }
-.spme-columns-sources .spme-col-source-actions { width:16.8rem; }
+.spme-source-table { min-width:62rem; }
+.spme-columns-sources .spme-col-source-name { width:27%; }
+.spme-columns-sources .spme-col-source-count { width:6%; }
+.spme-columns-sources .spme-col-source-checked { width:13%; }
+.spme-columns-sources .spme-col-source-status { width:16%; }
+.spme-columns-sources .spme-col-source-actions { width:26%; }
 .spme-source-table-name { display:grid; gap:.25rem; min-width:0; }
 .spme-source-table-name small { color:var(--spme-text-muted); }
 .spme-source-table-status { min-width:0; }
@@ -233,6 +234,7 @@
   .spme-package-table td[data-label="Plugin"] { grid-row:1; }
   .spme-table-description { white-space:normal; overflow:visible; }
   .spme-table-actions, .spme-package-table .spme-badges { justify-content:flex-start; }
+  .spme-source-table { min-width:0; }
   .spme-source-table tr { grid-template-columns:1fr; }
   .spme-source-table td { grid-column:1; }
   .spme-source-edit-row { display:block; }

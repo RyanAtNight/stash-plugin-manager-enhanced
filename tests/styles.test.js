@@ -141,9 +141,16 @@ describe("package view responsive styles", () => {
   });
 
   it("sizes and highlights the Sources table without affecting package tables", () => {
-    expect(css).toMatch(/\.spme-columns-sources \.spme-col-source-actions\s*\{\s*width:\s*16\.8rem/);
+    expect(css).toMatch(/\.spme-source-table\s*\{\s*min-width:\s*62rem/);
+    expect(css).toMatch(/\.spme-columns-sources \.spme-col-source-name\s*\{\s*width:\s*27%/);
+    expect(css).toMatch(/\.spme-columns-sources \.spme-col-source-count\s*\{\s*width:\s*6%/);
+    expect(css).toMatch(/\.spme-columns-sources \.spme-col-source-checked\s*\{\s*width:\s*13%/);
+    expect(css).toMatch(/\.spme-columns-sources \.spme-col-source-status\s*\{\s*width:\s*16%/);
+    expect(css).toMatch(/\.spme-columns-sources \.spme-col-source-actions\s*\{\s*width:\s*26%/);
     expect(css).toMatch(/\.spme-source-row:target,[\s\S]*\.spme-source-row:focus\s*\{[\s\S]*outline:/);
     expect(css).toMatch(/\.spme-source-edit-row \.spme-source-form\s*\{[\s\S]*margin:\s*0/);
+    const mobile = css.slice(css.indexOf("@media (max-width: 1100px)"));
+    expect(mobile).toMatch(/\.spme-source-table\s*\{\s*min-width:\s*0/);
   });
 
   it("styles linked source labels and highlights the anchored source card", () => {
