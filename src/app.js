@@ -1,12 +1,15 @@
 import {
   configurationAnchorHref,
   configurationAnchorID,
+  dependentPlugins,
   deriveSourceGithubUrl,
   filterPackages,
   installedAnchorHref,
   installedAnchorID,
   packageLastCommitDate,
+  orphanedDependencies,
   pluginManagerTabFromURL,
+  requiredPluginIDs,
   safeExternalUrl,
   sourceAnchorHref,
   sourceAnchorID,
@@ -818,6 +821,79 @@ export class EnhancedPluginManager {
     return succeeded;
   }
 
+  requiredDependencyIDs(packages) {
+    return [...new Set(packages.flatMap((pkg) => requiredPluginIDs(pkg)))];
+  }
+
+  dependencyWarnings(packages, { enabledOnly }) {
+    const changingIDs = new Set(packages.map((pkg) => pkg.package_id));
+    return packages.flatMap((dependency) => {
+      const dependents = dependentPlugins(this.inventory.packages, dependency.package_id, { enabledOnly })
+        .filter((pkg) => !changingIDs.has(pkg.package_id));
+      return dependents.length ? [{ dependency, dependents }] : [];
+    });
+  }
+
+  confirmDisable(pkg) {
+    const warnings = this.dependencyWarnings([pkg], { enabledOnly: true });
+    if (!warnings.length) return true;
+    const details = warnings.map(({ dependency, dependents }) => {
+      const names = dependents.map((dependent) => `- ${dependent.name}`).join("\n");
+      return `${dependency.name} is required by the following enabled ${dependents.length === 1 ? "plugin" : "plugins"}:\n${names}`;
+    }).join("\n\n");
+    return this.confirm?.(`${details}\n\nDisabling ${pkg.name} may break those plugins. Continue?`) ?? false;
+  }
+
+  confirmUninstall(packages) {
+    const names = packages.map((pkg) => pkg.name).join(", ");
+    const warnings = this.dependencyWarnings(packages, { enabledOnly: false });
+    const details = warnings.map(({ dependency, dependents }) => {
+      const dependentNames = dependents
+        .map((dependent) => `- ${dependent.name} (${dependent.enabled ? "enabled" : "disabled"})`)
+        .join("\n");
+      return `${dependency.name} is required by the following installed ${dependents.length === 1 ? "plugin" : "plugins"}:\n${dependentNames}`;
+    }).join("\n\n");
+    const warning = details ? `\n\n${details}\n\nUninstalling may break those plugins or prevent them from working when enabled.` : "";
+    return this.confirm?.(`Uninstall ${names}? Stash will remove the package files.${warning}`) ?? false;
+  }
+
+  async offerOrphanCleanup(dependencyIDs, operation) {
+    const queue = [...new Set(dependencyIDs)];
+    const offered = new Set();
+    while (queue.length) {
+      const dependencyID = queue.shift();
+      if (offered.has(dependencyID)) continue;
+      const dependency = orphanedDependencies(
+        this.inventory.packages,
+        [dependencyID],
+        { enabledOnly: operation === "disable" }
+      )[0];
+      if (!dependency || (operation === "disable" && !dependency.enabled)) continue;
+
+      offered.add(dependencyID);
+      const cleanupOperation = operation === "uninstall" && !dependency.runtimeOnly ? "uninstall" : "disable";
+      const scope = operation === "disable" ? "enabled" : "installed";
+      const runtimeNote = operation === "uninstall" && dependency.runtimeOnly
+        ? " It is runtime-only and cannot be uninstalled by the package manager."
+        : "";
+      const accepted = this.confirm?.(
+        `${dependency.name} is no longer required by any ${scope} plugin.${runtimeNote} ${cleanupOperation === "uninstall" ? "Uninstall" : "Disable"} it too?`
+      );
+      if (!accepted) continue;
+
+      const nestedDependencies = requiredPluginIDs(dependency);
+      const succeeded = cleanupOperation === "uninstall"
+        ? await this.runOperation(`Uninstalling ${dependency.name}`, () => this.service.uninstall([dependency]))
+        : await this.runOperation(`Disabling ${dependency.name}`, () => this.service.setEnabled(dependency.package_id, false));
+      if (!succeeded) continue;
+      if (cleanupOperation === operation) {
+        queue.push(...nestedDependencies);
+      } else {
+        await this.offerOrphanCleanup(nestedDependencies, cleanupOperation);
+      }
+    }
+  }
+
   async onClick(event) {
     const button = event.target.closest("[data-action]");
     if (!button) return;
@@ -866,7 +942,14 @@ export class EnhancedPluginManager {
     if (action === "toggle-enabled") {
       const pkg = this.packageByID(button.dataset.id);
       if (!pkg) return;
-      await this.runOperation(`${pkg.enabled ? "Disabling" : "Enabling"} ${pkg.name}`, () => this.service.setEnabled(pkg.package_id, !pkg.enabled));
+      if (!pkg.enabled) {
+        await this.runOperation(`Enabling ${pkg.name}`, () => this.service.setEnabled(pkg.package_id, true));
+        return;
+      }
+      if (!this.confirmDisable(pkg)) return;
+      const dependencies = requiredPluginIDs(pkg);
+      const succeeded = await this.runOperation(`Disabling ${pkg.name}`, () => this.service.setEnabled(pkg.package_id, false));
+      if (succeeded) await this.offerOrphanCleanup(dependencies, "disable");
       return;
     }
 
@@ -885,9 +968,11 @@ export class EnhancedPluginManager {
     }
     if (action === "uninstall-one" || action === "uninstall-selected") {
       const packages = action === "uninstall-one" ? [this.packageByID(button.dataset.id)] : installedSelected;
-      const names = packages.map((pkg) => pkg.name).join(", ");
-      if (!this.confirm?.(`Uninstall ${names}? Stash will remove the package files. Review dependencies before continuing.`)) return;
-      return this.runOperation(`Uninstalling ${plural(packages.length, "plugin")}`, () => this.service.uninstall(packages));
+      if (!this.confirmUninstall(packages)) return;
+      const dependencies = this.requiredDependencyIDs(packages);
+      const succeeded = await this.runOperation(`Uninstalling ${plural(packages.length, "plugin")}`, () => this.service.uninstall(packages));
+      if (succeeded) await this.offerOrphanCleanup(dependencies, "uninstall");
+      return;
     }
     if (action === "add-source") {
       this.clearSourceAnchor();

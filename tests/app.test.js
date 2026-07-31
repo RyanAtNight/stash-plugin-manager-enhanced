@@ -92,10 +92,10 @@ function serviceFixture() {
   };
 }
 
-async function mountApp() {
+async function mountApp(options = {}) {
   pageFixture();
   const service = serviceFixture();
-  const app = new EnhancedPluginManager(service, { confirm: () => true });
+  const app = new EnhancedPluginManager(service, { confirm: options.confirm ?? (() => true) });
   await app.mount();
   return { app, service };
 }
@@ -487,6 +487,129 @@ describe("EnhancedPluginManager", () => {
 
     plugin.querySelector('[data-action="toggle-enabled"]').click();
     await vi.waitFor(() => expect(service.setEnabled).toHaveBeenCalledWith("dev-helper", true));
+  });
+
+  it("warns before disabling a plugin required by an enabled plugin", async () => {
+    const confirm = vi.fn(() => false);
+    const { app, service } = await mountApp({ confirm });
+    const template = app.inventory.packages[0];
+    const library = { ...template, package_id: "library", name: "Shared Library", enabled: true, requires: [], plugin: { ...template.plugin, id: "library", name: "Shared Library", enabled: true } };
+    const consumer = { ...template, package_id: "consumer", name: "Enabled Consumer", enabled: true, requires: ["library"], plugin: { ...template.plugin, id: "consumer", name: "Enabled Consumer", enabled: true, requires: ["library"] } };
+    app.inventory.packages = [library, consumer];
+    app.render();
+
+    document.querySelector('[data-package-id="library"] [data-action="toggle-enabled"]').click();
+
+    await vi.waitFor(() => expect(confirm).toHaveBeenCalledWith(expect.stringContaining("Enabled Consumer")));
+    expect(confirm.mock.calls[0][0]).toContain("required by the following enabled plugin");
+    expect(service.setEnabled).not.toHaveBeenCalled();
+  });
+
+  it("allows disabling a dependency without warning when only disabled plugins require it", async () => {
+    const confirm = vi.fn(() => false);
+    const { app, service } = await mountApp({ confirm });
+    const template = app.inventory.packages[0];
+    const library = { ...template, package_id: "library", name: "Shared Library", enabled: true, requires: [], plugin: { ...template.plugin, id: "library", name: "Shared Library", enabled: true } };
+    const consumer = { ...template, package_id: "consumer", name: "Disabled Consumer", enabled: false, requires: ["library"], plugin: { ...template.plugin, id: "consumer", name: "Disabled Consumer", enabled: false, requires: ["library"] } };
+    app.inventory.packages = [library, consumer];
+    app.render();
+    service.loadInstalled.mockResolvedValueOnce({ ...app.inventory, packages: [{ ...library, enabled: false }, consumer] });
+
+    document.querySelector('[data-package-id="library"] [data-action="toggle-enabled"]').click();
+
+    await vi.waitFor(() => expect(service.setEnabled).toHaveBeenCalledWith("library", false));
+    expect(confirm).not.toHaveBeenCalled();
+  });
+
+  it("warns before uninstalling a dependency required by a disabled installed plugin", async () => {
+    const confirm = vi.fn(() => false);
+    const { app, service } = await mountApp({ confirm });
+    const template = app.inventory.packages[0];
+    const library = { ...template, package_id: "library", name: "Shared Library", enabled: true, requires: [], plugin: { ...template.plugin, id: "library", name: "Shared Library", enabled: true } };
+    const consumer = { ...template, package_id: "consumer", name: "Disabled Consumer", enabled: false, requires: ["library"], plugin: { ...template.plugin, id: "consumer", name: "Disabled Consumer", enabled: false, requires: ["library"] } };
+    app.inventory.packages = [library, consumer];
+    app.render();
+
+    document.querySelector('[data-package-id="library"] [data-action="uninstall-one"]').click();
+
+    await vi.waitFor(() => expect(confirm).toHaveBeenCalledWith(expect.stringContaining("Disabled Consumer (disabled)")));
+    expect(service.uninstall).not.toHaveBeenCalled();
+  });
+
+  it("recursively offers to disable dependencies that become unused", async () => {
+    const confirm = vi.fn(() => true);
+    const { app, service } = await mountApp({ confirm });
+    const template = app.inventory.packages[0];
+    const make = (id, name, requires = [], enabled = true) => ({ ...template, package_id: id, name, enabled, requires, plugin: { ...template.plugin, id, name, enabled, requires } });
+    const consumer = make("consumer", "Consumer", ["library"]);
+    const library = make("library", "Shared Library", ["foundation"]);
+    const foundation = make("foundation", "Foundation");
+    app.inventory.packages = [consumer, library, foundation];
+    app.render();
+    service.loadInstalled
+      .mockResolvedValueOnce({ ...app.inventory, packages: [{ ...consumer, enabled: false }, library, foundation] })
+      .mockResolvedValueOnce({ ...app.inventory, packages: [{ ...consumer, enabled: false }, { ...library, enabled: false }, foundation] })
+      .mockResolvedValueOnce({ ...app.inventory, packages: [{ ...consumer, enabled: false }, { ...library, enabled: false }, { ...foundation, enabled: false }] });
+
+    document.querySelector('[data-package-id="consumer"] [data-action="toggle-enabled"]').click();
+
+    await vi.waitFor(() => expect(service.setEnabled.mock.calls).toEqual([
+      ["consumer", false],
+      ["library", false],
+      ["foundation", false],
+    ]));
+    expect(confirm.mock.calls.map(([message]) => message)).toEqual([
+      expect.stringContaining("Shared Library is no longer required by any enabled plugin"),
+      expect.stringContaining("Foundation is no longer required by any enabled plugin"),
+    ]);
+  });
+
+  it("keeps a dependency installed when another disabled plugin still requires it", async () => {
+    const confirm = vi.fn(() => true);
+    const { app, service } = await mountApp({ confirm });
+    const template = app.inventory.packages[0];
+    const make = (id, name, requires = [], enabled = true) => ({ ...template, package_id: id, name, enabled, requires, plugin: { ...template.plugin, id, name, enabled, requires } });
+    const consumer = make("consumer", "Consumer", ["library"]);
+    const library = make("library", "Shared Library");
+    const disabledConsumer = make("disabled-consumer", "Disabled Consumer", ["library"], false);
+    app.inventory.packages = [consumer, library, disabledConsumer];
+    app.render();
+    service.loadInstalled.mockResolvedValueOnce({ ...app.inventory, packages: [library, disabledConsumer] });
+
+    document.querySelector('[data-package-id="consumer"] [data-action="uninstall-one"]').click();
+
+    await vi.waitFor(() => expect(service.uninstall).toHaveBeenCalledTimes(1));
+    expect(service.uninstall).toHaveBeenCalledWith([consumer]);
+    expect(confirm).toHaveBeenCalledTimes(1);
+  });
+
+  it("recursively offers to uninstall dependencies that become unused", async () => {
+    const confirm = vi.fn(() => true);
+    const { app, service } = await mountApp({ confirm });
+    const template = app.inventory.packages[0];
+    const make = (id, name, requires = []) => ({ ...template, package_id: id, name, enabled: true, requires, plugin: { ...template.plugin, id, name, enabled: true, requires } });
+    const consumer = make("consumer", "Consumer", ["library"]);
+    const library = make("library", "Shared Library", ["foundation"]);
+    const foundation = make("foundation", "Foundation");
+    app.inventory.packages = [consumer, library, foundation];
+    app.render();
+    service.loadInstalled
+      .mockResolvedValueOnce({ ...app.inventory, packages: [library, foundation] })
+      .mockResolvedValueOnce({ ...app.inventory, packages: [foundation] })
+      .mockResolvedValueOnce({ ...app.inventory, packages: [] });
+
+    document.querySelector('[data-package-id="consumer"] [data-action="uninstall-one"]').click();
+
+    await vi.waitFor(() => expect(service.uninstall.mock.calls).toEqual([
+      [[consumer]],
+      [[library]],
+      [[foundation]],
+    ]));
+    expect(confirm.mock.calls.map(([message]) => message)).toEqual([
+      expect.stringContaining("Uninstall Consumer"),
+      expect.stringContaining("Shared Library is no longer required by any installed plugin"),
+      expect.stringContaining("Foundation is no longer required by any installed plugin"),
+    ]);
   });
 
   it("opens installed and available GitHub repositories in a new tab", async () => {

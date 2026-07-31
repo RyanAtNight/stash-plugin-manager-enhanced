@@ -158,6 +158,31 @@ export function deriveGithubUrl({ pluginUrl, metadata = {}, sourceUrl, packageId
   return `https://github.com/${owner}/${repo}/tree/${encodeURIComponent(branch)}/plugins/${encodeURIComponent(packageId)}`;
 }
 
+export function requiredPluginIDs(pkg = {}) {
+  const declared = Array.isArray(pkg.requires)
+    ? pkg.requires
+    : Array.isArray(pkg.plugin?.requires)
+      ? pkg.plugin.requires
+      : [];
+  const ownID = String(pkg.package_id ?? pkg.id ?? "");
+  return [...new Set(declared
+    .map((requirement) => typeof requirement === "string" ? requirement : requirement?.package_id)
+    .filter((id) => typeof id === "string" && id && id !== ownID))];
+}
+
+export function dependentPlugins(packages, dependencyID, { enabledOnly = false } = {}) {
+  return (packages ?? []).filter((pkg) =>
+    (!enabledOnly || pkg.enabled) && requiredPluginIDs(pkg).includes(dependencyID)
+  );
+}
+
+export function orphanedDependencies(packages, dependencyIDs, { enabledOnly = false } = {}) {
+  const byID = new Map((packages ?? []).map((pkg) => [pkg.package_id, pkg]));
+  return [...new Set(dependencyIDs ?? [])]
+    .map((id) => byID.get(id))
+    .filter((dependency) => dependency && dependentPlugins(packages, dependency.package_id, { enabledOnly }).length === 0);
+}
+
 export function safeExternalUrl(value) {
   if (typeof value !== "string") return undefined;
   try {

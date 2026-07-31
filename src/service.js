@@ -14,7 +14,7 @@ const INSTALLED_QUERY = `
       }
     }
     plugins {
-      id name description url version enabled
+      id name description url version enabled requires
       hooks { name description hooks }
       tasks { name description }
       settings { name display_name description type }
@@ -78,6 +78,7 @@ function mergeInstalled(pkg, runtime, sources) {
     ...pkg,
     plugin,
     enabled: plugin?.enabled ?? false,
+    requires: plugin?.requires ?? [],
     installed: true,
     status: packageStatus(pkg),
     sourceName: sourceNameFor(pkg.sourceURL, sources),
@@ -100,6 +101,7 @@ function mergeRuntimeOnly(plugin) {
     metadata: { description: plugin.description },
     plugin,
     enabled: plugin.enabled ?? false,
+    requires: plugin.requires ?? [],
     installed: true,
     runtimeOnly: true,
     status: "runtime-only",

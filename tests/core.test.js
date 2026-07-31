@@ -5,6 +5,7 @@ import {
   configurationAnchorID,
   deriveGithubUrl,
   deriveSourceGithubUrl,
+  dependentPlugins,
   filterPackages,
   installedAnchorHref,
   installedAnchorID,
@@ -12,6 +13,8 @@ import {
   pluginManagerTabFromURL,
   packageLastCommitDate,
   packageStatus,
+  orphanedDependencies,
+  requiredPluginIDs,
   safeExternalUrl,
   sourceAnchorHref,
   sourceAnchorID,
@@ -193,6 +196,36 @@ describe("deriveSourceGithubUrl", () => {
   it("does not invent repositories for local or unrelated sources", () => {
     expect(deriveSourceGithubUrl("file:///C:/plugins/index.yml")).toBeUndefined();
     expect(deriveSourceGithubUrl("https://plugins.example.com/index.yml")).toBeUndefined();
+  });
+});
+
+describe("plugin dependency graphs", () => {
+  const packages = [
+    { package_id: "library", name: "Shared Library", enabled: true, requires: [] },
+    { package_id: "enabled-consumer", name: "Enabled Consumer", enabled: true, requires: ["library"] },
+    { package_id: "disabled-consumer", name: "Disabled Consumer", enabled: false, requires: ["library"] },
+    { package_id: "object-requirement", name: "Object Requirement", enabled: true, requires: [{ package_id: "other-library" }] },
+    { package_id: "other-library", name: "Other Library", enabled: true, requires: [] },
+  ];
+
+  it("normalizes dependency IDs declared by plugin and package records", () => {
+    expect(requiredPluginIDs(packages[1])).toEqual(["library"]);
+    expect(requiredPluginIDs(packages[3])).toEqual(["other-library"]);
+    expect(requiredPluginIDs({ package_id: "consumer", plugin: { requires: ["library", "library", "consumer"] } })).toEqual(["library"]);
+  });
+
+  it("finds enabled dependents for disable warnings and all dependents for uninstall warnings", () => {
+    expect(dependentPlugins(packages, "library", { enabledOnly: true }).map((pkg) => pkg.package_id)).toEqual(["enabled-consumer"]);
+    expect(dependentPlugins(packages, "library").map((pkg) => pkg.package_id)).toEqual(["enabled-consumer", "disabled-consumer"]);
+  });
+
+  it("identifies dependencies orphaned among active or installed consumers", () => {
+    const afterDisable = packages.map((pkg) => pkg.package_id === "enabled-consumer" ? { ...pkg, enabled: false } : pkg);
+    expect(orphanedDependencies(afterDisable, ["library"], { enabledOnly: true }).map((pkg) => pkg.package_id)).toEqual(["library"]);
+    expect(orphanedDependencies(afterDisable, ["library"]).map((pkg) => pkg.package_id)).toEqual([]);
+
+    const afterUninstall = afterDisable.filter((pkg) => !["enabled-consumer", "disabled-consumer"].includes(pkg.package_id));
+    expect(orphanedDependencies(afterUninstall, ["library"]).map((pkg) => pkg.package_id)).toEqual(["library"]);
   });
 });
 

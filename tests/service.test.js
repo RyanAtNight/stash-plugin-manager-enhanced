@@ -25,6 +25,7 @@ describe("PluginManagerService", () => {
             id: "alpha",
             name: "Alpha",
             enabled: true,
+            requires: ["helper-library"],
             url: "https://github.com/example/alpha",
             hooks: [],
             tasks: [],
@@ -68,7 +69,9 @@ describe("PluginManagerService", () => {
       status: "update",
       sourceName: "Example",
       githubUrl: "https://github.com/example/alpha",
+      requires: ["helper-library"],
     });
+    expect(client.request.mock.calls[0][0]).toContain("id name description url version enabled requires");
     expect(result.packages[1]).toMatchObject({
       package_id: "dev-helper",
       name: "Dev Helper",
