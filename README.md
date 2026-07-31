@@ -1,12 +1,12 @@
 # Stash Plugin Manager Enhanced
 
-A client-side Stash UI plugin that progressively replaces **Settings → Plugins** with a wider, accessible interface while leaving Stash core unchanged.
+A client-side Stash UI plugin that enhances **Settings → Plugins** in place with a wider, accessible interface while leaving Stash core unchanged.
 
 ## Why this is possible
 
 Stash UI plugins may load JavaScript and CSS globally. This plugin watches Stash SPA navigation for `/settings?tab=plugins`, hides the three stock plugin sections, mounts the enhanced interface, and restores the stock sections when navigating away or when the enhancement is dismissed.
 
-The integration is intentionally progressive because Stash's `SettingsPluginsPanel` is not currently exposed as a named patchable component. Stash's UI plugin API is experimental, so DOM integration may need adjustment after future Stash UI changes.
+The integration is intentionally progressive because Stash's `SettingsPluginsPanel` is not currently exposed as a named patchable component. The plugin only hides the original stock sections while the enhanced interface is active and restores them if you disable the enhancement. Stash's UI plugin API is experimental, so DOM integration may need adjustment after future Stash UI changes.
 
 ## Features
 
