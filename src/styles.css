@@ -33,8 +33,8 @@
 .spme-summary span { background:var(--spme-panel); border:1px solid var(--spme-border); border-radius:.5rem; padding:.55rem .75rem; white-space:nowrap; }
 .spme-header-tools { display:grid; justify-items:end; gap:.5rem; }
 .spme-view-toggle { display:inline-flex; gap:0; padding:.2rem; border:1px solid var(--spme-border); border-radius:.5rem; background:var(--spme-panel-2); }
-#spme-root .spme-view-toggle button { background:transparent; color:var(--spme-text-muted); padding:.35rem .65rem; }
-#spme-root .spme-view-toggle button[aria-pressed="true"] { background:var(--spme-accent); color:#fff; }
+#spme-root .spme-view-toggle button { background:transparent; border-color:transparent; color:var(--spme-text-muted); padding:.35rem .65rem; }
+#spme-root .spme-view-toggle button[aria-pressed="true"] { background:var(--spme-accent); border-color:var(--spme-accent); color:#fff; }
 .spme-tabs { display:flex; align-items:center; gap:.4rem; overflow-x:auto; border-bottom:1px solid var(--spme-border); padding-bottom:.85rem; margin-bottom:1rem; }
 #spme-root .spme-tabs button { background:var(--spme-panel-2); border:1px solid var(--spme-border); border-radius:.4rem; padding:.55rem .8rem; color:inherit; white-space:nowrap; }
 #spme-root .spme-tabs button:hover { background:var(--spme-panel); border-color:rgba(255,255,255,.28); }
