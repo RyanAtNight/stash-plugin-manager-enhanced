@@ -153,6 +153,11 @@ describe("package view responsive styles", () => {
     expect(mobile).toMatch(/\.spme-source-table\s*\{\s*min-width:\s*0/);
   });
 
+  it("matches Sources GitHub action height to the other action buttons", () => {
+    expect(css).toMatch(/#spme-root\[data-active-tab="sources"\] \.spme-card-actions,[\s\S]*#spme-root\[data-active-tab="sources"\] \.spme-table-actions\s*\{\s*align-items:\s*stretch/);
+    expect(css).toMatch(/#spme-root\[data-active-tab="sources"\] \.spme-repo-link\s*\{\s*height:\s*auto/);
+  });
+
   it("styles linked source labels and highlights the anchored source card", () => {
     expect(css).toMatch(/\.spme-source-link\s*\{[\s\S]*text-decoration:\s*underline/);
     expect(css).toMatch(/\.spme-source-card:target,[\s\S]*\.spme-source-card:focus\s*\{[\s\S]*border-color:\s*var\(--spme-accent\)/);

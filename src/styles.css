@@ -162,6 +162,9 @@
 .spme-source-table-status { min-width:0; }
 .spme-source-table-status .spme-badges { justify-content:flex-start; }
 .spme-source-table-status .spme-source-error { margin-top:.5rem; }
+#spme-root[data-active-tab="sources"] .spme-card-actions,
+#spme-root[data-active-tab="sources"] .spme-table-actions { align-items:stretch; }
+#spme-root[data-active-tab="sources"] .spme-repo-link { height:auto; }
 .spme-source-table .spme-table-actions { flex-wrap:nowrap; }
 .spme-source-row { scroll-margin-top:5rem; }
 .spme-source-row:target,
