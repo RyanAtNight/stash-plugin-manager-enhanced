@@ -135,7 +135,7 @@ export class EnhancedPluginManager {
     this.selectedAvailable = new Set();
     this.filters = {
       installed: { query: "", enabled: undefined, updatesOnly: false, sort: "name" },
-      browse: { query: "", source: "", sort: "name" },
+      browse: { query: "", source: "", sort: "last-commit" },
       sources: { sort: "name" },
       configuration: { query: "", enabled: undefined },
     };

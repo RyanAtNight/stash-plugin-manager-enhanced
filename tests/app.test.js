@@ -225,13 +225,14 @@ describe("EnhancedPluginManager", () => {
     });
     app.viewMode = "cards";
     app.render();
-    expect(cardOrder()).toEqual(["aardvark", "beta"]);
+    expect(cardOrder()).toEqual(["beta", "aardvark"]);
     expect(document.querySelector('[data-package-id="beta"] time[data-last-commit]')?.dateTime).toBe("2025-02-01T00:00:00.000Z");
 
     sort = document.querySelector('[data-filter-select="browse-sort"]');
-    sort.value = "last-commit";
+    expect(sort.value).toBe("last-commit");
+    sort.value = "name";
     sort.dispatchEvent(new Event("change", { bubbles: true }));
-    expect(cardOrder()).toEqual(["beta", "aardvark"]);
+    expect(cardOrder()).toEqual(["aardvark", "beta"]);
     sort = document.querySelector('[data-filter-select="browse-sort"]');
     expect([...sort.options].map((option) => option.value)).toContain("last-commit-oldest");
     sort.value = "last-commit-oldest";
