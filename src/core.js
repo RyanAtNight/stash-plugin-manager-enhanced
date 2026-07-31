@@ -240,7 +240,7 @@ function searchableText(pkg) {
 
 export function filterPackages(
   packages,
-  { query = "", enabled, updatesOnly = false, source } = {}
+  { query = "", enabled, updatesOnly = false, source, dependency } = {}
 ) {
   const needle = query.trim().toLowerCase();
   return packages.filter((pkg) => {
@@ -248,6 +248,7 @@ export function filterPackages(
     if (typeof enabled === "boolean" && pkg.enabled !== enabled) return false;
     if (updatesOnly && pkg.status !== "update") return false;
     if (source && pkg.sourceURL !== source) return false;
+    if (dependency && !requiredPluginIDs(pkg).includes(dependency)) return false;
     return true;
   });
 }

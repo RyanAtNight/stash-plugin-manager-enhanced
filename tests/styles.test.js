@@ -101,8 +101,9 @@ describe("package view responsive styles", () => {
     expect(css).toMatch(/#spme-root button\.spme-enable-toggle\[aria-checked="true"\][\s\S]*\.spme-enable-toggle-knob\s*\{[^}]*transform:\s*translateX\(1\.8rem\)/);
   });
 
-  it("styles dependency status badges as hoverable metadata", () => {
-    expect(css).toMatch(/\.spme-status-dependency\s*\{[^}]*border-color:\s*#b07cff[^}]*color:\s*#d1afff[^}]*cursor:\s*help/);
+  it("keeps clickable dependency status badges compact and purple", () => {
+    expect(css).toMatch(/#spme-root button\.spme-status-dependency\s*\{[^}]*padding:\s*\.2rem \.5rem[^}]*background:\s*transparent[^}]*border-color:\s*#b07cff[^}]*color:\s*#d1afff[^}]*cursor:\s*pointer/);
+    expect(css).toMatch(/#spme-root button\.spme-status-dependency:not\(:disabled\):hover\s*\{[^}]*background:\s*rgba\(176,124,255,\.16\)[^}]*border-color:\s*#c29aff/);
   });
 
   it("places a compact interactive dismiss button at the far right of alerts", () => {

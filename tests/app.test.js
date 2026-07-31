@@ -519,7 +519,7 @@ describe("EnhancedPluginManager", () => {
       const badge = document.querySelector('[data-package-id="library"] .spme-status-dependency');
       expect(badge?.textContent).toBe("Dependency");
       expect(badge?.getAttribute("title")).toBe("Required by: Enabled Consumer (enabled), Disabled <Consumer> (disabled)");
-      expect(badge?.getAttribute("aria-label")).toBe("Dependency. Required by: Enabled Consumer (enabled), Disabled <Consumer> (disabled)");
+      expect(badge?.getAttribute("aria-label")).toBe("Filter Installed to plugins requiring Shared Library. Required by: Enabled Consumer (enabled), Disabled <Consumer> (disabled)");
       expect(document.querySelector('[data-package-id="enabled-consumer"] .spme-status-dependency')).toBeNull();
       expect(document.querySelector('[data-package-id="disabled-consumer"] .spme-status-dependency')).toBeNull();
       expect(document.querySelector("script")).toBeNull();
@@ -528,6 +528,97 @@ describe("EnhancedPluginManager", () => {
     assertDependencyBadge();
     document.querySelector('[data-action="set-view"][data-view-mode="table"]').click();
     assertDependencyBadge();
+  });
+
+  it("populates the Installed dependency filter with known dependency plugins", async () => {
+    const { app } = await mountApp();
+    const template = app.inventory.packages[0];
+    const make = (id, name, requires = []) => ({ ...template, package_id: id, name, requires, plugin: { ...template.plugin, id, name, requires } });
+    app.inventory.packages = [
+      make("library", "Shared Library"),
+      make("framework", "Base Framework"),
+      make("consumer-a", "Consumer A", ["library"]),
+      make("consumer-b", "Consumer B", ["framework"]),
+      make("ordinary", "Ordinary Plugin"),
+    ];
+    app.render();
+
+    const options = [...document.querySelectorAll('[data-filter-select="installed-dependency"] option')]
+      .map((option) => [option.value, option.textContent]);
+    expect(options).toEqual([
+      ["", "All plugins"],
+      ["framework", "Base Framework"],
+      ["library", "Shared Library"],
+    ]);
+  });
+
+  it("filters Installed to enabled and disabled consumers selected from the dependency dropdown", async () => {
+    const { app } = await mountApp();
+    const template = app.inventory.packages[0];
+    const make = (id, name, requires = [], enabled = true) => ({ ...template, package_id: id, name, enabled, requires, plugin: { ...template.plugin, id, name, enabled, requires } });
+    app.inventory.packages = [
+      make("library", "Shared Library"),
+      make("enabled-consumer", "Enabled Consumer", ["library"]),
+      make("disabled-consumer", "Disabled Consumer", ["library"], false),
+      make("ordinary", "Ordinary Plugin"),
+    ];
+    app.filters.installed.enabled = true;
+    app.render();
+
+    const select = document.querySelector('[data-filter-select="installed-dependency"]');
+    select.value = "library";
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+
+    expect(app.filters.installed.dependency).toBe("library");
+    expect(app.filters.installed.enabled).toBeUndefined();
+    expect(document.querySelector('[data-filter-select="installed-enabled"]').value).toBe("");
+    expect([...document.querySelectorAll(".spme-package-card")].map((card) => card.dataset.packageId)).toEqual([
+      "disabled-consumer",
+      "enabled-consumer",
+    ]);
+    expect(document.querySelector('[data-filter-select="installed-dependency"]').value).toBe("library");
+  });
+
+  it("resets a dependency filter that is no longer known after inventory changes", async () => {
+    const { app } = await mountApp();
+    const template = app.inventory.packages[0];
+    const library = { ...template, package_id: "library", name: "Shared Library", requires: [], plugin: { ...template.plugin, id: "library", name: "Shared Library", requires: [] } };
+    const consumer = { ...template, package_id: "consumer", name: "Consumer", requires: ["library"], plugin: { ...template.plugin, id: "consumer", name: "Consumer", requires: ["library"] } };
+    app.inventory.packages = [library, consumer];
+    app.filters.installed.dependency = "library";
+
+    app.inventory.packages = [{ ...consumer, requires: [], plugin: { ...consumer.plugin, requires: [] } }];
+    app.render();
+
+    expect(app.filters.installed.dependency).toBe("");
+    expect(document.querySelector('[data-filter-select="installed-dependency"]').value).toBe("");
+    expect(document.querySelector('[data-package-id="consumer"]')).not.toBeNull();
+  });
+
+  it("selects the Installed dependency filter when its Dependency pill is clicked", async () => {
+    const { app } = await mountApp();
+    const template = app.inventory.packages[0];
+    const make = (id, name, requires = [], enabled = true) => ({ ...template, package_id: id, name, enabled, requires, plugin: { ...template.plugin, id, name, enabled, requires } });
+    app.inventory.packages = [
+      make("library", "Shared Library", [], false),
+      make("enabled-consumer", "Enabled Consumer", ["library"]),
+      make("disabled-consumer", "Disabled Consumer", ["library"], false),
+      make("ordinary", "Ordinary Plugin"),
+    ];
+    app.filters.installed.enabled = false;
+    app.render();
+
+    const pill = document.querySelector('[data-package-id="library"] .spme-status-dependency');
+    expect(pill?.tagName).toBe("BUTTON");
+    pill.click();
+
+    expect(app.filters.installed.dependency).toBe("library");
+    expect(app.filters.installed.enabled).toBeUndefined();
+    expect(document.querySelector('[data-filter-select="installed-dependency"]').value).toBe("library");
+    expect([...document.querySelectorAll(".spme-package-card")].map((card) => card.dataset.packageId)).toEqual([
+      "disabled-consumer",
+      "enabled-consumer",
+    ]);
   });
 
   it("allows disabling a dependency without warning when only disabled plugins require it", async () => {
@@ -761,6 +852,24 @@ describe("EnhancedPluginManager", () => {
     expect(app.viewMode).toBe("table");
     expect(target?.tagName).toBe("TR");
     expect(document.activeElement).toBe(target);
+  });
+
+  it("clears a dependency filter when revealing an Installed deep link outside its results", async () => {
+    const { app } = await mountApp();
+    const template = app.inventory.packages[0];
+    const library = { ...template, package_id: "library", name: "Shared Library", requires: [], plugin: { ...template.plugin, id: "library", name: "Shared Library", requires: [] } };
+    const consumer = { ...template, package_id: "consumer", name: "Consumer", requires: ["library"], plugin: { ...template.plugin, id: "consumer", name: "Consumer", requires: ["library"] } };
+    const ordinary = { ...template, package_id: "ordinary", name: "Ordinary Plugin", requires: [], plugin: { ...template.plugin, id: "ordinary", name: "Ordinary Plugin", requires: [] } };
+    app.inventory.packages = [library, consumer, ordinary];
+    app.filters.installed.dependency = "library";
+    app.render();
+    const anchorID = installedAnchorID("ordinary");
+    window.history.replaceState({}, "", `/settings?tab=plugins&pluginManagerTab=installed#${anchorID}`);
+
+    expect(document.getElementById(anchorID)).toBeNull();
+    expect(app.scrollToInstalledFromURL({ behavior: "auto" })).toBe(true);
+    expect(app.filters.installed.dependency).toBe("");
+    expect(document.getElementById(anchorID)).not.toBeNull();
   });
 
   it("links Installed and Browse source labels to stable source anchors in Cards and Table views", async () => {

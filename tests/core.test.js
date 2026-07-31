@@ -307,6 +307,20 @@ describe("filterPackages", () => {
       filterPackages(packages, { enabled: false, updatesOnly: true })
     ).toEqual([packages[1]]);
   });
+
+  it("filters enabled and disabled consumers by a required dependency", () => {
+    const dependencyPackages = [
+      { package_id: "library", name: "Shared Library", enabled: true, requires: [] },
+      { package_id: "enabled-consumer", name: "Enabled Consumer", enabled: true, requires: ["library"] },
+      { package_id: "disabled-consumer", name: "Disabled Consumer", enabled: false, requires: ["library"] },
+      { package_id: "other", name: "Other Plugin", enabled: true, requires: [] },
+    ];
+
+    expect(filterPackages(dependencyPackages, { dependency: "library" })).toEqual([
+      dependencyPackages[1],
+      dependencyPackages[2],
+    ]);
+  });
 });
 
 describe("capabilitySummary", () => {

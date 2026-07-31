@@ -164,7 +164,7 @@ export class EnhancedPluginManager {
     this.selectedInstalled = new Set();
     this.selectedAvailable = new Set();
     this.filters = {
-      installed: { query: "", enabled: installedEnabled, updatesOnly: false, sort: installedSort },
+      installed: { query: "", enabled: installedEnabled, updatesOnly: false, dependency: "", sort: installedSort },
       browse: { query: "", source: "", sort: "last-commit" },
       sources: { sort: "packages-desc" },
       configuration: { query: "", enabled: true },
@@ -308,7 +308,8 @@ export class EnhancedPluginManager {
       .map((dependent) => `${dependent.name || dependent.package_id} (${dependent.enabled ? "enabled" : "disabled"})`)
       .join(", ");
     const tooltip = `Required by: ${requiredBy}`;
-    return `<span class="spme-badge spme-status-dependency" title="${escapeHTML(tooltip)}" aria-label="${escapeHTML(`Dependency. ${tooltip}`)}">Dependency</span>`;
+    const actionLabel = `Filter Installed to plugins requiring ${pkg.name || pkg.package_id}. ${tooltip}`;
+    return `<button type="button" class="spme-badge spme-status-dependency" data-action="filter-dependency" data-id="${escapeHTML(pkg.package_id)}" title="${escapeHTML(tooltip)}" aria-label="${escapeHTML(actionLabel)}">Dependency</button>`;
   }
 
   saveCurrentInstallAssumptions() {
@@ -357,6 +358,7 @@ export class EnhancedPluginManager {
       this.filters.installed.query = "";
       this.filters.installed.enabled = undefined;
       this.filters.installed.updatesOnly = false;
+      this.filters.installed.dependency = "";
       this.render();
       target = this.document.getElementById(anchorID);
     }
@@ -539,11 +541,41 @@ export class EnhancedPluginManager {
     return `<label><span>Sort</span><select data-filter-select="${kind}-sort" aria-label="Sort ${kind === "installed" ? "installed" : "available"} plugins"><option value="name" ${selected === "name" ? "selected" : ""}>Plugin name (A–Z)</option><option value="last-commit" ${selected === "last-commit" ? "selected" : ""}>Last commit (newest)</option><option value="last-commit-oldest" ${selected === "last-commit-oldest" ? "selected" : ""}>Last commit (oldest)</option></select></label>`;
   }
 
+  knownDependencyPackages() {
+    return sortPackages(
+      this.inventory.packages.filter((pkg) => dependentPlugins(this.inventory.packages, pkg.package_id).length),
+      "name"
+    );
+  }
+
+  dependencyFilterHTML(dependencies = this.knownDependencyPackages()) {
+    const selected = this.filters.installed.dependency;
+    const options = dependencies
+      .map((pkg) => `<option value="${escapeHTML(pkg.package_id)}" ${selected === pkg.package_id ? "selected" : ""}>${escapeHTML(pkg.name || pkg.package_id)}</option>`)
+      .join("");
+    return `<label><span>Dependency</span><select data-filter-select="installed-dependency" aria-label="Filter installed plugins by dependency"><option value="">All plugins</option>${options}</select></label>`;
+  }
+
+  selectInstalledDependency(dependencyID) {
+    this.filters.installed.dependency = dependencyID;
+    if (!dependencyID) return;
+    this.filters.installed.enabled = undefined;
+    try {
+      this.storage?.setItem("spme.installedStatus", "");
+    } catch {
+      // Storage may be unavailable in privacy-restricted browser contexts.
+    }
+  }
+
   installedHTML() {
+    const dependencies = this.knownDependencyPackages();
+    if (this.filters.installed.dependency && !dependencies.some((pkg) => pkg.package_id === this.filters.installed.dependency)) {
+      this.selectInstalledDependency("");
+    }
     const packages = sortPackages(filterPackages(this.inventory.packages, this.filters.installed), this.filters.installed.sort);
     const selected = packages.filter((pkg) => this.selectedInstalled.has(pkg.package_id));
     const updates = this.inventory.packages.filter((pkg) => pkg.status === "update");
-    const filterExtras = `${this.sortControlHTML("installed")}<label><span>Status</span><select data-filter-select="installed-enabled" aria-label="Filter installed plugins by enabled status"><option value="">All states</option><option value="true" ${
+    const filterExtras = `${this.sortControlHTML("installed")}${this.dependencyFilterHTML(dependencies)}<label><span>Status</span><select data-filter-select="installed-enabled" aria-label="Filter installed plugins by enabled status"><option value="">All states</option><option value="true" ${
       this.filters.installed.enabled === true ? "selected" : ""
     }>Enabled</option><option value="false" ${
       this.filters.installed.enabled === false ? "selected" : ""
@@ -952,6 +984,12 @@ export class EnhancedPluginManager {
       this.browseLimit += 50;
       return this.render();
     }
+    if (action === "filter-dependency") {
+      const dependency = this.packageByID(button.dataset.id);
+      if (!dependency || !dependentPlugins(this.inventory.packages, dependency.package_id).length) return;
+      this.selectInstalledDependency(dependency.package_id);
+      return this.render();
+    }
     if (action === "toggle-enabled") {
       const pkg = this.packageByID(button.dataset.id);
       if (!pkg) return;
@@ -1072,6 +1110,13 @@ export class EnhancedPluginManager {
           // Storage may be unavailable in privacy-restricted browser contexts.
         }
       }
+      return this.render();
+    }
+    if (target.dataset.filterSelect === "installed-dependency") {
+      const dependency = this.inventory.packages.find((pkg) =>
+        pkg.package_id === target.value && dependentPlugins(this.inventory.packages, pkg.package_id).length
+      );
+      this.selectInstalledDependency(dependency?.package_id ?? "");
       return this.render();
     }
     if (target.dataset.filterSelect === "browse-source") {
