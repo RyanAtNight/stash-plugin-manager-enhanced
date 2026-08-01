@@ -1151,6 +1151,29 @@ describe("EnhancedPluginManager", () => {
     expect(document.activeElement).toBe(panel);
   });
 
+  it("exposes a plugin-owned extension action slot in Configuration cards", async () => {
+    const { app } = await mountApp();
+    await app.setTab("configuration");
+
+    const card = document.querySelector('article[data-package-id="alpha"]');
+    const panel = card?.querySelector('.spme-plugin-config[data-plugin-id="alpha"]');
+    const actions = panel?.querySelector('.spme-plugin-extension-actions.spme-card-actions[data-spme-config-actions="alpha"]');
+
+    expect(card).not.toBeNull();
+    expect(panel).not.toBeNull();
+    expect(actions).not.toBeNull();
+    expect(actions?.querySelector('[data-action="save-config"]')).toBeNull();
+    expect(actions?.querySelector('[data-action="reset-config"]')).toBeNull();
+    expect(panel?.querySelector('.spme-actions:not(.spme-plugin-extension-actions) [data-action="save-config"]')).not.toBeNull();
+    expect(panel?.querySelector('.spme-actions:not(.spme-plugin-extension-actions) [data-action="reset-config"]')).not.toBeNull();
+
+    const pluginAction = document.createElement("button");
+    pluginAction.className = "sgc-open-configurator";
+    pluginAction.textContent = "Open visual configurator";
+    actions.append(pluginAction);
+    expect(card?.querySelector('.spme-plugin-extension-actions > .sgc-open-configurator')?.textContent).toBe("Open visual configurator");
+  });
+
   it("links every Configuration panel back to its highlighted Installed item", async () => {
     const scrollIntoView = vi.fn();
     window.HTMLElement.prototype.scrollIntoView = scrollIntoView;

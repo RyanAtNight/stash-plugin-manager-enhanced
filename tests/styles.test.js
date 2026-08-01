@@ -188,6 +188,11 @@ describe("package view responsive styles", () => {
     expect(css).toMatch(/\.spme-source-form-inline\s*\{[\s\S]*grid-column:\s*1\s*\/\s*-1[\s\S]*background:\s*transparent[\s\S]*border:\s*0/);
   });
 
+  it("keeps plugin-owned Configuration action slots invisible until populated", () => {
+    expect(css).toMatch(/\.spme-plugin-extension-actions:empty\s*\{\s*display:\s*none/);
+    expect(css).toMatch(/#spme-root\[data-active-tab="configuration"\] \.spme-plugin-extension-actions\s*\{[^}]*grid-column:\s*auto[^}]*justify-content:\s*flex-start[^}]*padding-top:\s*0[^}]*border-top:\s*0/);
+  });
+
   it("turns Table rows into labeled stacked cards on narrow windows", () => {
     const mobile = css.slice(css.indexOf("@media (max-width: 1100px)"));
     expect(mobile).toMatch(/\.spme-package-table thead\s*\{\s*display:\s*none/);
