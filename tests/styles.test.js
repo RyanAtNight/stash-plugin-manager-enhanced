@@ -191,6 +191,7 @@ describe("package view responsive styles", () => {
   it("keeps plugin-owned Configuration action slots invisible until populated", () => {
     expect(css).toMatch(/\.spme-plugin-extension-actions:empty\s*\{\s*display:\s*none/);
     expect(css).toMatch(/#spme-root\[data-active-tab="configuration"\] \.spme-plugin-extension-actions\s*\{[^}]*grid-column:\s*auto[^}]*justify-content:\s*flex-start[^}]*padding-top:\s*0[^}]*border-top:\s*0/);
+    expect(css).toMatch(/#spme-root\[data-active-tab="configuration"\] \.spme-plugin-extension-actions > \*\s*\{\s*margin-left:\s*0/);
   });
 
   it("turns Table rows into labeled stacked cards on narrow windows", () => {
