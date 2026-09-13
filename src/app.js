@@ -31,6 +31,15 @@ const TAB_DEFINITIONS = [
 ];
 
 const PLUGIN_ID = "stash-plugin-manager-enhanced";
+const HEADER_TAB_ICONS = {
+  installed: '<path d="m7.5 4.27 9 5.15M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/>',
+  browse: '<circle cx="12" cy="12" r="10"/><path d="m16.24 7.76-2.12 6.36-6.36 2.12 2.12-6.36 6.36-2.12z"/>',
+  sources: '<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5M3 12a9 3 0 0 0 18 0"/>',
+  configuration: '<path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/>',
+};
+function headerIcon(paths) {
+  return `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
+}
 const DISPLAY_VERSION = `${pluginManagerVersion}-${typeof __SPME_COMMIT_ID__ === "undefined" ? "dev" : __SPME_COMMIT_ID__}`;
 const LAST_UPDATE_CHECK_SETTING = "lastUpdateCheck";
 const SEARCH_DELAY_MS = 250;
@@ -624,7 +633,7 @@ export class EnhancedPluginManager {
         ([id, label]) => `<button type="button" role="tab" data-action="tab" data-tab="${id}"
           aria-selected="${this.activeTab === id}" class="${
             this.activeTab === id ? "active" : ""
-          }">${label}</button>`
+          }">${headerIcon(HEADER_TAB_ICONS[id])}${label}</button>`
       ).join("")}
     </div>`;
   }
@@ -645,17 +654,20 @@ export class EnhancedPluginManager {
           <button type="button" data-action="set-view" data-view-mode="table" aria-pressed="${this.viewMode === "table"}">Table</button>
         </div>`
       : "";
-    return `<header class="spme-header">
-      <div><h1>Plugin Manager Enhanced</h1><p>Version ${escapeHTML(DISPLAY_VERSION)}</p></div>
-      <div class="spme-header-tools">
+    return `<div class="spme-header-container"><header class="spme-header">
+      <div class="spme-header-identity"><h1>Plugin Manager Enhanced</h1><p>Version ${escapeHTML(DISPLAY_VERSION)}</p>
         <div class="spme-summary" aria-label="Plugin summary">
           <span><strong>${this.inventory.packages.length}</strong> installed</span>
           <span><strong>${enabled}</strong> enabled</span>
           <span class="${updates ? "spme-text-warning" : ""}"><strong>${updates}</strong> updates</span>
         </div>
-        ${viewToggle}
       </div>
-    </header>`;
+      ${this.tabsHTML()}
+      <div class="spme-header-tools">
+        ${viewToggle}
+        <a class="spme-project-link" href="https://github.com/RyanAtNight/stash-plugin-manager-enhanced" target="_blank" rel="noopener noreferrer" aria-label="Plugin Manager Enhanced on GitHub">${headerIcon('<path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 19 4.77 5.07 5.07 0 0 0 18.91 1S17.73.65 15 2.48a13.38 13.38 0 0 0-7 0C5.27.65 4.09 1 4.09 1A5.07 5.07 0 0 0 4 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 8 18.13V22"/>')}GitHub</a>
+      </div>
+    </header></div>`;
   }
 
   toolbarHTML({ kind, count, selectedCount = 0, hiddenSelectedCount = 0, filters = "", sort = "" }) {
@@ -1051,7 +1063,7 @@ export class EnhancedPluginManager {
       sources: () => this.sourcesHTML(),
       configuration: () => this.configurationHTML(),
     };
-    this.root.innerHTML = `${this.headerHTML()}${this.tabsHTML()}${this.messageHTML()}${panels[this.activeTab]()}`;
+    this.root.innerHTML = `${this.headerHTML()}${this.messageHTML()}${panels[this.activeTab]()}`;
     this.updateBusyControls();
   }
 

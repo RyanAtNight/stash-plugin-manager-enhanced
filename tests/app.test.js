@@ -110,6 +110,10 @@ describe("EnhancedPluginManager", () => {
   it("identifies the page as Plugin Manager Enhanced", async () => {
     await mountApp();
     expect(document.querySelector("#spme-root h1")?.textContent).toBe("Plugin Manager Enhanced");
+    expect(document.querySelector('.spme-header [role="tablist"]')).not.toBeNull();
+    const projectLink = document.querySelector('.spme-header .spme-project-link');
+    expect(projectLink?.getAttribute('href')).toBe('https://github.com/RyanAtNight/stash-plugin-manager-enhanced');
+    expect(projectLink?.getAttribute('rel')).toBe('noopener noreferrer');
   });
 
   it("replaces the three core sections with four focused tabs", async () => {

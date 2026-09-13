@@ -10,17 +10,17 @@ describe("package view responsive styles", () => {
     expect(css).toMatch(/left:\s*50%[\s\S]*translateX\(-50%\)/);
   });
 
-  it("gives inactive and active subtabs distinct surfaces with space before the separator", () => {
-    expect(css).toMatch(/\.spme-tabs\s*\{[\s\S]*padding-bottom:\s*\.8(?:rem|5rem)/);
-    expect(css).toMatch(/#spme-root \.spme-tabs button\s*\{[\s\S]*background:\s*var\(--spme-panel-2\)[\s\S]*border:\s*1px solid var\(--spme-border\)/);
-    expect(css).toMatch(/#spme-root \.spme-tabs button\.active\s*\{[\s\S]*background:\s*var\(--spme-accent\)/);
+  it("moves section tabs below identity and utilities when the header narrows", () => {
+    expect(css).toContain('grid-template-areas:"identity tabs tools"');
+    expect(css).toMatch(/@container spme-header \(max-width:660px\)[\s\S]*grid-template-areas:"identity tools" "tabs tabs"/);
+    expect(css).toMatch(/@container spme-header \(max-width:510px\)[\s\S]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
   });
 
   it("joins Cards and Table into a compact segmented control", () => {
     expect(css).toMatch(/\.spme-view-toggle\s*\{[^}]*gap:\s*0(?:;|\s)/);
     expect(css).toMatch(/#spme-root \.spme-view-toggle button\s*\{[^}]*border-color:\s*transparent/);
-    expect(css).toMatch(/#spme-root \.spme-view-toggle button\[aria-pressed="true"\]\s*\{[^}]*border-color:\s*var\(--spme-accent\)/);
-    expect(css).toMatch(/#spme-root \.spme-view-toggle button\[aria-pressed="true"\]:hover,\s*#spme-root \.spme-view-toggle button\[aria-pressed="true"\]:active\s*\{[^}]*background:\s*var\(--spme-accent\)[^}]*box-shadow:\s*none[^}]*cursor:\s*default/);
+    expect(css).toMatch(/#spme-root \.spme-view-toggle button\[aria-pressed="true"\]\s*\{[^}]*background:#2f4352/);
+    expect(css).toMatch(/#spme-root \.spme-view-toggle button\[aria-pressed="true"\]:hover,\s*#spme-root \.spme-view-toggle button\[aria-pressed="true"\]:active\s*\{[^}]*background:#2f4352[^}]*box-shadow:\s*none[^}]*cursor:\s*default/);
   });
 
   it("wraps table descriptions instead of truncating them", () => {
