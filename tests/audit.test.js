@@ -28,6 +28,23 @@ async function setup({ mount = true } = {}) {
 
 const click = (action) => app.onClick({ target: document.querySelector(`[data-action="${action}"]`) });
 
+it("preserves first-seen dates and records installs and uninstalls after operations", async () => {
+  const { inventory } = await setup();
+  const firstSeen = app.inventory.packages[0].installedAt;
+  app.now = () => firstSeen + 1000;
+  inventory.packages.push(packageFixture("gamma"));
+  await app.runOperation("Install", async () => true, { checkUpdatesAfter: false });
+  expect(app.packageByID("alpha").installedAt).toBe(firstSeen);
+  expect(app.packageByID("gamma").installedAt).toBe(firstSeen + 1000);
+  inventory.packages = inventory.packages.filter((pkg) => pkg.package_id !== "gamma");
+  await app.runOperation("Uninstall", async () => true, { checkUpdatesAfter: false });
+  expect(app.installDates.gamma).toBeUndefined();
+  inventory.packages.push(packageFixture("gamma"));
+  app.now = () => firstSeen + 2000;
+  await app.runOperation("Reinstall", async () => true, { checkUpdatesAfter: false });
+  expect(app.packageByID("gamma").installedAt).toBe(firstSeen + 2000);
+});
+
 it("does not promote a failed configuration save into confirmed state", async () => {
   const { service } = await setup();
   await app.setTab("configuration");

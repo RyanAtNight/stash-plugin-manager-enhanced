@@ -1020,6 +1020,7 @@ export class EnhancedPluginManager {
         await this.service.waitForJob(result);
       }
       this.inventory = await this.service.loadInstalled({ checkUpdates: checkUpdatesAfter });
+      this.recordInstallDates();
       if (checkUpdatesAfter) await this.recordUpdateCheck();
       else await this.syncLastUpdateCheckFromInventory();
       if (rememberNewInstalls) {
