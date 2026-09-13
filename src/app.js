@@ -14,6 +14,7 @@ import {
   safeExternalUrl,
   sourceAnchorHref,
   sourceAnchorID,
+  sourceTrust,
   sortPackages,
   withoutPluginManagerConfigurationAnchor,
   withoutPluginManagerInstalledAnchor,
@@ -887,12 +888,7 @@ export class EnhancedPluginManager {
       return { source, index, health, installed, enabled, packages: health?.packageCount ?? 0 };
     }), this.filters.sources.sort).map((entry) => {
       const { source, health } = entry;
-      const trust = health?.source ? this.available.packages.find((pkg) => pkg.sourceURL === source.url)?.trust : undefined;
-      const inferredTrust = trust ?? (source.url.includes("stashapp.github.io/CommunityScripts")
-        ? { level: "official", label: "Official Stash source" }
-        : source.url.includes("github")
-          ? { level: "community", label: "Community GitHub source" }
-          : { level: "unverified", label: "Unverified source" });
+      const inferredTrust = sourceTrust(source.url);
       const sourceLink = safeExternalUrl(source.url);
       const sourceURL = sourceLink
         ? `<a href="${escapeHTML(sourceLink)}" target="_blank" rel="noopener noreferrer">${escapeHTML(source.url)} ↗</a>`

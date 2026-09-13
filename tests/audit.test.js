@@ -28,6 +28,21 @@ async function setup({ mount = true } = {}) {
 
 const click = (action) => app.onClick({ target: document.querySelector(`[data-action="${action}"]`) });
 
+it.each(["cards", "table"])("uses parsed source provenance even for failed and empty catalogs in %s", async (view) => {
+  await setup();
+  app.viewMode = view;
+  app.inventory.sources = [
+    { name: "Fake official", url: "https://example.test/stashapp.github.io/CommunityScripts/index.yml" },
+    { name: "Fake community", url: "https://github.evil.test/index.yml" },
+    { name: "Official", url: "https://stashapp.github.io/CommunityScripts/stable/index.yml" },
+  ];
+  app.available = { packages: [], health: [] };
+  await app.setTab("sources");
+  expect(document.querySelectorAll(".spme-trust-official")).toHaveLength(1);
+  expect(document.querySelectorAll(".spme-trust-unverified")).toHaveLength(2);
+  expect(document.querySelectorAll(".spme-trust-community")).toHaveLength(0);
+});
+
 it("preserves first-seen dates and records installs and uninstalls after operations", async () => {
   const { inventory } = await setup();
   const firstSeen = app.inventory.packages[0].installedAt;
