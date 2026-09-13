@@ -612,7 +612,7 @@ export class EnhancedPluginManager {
     </header>`;
   }
 
-  toolbarHTML({ kind, count, selectedCount = 0, filters = "", sort = "" }) {
+  toolbarHTML({ kind, count, selectedCount = 0, hiddenSelectedCount = 0, filters = "", sort = "" }) {
     const label = kind === "installed" ? "installed plugins" : "available plugins";
     return `<div class="spme-toolbar">
       <label class="spme-search"><span>Search ${label}</span><input type="search" data-filter="${kind}" aria-label="Search ${label}" placeholder="Name, ID, description, or source" value="${escapeHTML(
@@ -620,7 +620,7 @@ export class EnhancedPluginManager {
       )}"></label>
       ${filters}
       <span class="spme-result-count" aria-live="polite">${plural(count, "result")}</span>
-      ${selectedCount ? `<span class="spme-selected-count">${plural(selectedCount, "selected plugin")}</span>` : ""}
+      ${selectedCount || hiddenSelectedCount ? `<span class="spme-selected-count">${[selectedCount ? plural(selectedCount, "selected plugin") : "", hiddenSelectedCount ? `${plural(hiddenSelectedCount, "selection")} hidden by filters` : ""].filter(Boolean).join("; ")}</span>` : ""}
       ${sort}
     </div>`;
   }
@@ -729,7 +729,8 @@ export class EnhancedPluginManager {
       this.selectInstalledDependency("");
     }
     const packages = sortPackages(filterPackages(this.inventory.packages, this.filters.installed), this.filters.installed.sort);
-    const selected = packages.filter((pkg) => this.selectedInstalled.has(pkg.package_id));
+    const selected = this.selectedPackages("installed");
+    const hiddenSelectedCount = this.selectedPackages("installed", false).length - selected.length;
     const updates = this.inventory.packages.filter((pkg) => pkg.status === "update");
     const filters = `${this.dependencyFilterHTML(dependencies)}<label><span>Status</span><select data-filter-select="installed-enabled" aria-label="Filter installed plugins by enabled status"><option value="">All states</option><option value="true" ${
       this.filters.installed.enabled === true ? "selected" : ""
@@ -754,7 +755,7 @@ export class EnhancedPluginManager {
         }>Uninstall selected (${selected.length})</button>
         <button type="button" data-action="reload">Reload plugin definitions</button>
       </div>
-      ${this.toolbarHTML({ kind: "installed", count: packages.length, selectedCount: selected.length, filters, sort: this.sortControlHTML("installed") })}
+      ${this.toolbarHTML({ kind: "installed", count: packages.length, selectedCount: selected.length, hiddenSelectedCount, filters, sort: this.sortControlHTML("installed") })}
       <div data-search-results>
       ${this.viewMode === "table"
         ? this.packageTable(packages, true)
@@ -849,12 +850,13 @@ export class EnhancedPluginManager {
     if (!this.available) return '<div class="spme-loading" role="status">Loading available plugins…</div>';
     const packages = sortPackages(filterPackages(this.available.packages, this.filters.browse), this.filters.browse.sort);
     const visiblePackages = packages.slice(0, this.browseLimit);
-    const selected = packages.filter((pkg) => this.selectedAvailable.has(`${pkg.sourceURL}|${pkg.package_id}`));
+    const selected = this.selectedPackages("browse");
+    const hiddenSelectedCount = this.selectedPackages("browse", false).length - selected.length;
     const sourceOptions = this.inventory.sources.map((source) => `<option value="${escapeHTML(source.url)}" ${this.filters.browse.source === source.url ? "selected" : ""}>${escapeHTML(source.name || source.url)}</option>`).join("");
     const filters = `<label><span>Source</span><select data-filter-select="browse-source" aria-label="Filter available plugins by source"><option value="">All sources</option>${sourceOptions}</select></label>`;
     return `<section class="spme-panel" role="tabpanel">
       <div class="spme-actions spme-sticky"><button type="button" data-action="install-selected" ${!selected.length || this.busy ? "disabled" : ""}>Install selected (${selected.length})</button><button type="button" data-action="refresh-sources">Refresh catalog</button></div>
-      ${this.toolbarHTML({ kind: "browse", count: packages.length, selectedCount: selected.length, filters, sort: this.sortControlHTML("browse") })}
+      ${this.toolbarHTML({ kind: "browse", count: packages.length, selectedCount: selected.length, hiddenSelectedCount, filters, sort: this.sortControlHTML("browse") })}
       <div data-search-results>
       ${this.viewMode === "table"
         ? this.packageTable(visiblePackages, false)
@@ -990,6 +992,14 @@ export class EnhancedPluginManager {
 
   packageByID(id) {
     return this.inventory.packages.find((pkg) => pkg.package_id === id);
+  }
+
+  selectedPackages(kind, matchingFilters = true) {
+    const installed = kind === "installed";
+    const packages = (installed ? this.inventory?.packages : this.available?.packages) ?? [];
+    const selected = installed ? this.selectedInstalled : this.selectedAvailable;
+    return (matchingFilters ? filterPackages(packages, this.filters[kind]) : packages)
+      .filter((pkg) => !pkg.runtimeOnly && selected.has(installed ? pkg.package_id : `${pkg.sourceURL}|${pkg.package_id}`));
   }
 
   availableByKey(key) {
@@ -1279,8 +1289,10 @@ export class EnhancedPluginManager {
       return;
     }
 
-    const installedSelected = this.inventory.packages.filter((pkg) => this.selectedInstalled.has(pkg.package_id));
-    const availableSelected = this.available?.packages.filter((pkg) => this.selectedAvailable.has(`${pkg.sourceURL}|${pkg.package_id}`)) ?? [];
+    const installedSelected = this.selectedPackages("installed");
+    const availableSelected = this.selectedPackages("browse");
+    if (["update-selected", "uninstall-selected"].includes(action) && !installedSelected.length) return;
+    if (action === "install-selected" && !availableSelected.length) return;
     if (action === "update-all") return this.runOperation("Updating all available plugins", () => this.service.update(this.inventory.packages.filter((pkg) => pkg.status === "update")));
     if (action === "update-selected") return this.runOperation("Updating selected plugins", () => this.service.update(installedSelected));
     if (action === "install-selected") return this.runOperation("Installing selected plugins", () => this.service.install(availableSelected), { checkUpdatesAfter: false, rememberNewInstalls: true });
