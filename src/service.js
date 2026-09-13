@@ -115,11 +115,16 @@ function mergeRuntimeOnly(plugin) {
 export class PluginManagerService {
   constructor(
     client,
-    storage = globalThis.localStorage,
+    storage,
     sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds))
   ) {
     this.client = client;
-    this.storage = storage;
+    try {
+      this.storage = storage ?? globalThis.localStorage;
+    } catch {
+      // Accessing localStorage itself may be denied by the browser.
+    }
+    this.sourceChecks = new Map();
     this.sleep = sleep;
   }
 
@@ -144,6 +149,15 @@ export class PluginManagerService {
     };
   }
 
+  sourceCheckedAt(url) {
+    if (this.sourceChecks.has(url)) return this.sourceChecks.get(url);
+    try {
+      return this.storage?.getItem?.(`spme-source-check:${url}`);
+    } catch {
+      return undefined;
+    }
+  }
+
   async loadAvailable(sources, installedIDs) {
     const settled = await Promise.all(
       sources.map(async (source) => {
@@ -152,16 +166,19 @@ export class PluginManagerService {
             source: source.url,
           });
           const packages = data.availablePackages ?? [];
-          this.storage?.setItem?.(
-            `spme-source-check:${source.url}`,
-            new Date().toISOString()
-          );
+          const checkedAt = new Date().toISOString();
+          this.sourceChecks.set(source.url, checkedAt);
+          try {
+            this.storage?.setItem?.(`spme-source-check:${source.url}`, checkedAt);
+          } catch {
+            // Optional timestamp persistence must not discard a healthy catalog.
+          }
           return {
             source,
             ok: true,
             packageCount: packages.length,
             packages,
-            checkedAt: this.storage?.getItem?.(`spme-source-check:${source.url}`),
+            checkedAt,
           };
         } catch (error) {
           return {
@@ -170,7 +187,7 @@ export class PluginManagerService {
             packageCount: 0,
             packages: [],
             error: error instanceof Error ? error.message : String(error),
-            checkedAt: this.storage?.getItem?.(`spme-source-check:${source.url}`),
+            checkedAt: this.sourceCheckedAt(source.url),
           };
         }
       })

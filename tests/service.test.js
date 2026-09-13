@@ -2,6 +2,22 @@ import { describe, expect, it, vi } from "vitest";
 import { PluginManagerService } from "../src/service.js";
 
 describe("PluginManagerService", () => {
+  it("keeps healthy catalogs and last-check times when storage throws", async () => {
+    const client = { request: vi.fn().mockResolvedValue({ availablePackages: [{ package_id: "alpha", metadata: {} }] }) };
+    const storage = { setItem: () => { throw new Error("quota"); }, getItem: () => { throw new Error("denied"); } };
+    const service = new PluginManagerService(client, storage);
+    const sources = [{ name: "Example", url: "https://example.test/index.yml" }];
+    const healthy = await service.loadAvailable(sources, new Set());
+    expect(healthy.packages).toHaveLength(1);
+    expect(healthy.health[0].ok).toBe(true);
+    expect(Date.parse(healthy.health[0].checkedAt)).toBeGreaterThan(0);
+    client.request.mockRejectedValue(new Error("offline"));
+    const failed = await service.loadAvailable(sources, new Set());
+    expect(failed.health[0]).toMatchObject({ ok: false, error: "offline", checkedAt: healthy.health[0].checkedAt });
+    const fresh = await new PluginManagerService(client, storage).loadAvailable(sources, new Set());
+    expect(fresh.health[0]).toMatchObject({ ok: false, error: "offline", checkedAt: undefined });
+  });
+
   it("loads and merges installed package, runtime plugin, and source information", async () => {
     const client = {
       request: vi.fn().mockResolvedValue({
