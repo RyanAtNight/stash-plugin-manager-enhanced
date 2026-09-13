@@ -28,6 +28,19 @@ async function setup({ mount = true } = {}) {
 
 const click = (action) => app.onClick({ target: document.querySelector(`[data-action="${action}"]`) });
 
+it("retries a rejected initial request and replaces the error shell", async () => {
+  const { service } = await setup({ mount: false });
+  service.loadInstalled.mockRejectedValueOnce(new Error("offline"));
+  expect(await app.mount()).toBe(false);
+  expect(document.querySelector('[data-action="retry"]')).not.toBeNull();
+  await click("retry");
+  expect(service.loadInstalled).toHaveBeenCalledTimes(2);
+  expect(document.querySelectorAll("#spme-root")).toHaveLength(1);
+  expect(document.querySelectorAll(".spme-core-hidden")).toHaveLength(3);
+  expect(document.querySelector('[data-action="retry"]')).toBeNull();
+  expect(document.querySelector('[data-filter="installed"]')).not.toBeNull();
+});
+
 it.each(["cards", "table"])("uses parsed source provenance even for failed and empty catalogs in %s", async (view) => {
   await setup();
   app.viewMode = view;

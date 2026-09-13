@@ -1243,7 +1243,10 @@ export class EnhancedPluginManager {
       }
       return this.render();
     }
-    if (action === "retry") return this.mount();
+    if (action === "retry") {
+      this.unmount();
+      return this.mount();
+    }
     if (action === "show-core") return this.unmount();
     if (action === "check-updates") return this.refresh({ checkUpdates: true });
     if (action === "refresh-sources") {
