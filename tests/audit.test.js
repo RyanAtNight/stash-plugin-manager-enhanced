@@ -28,6 +28,24 @@ async function setup({ mount = true } = {}) {
 
 const click = (action) => app.onClick({ target: document.querySelector(`[data-action="${action}"]`) });
 
+it("keeps sources and catalog on failed deletion and uses refreshed sources on success", async () => {
+  const { service, inventory } = await setup();
+  await app.setTab("sources");
+  const available = app.available;
+  service.saveSources.mockRejectedValueOnce(new Error("offline"));
+  await click("delete-source");
+  expect(app.message.type).toBe("error");
+  expect(app.inventory.sources).toEqual([source]);
+  expect(app.available).toBe(available);
+  service.saveSources.mockImplementationOnce(async () => {
+    inventory.sources = [{ name: "Concurrent addition", url: "https://other.test/index.yml" }];
+    return inventory.sources;
+  });
+  await click("delete-source");
+  expect(app.inventory.sources).toEqual(inventory.sources);
+  expect(document.querySelector(".spme-source-card").textContent).toContain("Concurrent addition");
+});
+
 beforeEach(() => {
   window.history.replaceState({}, "", "/settings?tab=plugins");
   window.localStorage.clear();

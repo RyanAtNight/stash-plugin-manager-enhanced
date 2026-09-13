@@ -1339,8 +1339,6 @@ export class EnhancedPluginManager {
       if (!this.confirm?.(`Delete plugin source “${source.name || source.url}”? Installed plugins will remain installed.`)) return;
       const sources = this.inventory.sources.filter((_, i) => i !== index);
       await this.runOperation(`Deleting source ${source.name || source.url}`, () => this.service.saveSources(sources));
-      this.inventory.sources = sources;
-      this.available = undefined;
       return;
     }
     if (action === "save-config") return this.savePluginConfig(button.dataset.id);
