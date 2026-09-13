@@ -249,7 +249,7 @@ export class EnhancedPluginManager {
     this.renderLoading("Loading installed plugins…");
 
     try {
-      this.inventory = await this.service.loadInstalled({ checkUpdates: false });
+      this.acceptInventory(await this.service.loadInstalled({ checkUpdates: false }));
       this.recordInstallDates();
       this.applyCurrentInstallAssumptions();
       await this.syncLastUpdateCheckFromInventory();
@@ -506,7 +506,7 @@ export class EnhancedPluginManager {
     this.busy = true;
     this.render();
     try {
-      this.inventory = await this.service.loadInstalled({ checkUpdates });
+      this.acceptInventory(await this.service.loadInstalled({ checkUpdates }));
       this.recordInstallDates();
       if (checkUpdates) await this.recordUpdateCheck();
       else await this.syncLastUpdateCheckFromInventory();
@@ -526,12 +526,41 @@ export class EnhancedPluginManager {
     }
   }
 
+  invalidateCatalog() {
+    this.available = undefined;
+    this.availableRequest = undefined;
+  }
+
+  acceptInventory(inventory) {
+    this.inventory = inventory;
+    this.invalidateCatalog();
+    const installedIDs = new Set(inventory.packages.map((pkg) => pkg.package_id));
+    this.selectedInstalled = new Set([...this.selectedInstalled].filter((id) => installedIDs.has(id)));
+    this.selectedAvailable = new Set([...this.selectedAvailable].filter((key) =>
+      inventory.sources.some((source) => key.startsWith(`${source.url}|`) && !installedIDs.has(key.slice(source.url.length + 1)))
+    ));
+    if (this.filters.browse.source && !inventory.sources.some((source) => source.url === this.filters.browse.source)) {
+      this.filters.browse.source = "";
+    }
+  }
+
   async loadAvailable(force = false) {
-    if (this.available && !force) return;
-    this.available = await this.service.loadAvailable(
-      this.inventory.sources,
-      new Set(this.inventory.packages.map((pkg) => pkg.package_id))
-    );
+    if (force) this.invalidateCatalog();
+    if (this.available) return;
+    const request = this.availableRequest ??= {
+      promise: this.service.loadAvailable(this.inventory.sources, new Set(this.inventory.packages.map((pkg) => pkg.package_id))),
+    };
+    try {
+      const available = await request.promise;
+      if (this.availableRequest !== request) return;
+      this.available = available;
+      const keys = new Set(available.packages.map((pkg) => `${pkg.sourceURL}|${pkg.package_id}`));
+      this.selectedAvailable = new Set([...this.selectedAvailable].filter((key) => keys.has(key)));
+    } catch (error) {
+      if (this.availableRequest === request) throw error;
+    } finally {
+      if (this.availableRequest === request) this.availableRequest = undefined;
+    }
   }
 
   async setTab(tab, { updateURL = true } = {}) {
@@ -1016,7 +1045,7 @@ export class EnhancedPluginManager {
         this.render();
         await this.service.waitForJob(result);
       }
-      this.inventory = await this.service.loadInstalled({ checkUpdates: checkUpdatesAfter });
+      this.acceptInventory(await this.service.loadInstalled({ checkUpdates: checkUpdatesAfter }));
       this.recordInstallDates();
       if (checkUpdatesAfter) await this.recordUpdateCheck();
       else await this.syncLastUpdateCheckFromInventory();
@@ -1250,7 +1279,7 @@ export class EnhancedPluginManager {
     if (action === "show-core") return this.unmount();
     if (action === "check-updates") return this.refresh({ checkUpdates: true });
     if (action === "refresh-sources") {
-      this.available = undefined;
+      this.invalidateCatalog();
       this.browseLimit = 50;
       return this.setTab(this.activeTab);
     }

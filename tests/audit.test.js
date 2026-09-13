@@ -28,6 +28,40 @@ async function setup({ mount = true } = {}) {
 
 const click = (action) => app.onClick({ target: document.querySelector(`[data-action="${action}"]`) });
 
+it("invalidates Browse after Installed changes and prunes obsolete selections", async () => {
+  const { inventory } = await setup();
+  await app.setTab("browse");
+  app.selectedAvailable.add(`${source.url}|gamma`);
+  app.selectedInstalled.add("beta");
+  await app.setTab("installed");
+  inventory.packages = [packageFixture("alpha"), packageFixture("gamma")];
+  await app.runOperation("Install dependency", async () => true, { checkUpdatesAfter: false });
+  expect(app.selectedAvailable.size).toBe(0);
+  expect(app.selectedInstalled.size).toBe(0);
+  await app.setTab("browse");
+  expect(app.available.packages.map((pkg) => pkg.package_id)).toEqual(["delta"]);
+  app.filters.browse.source = source.url;
+  app.selectedAvailable.add(`${source.url}|delta`);
+  await app.setTab("installed");
+  inventory.sources = [];
+  await app.refresh({ checkUpdates: false });
+  expect(app.filters.browse.source).toBe("");
+  expect(app.selectedAvailable.size).toBe(0);
+});
+
+it("discards delayed catalog results after inventory changes", async () => {
+  const { service, inventory } = await setup();
+  let resolveOld;
+  service.loadAvailable.mockImplementationOnce(() => new Promise((resolve) => { resolveOld = resolve; }));
+  const oldLoad = app.loadAvailable();
+  inventory.packages.push(packageFixture("gamma"));
+  await app.refresh({ checkUpdates: false });
+  await app.setTab("browse");
+  resolveOld({ packages: [packageFixture("gamma")], health: [] });
+  await oldLoad;
+  expect(app.available.packages.map((pkg) => pkg.package_id)).toEqual(["delta"]);
+});
+
 it("retries a rejected initial request and replaces the error shell", async () => {
   const { service } = await setup({ mount: false });
   service.loadInstalled.mockRejectedValueOnce(new Error("offline"));
