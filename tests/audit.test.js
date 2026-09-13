@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { EnhancedPluginManager } from "../src/app.js";
+import { PluginPageController } from "../src/controller.js";
 
 let app;
 const source = { name: "Example", url: "https://example.test/index.yml" };
@@ -27,6 +28,38 @@ async function setup({ mount = true } = {}) {
 }
 
 const click = (action) => app.onClick({ target: document.querySelector(`[data-action="${action}"]`) });
+
+it("remounts and rebinds controls after the host replaces its settings subtree", async () => {
+  const { service } = await setup({ mount: false });
+  const controller = new PluginPageController({ createApp: () => app, observe: false });
+  await controller.sync();
+  const oldRoot = app.root;
+  document.body.innerHTML = ["Installed Plugins", "Available Plugins", "Plugins"]
+    .map((title) => `<section class="setting-section"><h1>${title}</h1></section>`).join("");
+  await controller.sync();
+  expect(app.root).not.toBe(oldRoot);
+  expect(app.root.isConnected).toBe(true);
+  expect(document.querySelectorAll(".spme-core-hidden")).toHaveLength(3);
+  expect(service.loadInstalled).toHaveBeenCalledTimes(2);
+  document.querySelector('[data-action="set-view"][data-view-mode="table"]').click();
+  expect(app.viewMode).toBe("table");
+  controller.stop();
+});
+
+it("does not leave a late mount active after navigation away", async () => {
+  const { service, inventory } = await setup({ mount: false });
+  let resolve;
+  service.loadInstalled.mockImplementationOnce(() => new Promise((done) => { resolve = done; }));
+  const controller = new PluginPageController({ createApp: () => app, observe: false });
+  const mounting = controller.sync();
+  window.history.replaceState({}, "", "/settings?tab=tools");
+  await controller.sync();
+  resolve(structuredClone(inventory));
+  await mounting;
+  expect(app.isMounted()).toBe(false);
+  expect(controller.mounted).toBe(false);
+  controller.stop();
+});
 
 it("invalidates Browse after Installed changes and prunes obsolete selections", async () => {
   const { inventory } = await setup();

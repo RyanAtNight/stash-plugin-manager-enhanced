@@ -267,6 +267,10 @@ export class EnhancedPluginManager {
     }
   }
 
+  isMounted() {
+    return Boolean(this.root?.isConnected);
+  }
+
   unmount() {
     this.cancelSearch();
     this.root?.removeEventListener("click", this.onClick);

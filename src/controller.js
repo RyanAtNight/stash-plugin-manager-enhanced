@@ -83,7 +83,11 @@ export class PluginPageController {
   }
 
   async sync() {
-    if (this.syncing) return;
+    if (this.stopped) return;
+    if (this.syncing) {
+      this.resyncRequested = true;
+      return;
+    }
     this.syncing = true;
     try {
       this.ensureEnhancementControl();
@@ -93,13 +97,21 @@ export class PluginPageController {
       }
 
       if (!this.app) this.app = this.createApp();
+      if (this.mounted && this.app.isMounted?.() === false) this.unmountApp();
       if (!this.mounted) this.mounted = await this.app.mount();
       else await this.app.syncFromURL?.();
+      if (this.stopped || !this.enhancementEnabled || !isPluginsSettingsRoute(this.getHref())) {
+        this.unmountApp();
+      }
     } catch (error) {
       this.lastError = error;
       if (this.app) this.unmountApp();
     } finally {
       this.syncing = false;
+      if (this.resyncRequested) {
+        this.resyncRequested = false;
+        this.scheduleSync();
+      }
     }
   }
 
@@ -108,6 +120,7 @@ export class PluginPageController {
   }
 
   start() {
+    this.stopped = false;
     this.eventTarget?.addEventListener?.("stash:location", this.scheduleSync);
     this.eventTarget?.addEventListener?.("popstate", this.scheduleSync);
     if (this.observe && this.MutationObserverImpl && this.document?.body) {
@@ -118,6 +131,7 @@ export class PluginPageController {
   }
 
   stop() {
+    this.stopped = true;
     this.eventTarget?.removeEventListener?.("stash:location", this.scheduleSync);
     this.eventTarget?.removeEventListener?.("popstate", this.scheduleSync);
     this.observer?.disconnect();
