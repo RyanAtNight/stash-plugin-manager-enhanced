@@ -28,7 +28,7 @@
 
 .spme-help, .spme-package-card p { color:var(--spme-text-muted); }
 .spme-header-container { container:spme-header / inline-size; margin-bottom:1rem; }
-.spme-header { display:grid; grid-template-columns:minmax(155px,1fr) minmax(235px,1.4fr) auto; grid-template-areas:"identity tabs tools"; gap:14px; align-items:center; padding:12px; background:#243847; color:#e5edf3; border:1px solid #496070; border-radius:8px; overflow:hidden; font-family:Arial,sans-serif; line-height:normal; }
+.spme-header { display:grid; grid-template-columns:minmax(155px,max-content) minmax(235px,1fr) auto; grid-template-areas:"identity tabs tools"; gap:14px; align-items:center; padding:12px; background:#243847; color:#e5edf3; border:1px solid #496070; border-radius:8px; overflow:hidden; font-family:Arial,sans-serif; line-height:normal; }
 .spme-header, .spme-header * { box-sizing:border-box; }
 .spme-header-identity { grid-area:identity; min-width:0; display:grid; gap:7px; }
 #spme-root .spme-header h1 { margin:0; padding:0; font-size:18px; font-weight:500; line-height:normal; }
@@ -37,7 +37,7 @@
 .spme-summary strong { font-weight:500; color:#e5edf3; }
 .spme-header-tools { grid-area:tools; display:grid; justify-items:end; gap:7px; }
 .spme-tabs-area { grid-area:tabs; align-self:end; min-width:0; container:spme-tabs / inline-size; }
-.spme-tabs { display:grid; grid-template-columns:repeat(4,minmax(0,140px)); gap:4px; }
+.spme-tabs { display:grid; grid-template-columns:repeat(4,minmax(0,140px)); justify-content:center; gap:4px; }
 @container spme-tabs (max-width:531px) {
   .spme-tabs { grid-template-columns:repeat(2,minmax(0,140px)); }
 }
