@@ -206,6 +206,8 @@ export class EnhancedPluginManager {
     this.coreSections = [];
     this.selectedInstalled = new Set();
     this.selectedAvailable = new Set();
+    this.configurationDrafts = new Map();
+    this.expandedConfiguration = new Set();
     this.filters = {
       installed: { query: "", enabled: installedEnabled, updatesOnly: false, dependency: "", sort: installedSort },
       browse: { query: "", source: "", sort: "last-commit" },
@@ -272,6 +274,7 @@ export class EnhancedPluginManager {
   }
 
   unmount() {
+    this.captureConfigurationState();
     this.cancelSearch();
     this.root?.removeEventListener("click", this.onClick);
     this.root?.removeEventListener("input", this.onInput);
@@ -988,6 +991,26 @@ export class EnhancedPluginManager {
     </section>`;
   }
 
+  captureConfigurationState() {
+    this.root?.querySelectorAll("details.spme-plugin-config").forEach((details) => {
+      const id = details.dataset.pluginId;
+      if (details.open) this.expandedConfiguration.add(id);
+      else this.expandedConfiguration.delete(id);
+    });
+    this.root?.querySelectorAll("[data-config-input]").forEach((input) => {
+      const checkbox = input.type === "checkbox";
+      const value = checkbox ? input.checked : input.value;
+      const { plugin, setting } = input.dataset;
+      if (value === (checkbox ? input.defaultChecked : input.defaultValue) && !this.configurationDrafts.get(plugin)?.has(setting)) return;
+      const saved = this.inventory?.pluginConfig[plugin]?.[setting];
+      const drafts = this.configurationDrafts.get(plugin) ?? new Map();
+      if (value === (checkbox ? Boolean(saved) : String(saved ?? ""))) drafts.delete(setting);
+      else drafts.set(setting, value);
+      if (drafts.size) this.configurationDrafts.set(plugin, drafts);
+      else this.configurationDrafts.delete(plugin);
+    });
+  }
+
   pluginConfigCard(pkg) {
     const plugin = pkg.plugin;
     const config = this.inventory.pluginConfig[plugin.id] ?? {};
@@ -995,7 +1018,8 @@ export class EnhancedPluginManager {
     const settings = (plugin.settings ?? [])
       .filter((setting) => !(plugin.id === PLUGIN_ID && setting.name === LAST_UPDATE_CHECK_SETTING))
       .map((setting) => {
-        const value = config[setting.name];
+        const drafts = this.configurationDrafts.get(plugin.id);
+        const value = drafts?.has(setting.name) ? drafts.get(setting.name) : config[setting.name];
         const label = setting.display_name || setting.name;
         let input;
         if (setting.type === "BOOLEAN") {
@@ -1005,10 +1029,11 @@ export class EnhancedPluginManager {
         }
         return `<label class="spme-setting"><span><strong>${escapeHTML(label)}</strong><small>${escapeHTML(setting.description || setting.name)}</small></span>${input}</label>`;
       }).join("");
-    return `<article class="spme-config-extension-card" data-package-id="${escapeHTML(plugin.id)}"><details id="${configurationAnchorID(plugin.id)}" class="spme-plugin-config" data-plugin-id="${escapeHTML(plugin.id)}" tabindex="-1"><summary><span><strong>${escapeHTML(plugin.name)}</strong> <code>${escapeHTML(plugin.id)}</code></span><span class="spme-badges"><span class="spme-badge ${pkg.enabled ? "spme-enabled" : "spme-disabled"}">${pkg.enabled ? "Enabled" : "Disabled"}</span>${githubLink(pkg)}${this.installedReferenceHTML(pkg)}</span></summary><div class="spme-config-body">${plugin.description ? `<p>${escapeHTML(plugin.description)}</p>` : ""}${hooks ? `<section><h3>Hooks</h3>${hooks}</section>` : ""}${settings ? `<section><h3>Settings</h3>${settings}</section>` : '<p>No configurable settings.</p>'}<div class="spme-card-actions spme-plugin-extension-actions" data-spme-config-actions="${escapeHTML(plugin.id)}"></div><div class="spme-actions"><button type="button" data-action="save-config" data-id="${escapeHTML(plugin.id)}">Save changes</button><button type="button" data-action="reset-config" data-id="${escapeHTML(plugin.id)}">Reset stored settings</button></div><p class="spme-help">Stash plugin manifests do not declare filesystem or network permissions, compatibility ranges, or setting defaults. This page does not infer them.</p></div></details></article>`;
+    return `<article class="spme-config-extension-card" data-package-id="${escapeHTML(plugin.id)}"><details id="${configurationAnchorID(plugin.id)}" class="spme-plugin-config" data-plugin-id="${escapeHTML(plugin.id)}" tabindex="-1" ${this.expandedConfiguration.has(plugin.id) ? "open" : ""}><summary><span><strong>${escapeHTML(plugin.name)}</strong> <code>${escapeHTML(plugin.id)}</code></span><span class="spme-badges"><span class="spme-badge ${pkg.enabled ? "spme-enabled" : "spme-disabled"}">${pkg.enabled ? "Enabled" : "Disabled"}</span>${githubLink(pkg)}${this.installedReferenceHTML(pkg)}</span></summary><div class="spme-config-body">${plugin.description ? `<p>${escapeHTML(plugin.description)}</p>` : ""}${hooks ? `<section><h3>Hooks</h3>${hooks}</section>` : ""}${settings ? `<section><h3>Settings</h3>${settings}</section>` : '<p>No configurable settings.</p>'}<div class="spme-card-actions spme-plugin-extension-actions" data-spme-config-actions="${escapeHTML(plugin.id)}"></div><div class="spme-actions"><button type="button" data-action="save-config" data-id="${escapeHTML(plugin.id)}">Save changes</button><button type="button" data-action="reset-config" data-id="${escapeHTML(plugin.id)}">Reset stored settings</button></div><p class="spme-help">Stash plugin manifests do not declare filesystem or network permissions, compatibility ranges, or setting defaults. This page does not infer them.</p></div></details></article>`;
   }
 
   render() {
+    this.captureConfigurationState();
     this.cancelSearch();
     if (!this.root || !this.inventory) return;
     const panels = {
@@ -1379,7 +1404,11 @@ export class EnhancedPluginManager {
     if (action === "reset-config") {
       const pkg = this.packageByID(button.dataset.id);
       if (!this.confirm?.(`Reset all stored settings for ${pkg.name}? Plugin defaults will apply after reload.`)) return;
-      await this.runOperation(`Resetting ${pkg.name} settings`, () => this.service.configurePlugin(pkg.package_id, {}));
+      const saved = await this.runOperation(`Resetting ${pkg.name} settings`, () => this.service.configurePlugin(pkg.package_id, {}));
+      if (saved) {
+        this.configurationDrafts.delete(pkg.package_id);
+        this.render();
+      }
     }
   }
 
@@ -1390,6 +1419,7 @@ export class EnhancedPluginManager {
 
   renderSearchResults(kind) {
     if (!this.root || this.activeTab !== kind) return;
+    this.captureConfigurationState();
     // Keep the toolbar connected: replacing/refocusing an input interrupts
     // held-key repeat and moves the caret during edits in the middle of a query.
     const template = this.document.createElement("template");
@@ -1411,6 +1441,10 @@ export class EnhancedPluginManager {
   }
 
   onInput(event) {
+    if (event.target.matches("[data-config-input]")) {
+      this.captureConfigurationState();
+      return;
+    }
     const kind = event.target.dataset.filter;
     if (!["installed", "browse", "configuration"].includes(kind)) return;
     if (this.window?.history && this.window?.location) {
@@ -1432,6 +1466,10 @@ export class EnhancedPluginManager {
 
   onChange(event) {
     const target = event.target;
+    if (target.matches("[data-config-input]")) {
+      this.captureConfigurationState();
+      return;
+    }
     if (target.dataset.selectPackage) {
       const set = target.dataset.selectPackage === "installed" ? this.selectedInstalled : this.selectedAvailable;
       target.checked ? set.add(target.dataset.key) : set.delete(target.dataset.key);
@@ -1492,6 +1530,8 @@ export class EnhancedPluginManager {
   }
 
   async savePluginConfig(pluginID) {
+    this.captureConfigurationState();
+    const submitted = new Map(this.configurationDrafts.get(pluginID));
     const current = { ...(this.inventory.pluginConfig[pluginID] ?? {}) };
     [...this.root.querySelectorAll("[data-config-input]")]
       .filter((input) => input.dataset.plugin === pluginID)
@@ -1508,7 +1548,15 @@ export class EnhancedPluginManager {
             : input.value;
       });
     const saved = await this.runOperation(`Saving ${this.packageByID(pluginID).name} settings`, () => this.service.configurePlugin(pluginID, current));
-    if (saved) this.inventory.pluginConfig[pluginID] = current;
+    if (saved) {
+      this.inventory.pluginConfig[pluginID] = current;
+      const drafts = this.configurationDrafts.get(pluginID);
+      submitted.forEach((value, name) => {
+        if (drafts?.get(name) === value) drafts.delete(name);
+      });
+      if (!drafts?.size) this.configurationDrafts.delete(pluginID);
+      this.render();
+    }
   }
 
   async submitSourceForm(form) {

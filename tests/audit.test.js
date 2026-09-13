@@ -29,6 +29,76 @@ async function setup({ mount = true } = {}) {
 
 const click = (action) => app.onClick({ target: document.querySelector(`[data-action="${action}"]`) });
 
+const setting = (id, name = "limit") => document.querySelector(`[data-plugin="${id}"][data-setting="${name}"]`);
+
+it("drops a draft when an edit is reverted before the next redraw", async () => {
+  await setup(); await app.setTab("configuration");
+  setting("alpha").value = "17";
+  setting("alpha").dispatchEvent(new Event("input", { bubbles: true }));
+  setting("alpha").value = "1";
+  setting("alpha").dispatchEvent(new Event("input", { bubbles: true }));
+  app.render();
+  expect(setting("alpha").value).toBe("1");
+});
+
+it("retains configuration drafts and expanded panels through filtering and navigation", async () => {
+  await setup();
+  await app.setTab("configuration");
+  app.message = { type: "info", text: "Earlier operation" }; app.render();
+  document.querySelector('[data-plugin-id="alpha"]').open = true;
+  setting("alpha").value = "17";
+  setting("alpha", "enabled").checked = true;
+  await click("dismiss-message");
+  expect(setting("alpha").value).toBe("17");
+  expect(setting("alpha", "enabled").checked).toBe(true);
+  expect(document.querySelector('[data-plugin-id="alpha"]').open).toBe(true);
+  app.filters.configuration.query = "beta";
+  app.renderSearchResults("configuration");
+  expect(setting("alpha")).toBeNull();
+  await app.setTab("installed");
+  app.filters.configuration.query = "";
+  await app.setTab("configuration");
+  expect(setting("alpha").value).toBe("17");
+  expect(document.querySelector('[data-plugin-id="alpha"]').open).toBe(true);
+});
+
+it("keeps other drafts on save and retains failed drafts until saved or reset", async () => {
+  const { service, inventory } = await setup();
+  await app.setTab("configuration");
+  setting("alpha").value = "17"; setting("beta").value = "23";
+  service.configurePlugin.mockRejectedValueOnce(new Error("offline"));
+  await app.savePluginConfig("alpha");
+  expect(setting("alpha").value).toBe("17");
+  expect(app.inventory.pluginConfig.alpha.limit).toBe(1);
+  await app.savePluginConfig("alpha");
+  expect(setting("beta").value).toBe("23");
+  inventory.pluginConfig.alpha.limit = 99;
+  await app.refresh({ checkUpdates: false });
+  expect(setting("alpha").value).toBe("99");
+  expect(setting("beta").value).toBe("23");
+  service.configurePlugin.mockRejectedValueOnce(new Error("offline"));
+  await app.onClick({ target: document.querySelector('[data-action="reset-config"][data-id="beta"]') });
+  expect(setting("beta").value).toBe("23");
+  await app.onClick({ target: document.querySelector('[data-action="reset-config"][data-id="beta"]') });
+  expect(setting("beta").value).toBe("");
+});
+
+it("retains edits made while a configuration save is pending", async () => {
+  const { service, inventory } = await setup();
+  await app.setTab("configuration");
+  let finish;
+  service.configurePlugin.mockImplementationOnce((id, value) => new Promise((resolve) => {
+    finish = () => { inventory.pluginConfig[id] = value; resolve(value); };
+  }));
+  setting("alpha").value = "17";
+  const saving = app.savePluginConfig("alpha");
+  setting("alpha").value = "21";
+  setting("alpha").dispatchEvent(new Event("input", { bubbles: true }));
+  finish(); await saving;
+  expect(app.inventory.pluginConfig.alpha.limit).toBe(17);
+  expect(setting("alpha").value).toBe("21");
+});
+
 it("remounts and rebinds controls after the host replaces its settings subtree", async () => {
   const { service } = await setup({ mount: false });
   const controller = new PluginPageController({ createApp: () => app, observe: false });
