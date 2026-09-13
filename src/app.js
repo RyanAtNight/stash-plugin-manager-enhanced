@@ -613,9 +613,10 @@ export class EnhancedPluginManager {
   }
 
   toolbarHTML({ kind, count, selectedCount = 0, hiddenSelectedCount = 0, filters = "", sort = "" }) {
-    const label = kind === "installed" ? "installed plugins" : "available plugins";
+    const label = { installed: "installed plugins", browse: "available plugins", configuration: "plugin configuration" }[kind];
+    const placeholder = kind === "configuration" ? "Plugin name, ID, description, or setting" : "Name, ID, description, or source";
     return `<div class="spme-toolbar">
-      <label class="spme-search"><span>Search ${label}</span><input type="search" data-filter="${kind}" aria-label="Search ${label}" placeholder="Name, ID, description, or source" value="${escapeHTML(
+      <label class="spme-search"><span>Search ${label}</span><input type="search" data-filter="${kind}" aria-label="Search ${label}" placeholder="${placeholder}" value="${escapeHTML(
         this.filters[kind].query
       )}"></label>
       ${filters}
