@@ -2,7 +2,7 @@
 
 A client-side Stash UI plugin that enhances **Settings → Plugins** in place with a wider, accessible interface while leaving Stash core unchanged.
 
-![Installed plugins in the enhanced manager](docs/images/installed.png)
+![Installed plugins in the enhanced manager's Table view](docs/images/installed-table.png)
 
 ## Installation
 
