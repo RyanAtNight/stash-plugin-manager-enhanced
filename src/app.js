@@ -31,6 +31,7 @@ const TAB_DEFINITIONS = [
 ];
 
 const PLUGIN_ID = "stash-plugin-manager-enhanced";
+const DISPLAY_VERSION = `${pluginManagerVersion}-${typeof __SPME_COMMIT_ID__ === "undefined" ? "dev" : __SPME_COMMIT_ID__}`;
 const LAST_UPDATE_CHECK_SETTING = "lastUpdateCheck";
 const SEARCH_DELAY_MS = 250;
 const BUSY_ACTIONS = new Set([
@@ -645,7 +646,7 @@ export class EnhancedPluginManager {
         </div>`
       : "";
     return `<header class="spme-header">
-      <div><h1>Plugin Manager Enhanced</h1><p>Version ${escapeHTML(pluginManagerVersion)}</p></div>
+      <div><h1>Plugin Manager Enhanced</h1><p>Version ${escapeHTML(DISPLAY_VERSION)}</p></div>
       <div class="spme-header-tools">
         <div class="spme-summary" aria-label="Plugin summary">
           <span><strong>${this.inventory.packages.length}</strong> installed</span>
