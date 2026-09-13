@@ -27,6 +27,7 @@ Compared with Stash's stock Plugins page, the enhanced interface adds:
 - Browse renders 50 packages initially with progressive **Load more** controls
 - Responsive, wider Cards and Table layouts with full plugin descriptions
 - Search by name, ID, description, version, and source
+- Search updates after a 250 ms typing pause, preserving the search field and cursor during typing and held Backspace
 - Per-plugin last-commit dates with name, newest-commit, or oldest-commit sorting
 - Filter plugins for enabled, disabled, source, and updates-only
 - Remember the Installed Status, Sort, and Cards/Table preferences between visits

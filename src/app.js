@@ -30,6 +30,7 @@ const TAB_DEFINITIONS = [
 
 const PLUGIN_ID = "stash-plugin-manager-enhanced";
 const LAST_UPDATE_CHECK_SETTING = "lastUpdateCheck";
+const SEARCH_DELAY_MS = 250;
 
 const SOURCE_SORT_OPTIONS = [
   ["name", "Name (A–Z)"],
@@ -153,6 +154,7 @@ export class EnhancedPluginManager {
     this.now = options.now ?? Date.now;
     this.confirm = options.confirm ?? globalThis.confirm?.bind(globalThis);
     this.setTimeout = options.setTimeout ?? globalThis.setTimeout?.bind(globalThis);
+    this.clearTimeout = options.clearTimeout ?? globalThis.clearTimeout?.bind(globalThis);
     this.activeTab = pluginManagerTabFromURL(this.window?.location?.href ?? "/settings?tab=plugins");
     let storedViewMode;
     let storedInstalledStatus;
@@ -216,6 +218,7 @@ export class EnhancedPluginManager {
     this.browseLimit = 50;
     this.onClick = this.onClick.bind(this);
     this.onInput = this.onInput.bind(this);
+    this.cancelSearch = this.cancelSearch.bind(this);
     this.onChange = this.onChange.bind(this);
     this.onSubmit = this.onSubmit.bind(this);
     this.updateLayoutWidth = this.updateLayoutWidth.bind(this);
@@ -236,6 +239,8 @@ export class EnhancedPluginManager {
     this.coreSections.forEach((section) => section.classList.add("spme-core-hidden"));
     this.root.addEventListener("click", this.onClick);
     this.root.addEventListener("input", this.onInput);
+    this.root.addEventListener("compositionstart", this.cancelSearch);
+    this.root.addEventListener("compositionend", this.onInput);
     this.root.addEventListener("change", this.onChange);
     this.root.addEventListener("submit", this.onSubmit);
     this.window?.addEventListener?.("resize", this.updateLayoutWidth);
@@ -262,8 +267,11 @@ export class EnhancedPluginManager {
   }
 
   unmount() {
+    this.cancelSearch();
     this.root?.removeEventListener("click", this.onClick);
     this.root?.removeEventListener("input", this.onInput);
+    this.root?.removeEventListener("compositionstart", this.cancelSearch);
+    this.root?.removeEventListener("compositionend", this.onInput);
     this.root?.removeEventListener("change", this.onChange);
     this.root?.removeEventListener("submit", this.onSubmit);
     this.window?.removeEventListener?.("resize", this.updateLayoutWidth);
@@ -612,7 +620,7 @@ export class EnhancedPluginManager {
       )}"></label>
       ${filters}
       <span class="spme-result-count" aria-live="polite">${plural(count, "result")}</span>
-      ${selectedCount ? `<span>${plural(selectedCount, "selected plugin")}</span>` : ""}
+      ${selectedCount ? `<span class="spme-selected-count">${plural(selectedCount, "selected plugin")}</span>` : ""}
       ${sort}
     </div>`;
   }
@@ -747,9 +755,11 @@ export class EnhancedPluginManager {
         <button type="button" data-action="reload">Reload plugin definitions</button>
       </div>
       ${this.toolbarHTML({ kind: "installed", count: packages.length, selectedCount: selected.length, filters, sort: this.sortControlHTML("installed") })}
+      <div data-search-results>
       ${this.viewMode === "table"
         ? this.packageTable(packages, true)
         : `<div class="spme-list">${packages.map((pkg) => this.packageCard(pkg, true)).join("") || '<p class="spme-empty">No installed plugins match these filters.</p>'}</div>`}
+      </div>
     </section>`;
   }
 
@@ -845,10 +855,12 @@ export class EnhancedPluginManager {
     return `<section class="spme-panel" role="tabpanel">
       <div class="spme-actions spme-sticky"><button type="button" data-action="install-selected" ${!selected.length || this.busy ? "disabled" : ""}>Install selected (${selected.length})</button><button type="button" data-action="refresh-sources">Refresh catalog</button></div>
       ${this.toolbarHTML({ kind: "browse", count: packages.length, selectedCount: selected.length, filters, sort: this.sortControlHTML("browse") })}
+      <div data-search-results>
       ${this.viewMode === "table"
         ? this.packageTable(visiblePackages, false)
         : `<div class="spme-list">${visiblePackages.map((pkg) => this.packageCard(pkg, false)).join("") || '<p class="spme-empty">No available plugins match these filters.</p>'}</div>`}
       ${visiblePackages.length < packages.length ? `<div class="spme-load-more"><button type="button" data-action="load-more">Load ${Math.min(50, packages.length - visiblePackages.length)} more (${packages.length - visiblePackages.length} remaining)</button></div>` : ""}
+      </div>
     </section>`;
   }
 
@@ -940,7 +952,7 @@ export class EnhancedPluginManager {
     return `<section class="spme-panel" role="tabpanel">
       <div class="spme-actions spme-sticky"><button type="button" data-action="expand-config">Expand all</button><button type="button" data-action="collapse-config">Collapse all</button></div>
       ${this.toolbarHTML({ kind: "configuration", count: packages.length, filters })}
-      <div class="spme-config-list">${packages.map((pkg) => this.pluginConfigCard(pkg)).join("") || '<p class="spme-empty">No plugin configuration matches these filters.</p>'}</div>
+      <div class="spme-config-list" data-search-results>${packages.map((pkg) => this.pluginConfigCard(pkg)).join("") || '<p class="spme-empty">No plugin configuration matches these filters.</p>'}</div>
     </section>`;
   }
 
@@ -965,6 +977,7 @@ export class EnhancedPluginManager {
   }
 
   render() {
+    this.cancelSearch();
     if (!this.root || !this.inventory) return;
     const panels = {
       installed: () => this.installedHTML(),
@@ -1326,15 +1339,51 @@ export class EnhancedPluginManager {
     }
   }
 
+  cancelSearch() {
+    this.clearTimeout(this.searchTimer);
+    this.searchTimer = undefined;
+  }
+
+  renderSearchResults(kind) {
+    if (!this.root || this.activeTab !== kind) return;
+    // Keep the toolbar connected: replacing/refocusing an input interrupts
+    // held-key repeat and moves the caret during edits in the middle of a query.
+    const template = this.document.createElement("template");
+    template.innerHTML = this[`${kind}HTML`]();
+    const next = template.content;
+    this.root.querySelector("[data-search-results]").innerHTML = next.querySelector("[data-search-results]").innerHTML;
+    const count = this.root.querySelector(".spme-result-count");
+    count.textContent = next.querySelector(".spme-result-count").textContent;
+    const selected = this.root.querySelector(".spme-selected-count");
+    const nextSelected = next.querySelector(".spme-selected-count");
+    if (selected && nextSelected) selected.textContent = nextSelected.textContent;
+    else if (selected) selected.remove();
+    else if (nextSelected) count.after(nextSelected);
+    next.querySelectorAll(".spme-sticky [data-action]").forEach((button) => {
+      const current = this.root.querySelector(`.spme-sticky [data-action="${button.dataset.action}"]`);
+      current.textContent = button.textContent;
+      current.disabled = button.disabled;
+    });
+  }
+
   onInput(event) {
     const kind = event.target.dataset.filter;
-    if (!kind) return;
+    if (!["installed", "browse", "configuration"].includes(kind)) return;
+    if (this.window?.history && this.window?.location) {
+      // Searching takes over from the plugin deep link. Otherwise the SPA
+      // observer reveals and refocuses that target after each result change.
+      const currentURL = `${this.window.location.pathname}${this.window.location.search}${this.window.location.hash}`;
+      const nextURL = withoutPluginManagerInstalledAnchor(withoutPluginManagerConfigurationAnchor(currentURL));
+      if (nextURL !== currentURL) this.window.history.replaceState({}, "", nextURL);
+    }
     this.filters[kind].query = event.target.value;
     if (kind === "browse") this.browseLimit = 50;
-    this.render();
-    const input = this.root.querySelector(`[data-filter="${kind}"]`);
-    input?.focus();
-    input?.setSelectionRange?.(input.value.length, input.value.length);
+    this.cancelSearch();
+    if (event.isComposing) return;
+    this.searchTimer = this.setTimeout(() => {
+      this.searchTimer = undefined;
+      this.renderSearchResults(kind);
+    }, SEARCH_DELAY_MS);
   }
 
   onChange(event) {
