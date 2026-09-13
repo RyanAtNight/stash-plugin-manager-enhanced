@@ -13,7 +13,7 @@ const apiKey = config.match(/^api_key:\s*(.+)$/m)?.[1]?.trim();
 if (!apiKey) throw new Error(`No api_key found in ${path.join(configDir, "config.yml")}`);
 
 const distDir = path.join(repoRoot, "dist");
-const files = (await readdir(distDir)).filter((name) => name.startsWith("stash-plugin-manager-enhanced."));
+const files = (await readdir(distDir)).filter((name) => name === "LICENSE" || name.startsWith("stash-plugin-manager-enhanced."));
 if (!files.some((name) => name.endsWith(".yml")) || !files.some((name) => name.endsWith(".js")) || !files.some((name) => name.endsWith(".css"))) {
   throw new Error("The dist directory does not contain a complete plugin build.");
 }
