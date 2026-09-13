@@ -1,6 +1,7 @@
 name: Stash Plugin Manager Enhanced
 description: A progressive enhancement of Stash's core Plugins settings page with focused Installed, Browse, Sources, and Configuration views.
 version: 0.1.0
+url: https://github.com/RyanAtNight/stash-plugin-manager-enhanced
 ui:
   javascript:
     - stash-plugin-manager-enhanced.js

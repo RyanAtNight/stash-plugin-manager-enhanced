@@ -2,6 +2,24 @@
 
 A client-side Stash UI plugin that enhances **Settings → Plugins** in place with a wider, accessible interface while leaving Stash core unchanged.
 
+![Installed plugins in the enhanced manager](docs/images/installed.png)
+
+## Installation
+
+1. Open **Settings → Plugins** in Stash.
+2. Under **Available Plugins**, add a package source (or use **Sources → Add source** if this enhancement is already installed):
+   - Name: `RyanAtNight`
+   - Source URL: `https://ryanatnight.github.io/stash-plugin-manager-enhanced/index.yml`
+   - Local path: `ryanatnight`
+3. Reload the available packages, select **Stash Plugin Manager Enhanced**, and install it.
+4. Reload plugins if prompted, then refresh your browser.
+
+Updates are delivered through Stash's normal plugin update controls. Install from one source only; remove a manually installed copy before switching to a managed installation to avoid duplicate plugin IDs.
+
+For manual installation, download the plugin ZIP from [Releases](https://github.com/RyanAtNight/stash-plugin-manager-enhanced/releases/latest) and extract it into its own folder beneath Stash's `plugins` directory. Use the plugin ZIP, not GitHub's source-code archives. Reload plugins and refresh the browser.
+
+Report problems through [GitHub Issues](https://github.com/RyanAtNight/stash-plugin-manager-enhanced/issues), including your Stash version, browser, and reproduction steps. Remove API keys and private URLs from reports.
+
 ## Why this is possible
 
 Stash UI plugins may load JavaScript and CSS globally. This plugin watches Stash SPA navigation for `/settings?tab=plugins`, hides the three stock plugin sections, mounts the enhanced interface, and restores the stock sections when navigating away or when the enhancement is dismissed.
@@ -124,4 +142,10 @@ The interface states these limitations instead of inferring potentially misleadi
 
 ## Status
 
-Initial local development version: `0.1.0`.
+Release version: `0.1.0`. Live development testing used **Stash v0.31.1** (`4de2351e`). Other Stash versions and custom themes have not been exhaustively tested.
+
+## Publishing updates
+
+Keep the versions in `package.json`, `package-lock.json`, and the plugin manifest aligned. Add release notes at `docs/releases/vVERSION.md`, run `npm run check`, then push a matching `vVERSION` tag. The release workflow tests and packages the plugin, publishes the source index to GitHub Pages, and creates a GitHub release with the same ZIP and checksum.
+
+To inspect the package locally after building, run `python scripts/package-release.py`. Output is written to `_site/`. Python is required only for release packaging; plugin users do not need Node.js or Python.
