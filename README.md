@@ -66,6 +66,13 @@ https://github.com/stashapp/CommunityScripts/tree/stable/plugins/VideoScrollWhee
 
 If no defensible GitHub URL can be found, the UI displays **Repository unavailable** rather than guessing.
 
+## License
+
+Copyright (C) 2026 RyanAtNight.
+
+This project is licensed under the GNU Affero General Public License,
+version 3 only (`AGPL-3.0-only`). See [LICENSE](LICENSE) for the full terms.
+
 ## Development
 
 ```bash
@@ -79,7 +86,7 @@ The packaged plugin is written to `dist/`.
 
 ## Local installation
 
-Copy the three files in `dist/` to a directory beneath the Stash configuration's `plugins` directory, then choose **Reload plugins** in Stash or restart Stash.
+Copy the files in `dist/`, including `LICENSE`, to a directory beneath the Stash configuration's `plugins` directory, then choose **Reload plugins** in Stash or restart Stash.
 
 For this development checkout, run `npm run deploy:local`. It rebuilds the plugin, copies the generated files to the authoritative local Stash plugin directory, verifies Stash's `reloadPlugins` response, and then emits a visible Windows toast and notification sound. The notification is deliberately sent only after deployment and reload have succeeded.
 
@@ -88,6 +95,7 @@ Expected layout:
 ```text
 plugins/
 └── stash-plugin-manager-enhanced/
+    ├── LICENSE
     ├── stash-plugin-manager-enhanced.yml
     ├── stash-plugin-manager-enhanced.js
     └── stash-plugin-manager-enhanced.css

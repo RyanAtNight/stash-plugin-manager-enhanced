@@ -13,7 +13,11 @@ await build({
   minify: false,
   sourcemap: true,
   legalComments: "none",
+  banner: {
+    js: "/*! Copyright (C) 2026 RyanAtNight. SPDX-License-Identifier: AGPL-3.0-only. See LICENSE. */",
+  },
 });
 
 await cp("src/styles.css", "dist/stash-plugin-manager-enhanced.css");
+await cp("LICENSE", "dist/LICENSE");
 await cp("plugin/stash-plugin-manager-enhanced.yml", "dist/stash-plugin-manager-enhanced.yml");
