@@ -106,7 +106,7 @@ The packaged plugin is written to `dist/`.
 
 Copy the files in `dist/`, including `LICENSE`, to a directory beneath the Stash configuration's `plugins` directory, then choose **Reload plugins** in Stash or restart Stash.
 
-For this development checkout, run `npm run deploy:local`. It rebuilds the plugin, copies the generated files to the authoritative local Stash plugin directory, verifies Stash's `reloadPlugins` response, and then emits a visible Windows toast and notification sound. The notification is deliberately sent only after deployment and reload have succeeded.
+For this development checkout, run `npm run deploy:local`. It rebuilds the plugin, copies the generated files to the authoritative local Stash plugin directory, registers its package source and uninstall manifest, verifies Stash's `reloadPlugins` response, and then emits a visible Windows toast and notification sound. The package manifest keeps the manager in Stash's stock **Installed Plugins** list, with the normal uninstall control, when **Enhanced Plugins UI** is turned off. The notification is deliberately sent only after deployment and reload have succeeded.
 
 Expected layout:
 

@@ -1,4 +1,4 @@
-import { cp, mkdir, readFile, readdir } from "node:fs/promises";
+import { cp, mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
@@ -18,8 +18,51 @@ if (!files.some((name) => name.endsWith(".yml")) || !files.some((name) => name.e
   throw new Error("The dist directory does not contain a complete plugin build.");
 }
 
+// Stash's stock Installed Plugins list and uninstall action require this
+// package manifest in addition to the runtime plugin YAML.
+const packageInfo = JSON.parse(await readFile(path.join(repoRoot, "package.json"), "utf8"));
+const sourceURL = "https://ryanatnight.github.io/stash-plugin-manager-enhanced/index.yml";
+const inventoryResponse = await fetch(`${stashURL}/graphql`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json", ApiKey: apiKey },
+  body: JSON.stringify({ query: "query { configuration { general { pluginPackageSources { name url local_path } } } }" }),
+});
+const inventory = await inventoryResponse.json();
+const sources = inventory.data?.configuration?.general?.pluginPackageSources;
+if (!inventoryResponse.ok || inventory.errors?.length || !Array.isArray(sources)) {
+  throw new Error("Could not read plugin package sources.");
+}
+const existingSource = sources.find((source) => source.url === sourceURL);
+if (existingSource?.local_path && existingSource.local_path !== ".") {
+  throw new Error("The manager source must use the root plugins directory for local deployment.");
+}
+if (!existingSource) {
+  const sourceResponse = await fetch(`${stashURL}/graphql`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ApiKey: apiKey },
+    body: JSON.stringify({
+      query: "mutation ($sources: [PackageSourceInput!]) { configureGeneral(input: { pluginPackageSources: $sources }) { pluginPackageSources { url } } }",
+      variables: { sources: [...sources, { name: "Plugin Manager Enhanced", url: sourceURL, local_path: "" }] },
+    }),
+  });
+  const result = await sourceResponse.json();
+  if (!sourceResponse.ok || result.errors?.length || !result.data?.configureGeneral) {
+    throw new Error("Could not register the manager package source.");
+  }
+}
+// JSON is valid YAML, including the scalars consumed by Stash's manifest reader.
 await mkdir(pluginDir, { recursive: true });
 await Promise.all(files.map((name) => cp(path.join(distDir, name), path.join(pluginDir, name))));
+await writeFile(path.join(pluginDir, "manifest"), JSON.stringify({
+  id: packageInfo.name,
+  name: "Stash Plugin Manager Enhanced",
+  version: packageInfo.version,
+  date: new Date().toISOString().slice(0, 19).replace("T", " "),
+  metadata: { description: packageInfo.description },
+  requires: [],
+  source_repository: sourceURL,
+  files,
+}, null, 2) + "\n");
 console.log(`Deployed ${files.length} files to ${pluginDir}`);
 
 const response = await fetch(`${stashURL}/graphql`, {
