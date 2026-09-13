@@ -27,6 +27,13 @@ import {
   withPluginManagerTab,
 } from "../src/core.js";
 
+it("searches runtime descriptions as well as package metadata descriptions", () => {
+  const pkg = { package_id: "alpha", metadata: { description: "Catalog text" }, plugin: { description: "Displayed runtime text" } };
+  expect(filterPackages([pkg], { query: "displayed runtime" })).toEqual([pkg]);
+  expect(filterPackages([pkg], { query: "catalog text" })).toEqual([pkg]);
+  expect(filterPackages([pkg], { query: "missing text" })).toEqual([]);
+});
+
 describe("isPluginsSettingsRoute", () => {
   it("matches the core plugins settings route regardless of query order", () => {
     expect(isPluginsSettingsRoute("/settings?tab=plugins")).toBe(true);

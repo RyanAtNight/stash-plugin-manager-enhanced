@@ -230,6 +230,7 @@ function searchableText(pkg) {
     pkg.name,
     pkg.package_id,
     pkg.metadata?.description,
+    pkg.plugin?.description,
     pkg.sourceName,
     pkg.version,
   ]
