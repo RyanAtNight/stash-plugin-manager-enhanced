@@ -1473,8 +1473,8 @@ export class EnhancedPluginManager {
             ? Number(input.value)
             : input.value;
       });
-    await this.runOperation(`Saving ${this.packageByID(pluginID).name} settings`, () => this.service.configurePlugin(pluginID, current));
-    this.inventory.pluginConfig[pluginID] = current;
+    const saved = await this.runOperation(`Saving ${this.packageByID(pluginID).name} settings`, () => this.service.configurePlugin(pluginID, current));
+    if (saved) this.inventory.pluginConfig[pluginID] = current;
   }
 
   async submitSourceForm(form) {

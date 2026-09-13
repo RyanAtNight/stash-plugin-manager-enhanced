@@ -28,6 +28,19 @@ async function setup({ mount = true } = {}) {
 
 const click = (action) => app.onClick({ target: document.querySelector(`[data-action="${action}"]`) });
 
+it("does not promote a failed configuration save into confirmed state", async () => {
+  const { service } = await setup();
+  await app.setTab("configuration");
+  document.querySelector('[data-plugin="alpha"][data-setting="limit"]').value = "17";
+  service.configurePlugin.mockRejectedValueOnce(new Error("offline"));
+  await app.savePluginConfig("alpha");
+  expect(app.message.type).toBe("error");
+  expect(app.inventory.pluginConfig.alpha.limit).toBe(1);
+  document.querySelector('[data-plugin="alpha"][data-setting="limit"]').value = "19";
+  await app.savePluginConfig("alpha");
+  expect(app.inventory.pluginConfig.alpha.limit).toBe(19);
+});
+
 it("keeps sources and catalog on failed deletion and uses refreshed sources on success", async () => {
   const { service, inventory } = await setup();
   await app.setTab("sources");
