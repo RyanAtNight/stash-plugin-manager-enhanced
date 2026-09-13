@@ -31,6 +31,80 @@ const click = (action) => app.onClick({ target: document.querySelector(`[data-ac
 
 const setting = (id, name = "limit") => document.querySelector(`[data-plugin="${id}"][data-setting="${name}"]`);
 
+it("blocks overlapping mutations and refreshes while leaving tabs and search usable", async () => {
+  const { service } = await setup();
+  let reject;
+  const pending = app.runOperation("First", () => new Promise((_resolve, fail) => { reject = fail; }));
+  const second = vi.fn();
+  expect(await app.runOperation("Second", second)).toBe(false);
+  expect(second).not.toHaveBeenCalled();
+  expect(app.busy).toBe(true);
+  app.filters.installed.query = "alpha"; app.renderSearchResults("installed");
+  expect(document.querySelector('[data-action="uninstall-one"]').disabled).toBe(true);
+  expect(document.querySelector('[data-filter="installed"]').disabled).toBe(false);
+  await app.refresh();
+  expect(service.loadInstalled).toHaveBeenCalledTimes(1);
+  await app.setTab("browse");
+  expect(document.querySelector('[data-action="install-one"]').disabled).toBe(true);
+  await app.setTab("sources");
+  expect(document.querySelector('[data-action="delete-source"]').disabled).toBe(true);
+  await click("delete-source");
+  await app.submitSourceForm({});
+  expect(service.saveSources).not.toHaveBeenCalled();
+  await app.setTab("configuration");
+  expect(document.querySelector('[data-action="save-config"]').disabled).toBe(true);
+  await app.savePluginConfig("alpha");
+  expect(service.configurePlugin).not.toHaveBeenCalled();
+  reject(new Error("failed"));
+  expect(await pending).toBe(false);
+  expect(app.busy).toBe(false);
+  expect(document.querySelector('[data-action="save-config"]').disabled).toBe(false);
+  expect(await app.runOperation("Next", async () => true, { checkUpdatesAfter: false })).toBe(true);
+});
+
+it("holds the operation lock through dependency discovery, install and enable", async () => {
+  const { service, inventory, catalog } = await setup();
+  inventory.packages[0].enabled = false;
+  inventory.packages[0].requires = ["gamma"];
+  app.acceptInventory(structuredClone(inventory)); app.render();
+  let finishCatalog;
+  service.loadAvailable.mockImplementationOnce(() => new Promise((resolve) => { finishCatalog = () => resolve({ packages: catalog, health: [] }); }));
+  service.install.mockImplementation(async (packages) => {
+    expect(app.busy).toBe(true);
+    expect(await app.runOperation("Unrelated", async () => true)).toBe(false);
+    inventory.packages.push(...packages.map((pkg) => ({ ...pkg, enabled: false })));
+    return true;
+  });
+  service.setEnabled.mockImplementation(async (id, enabled) => {
+    expect(app.busy).toBe(true);
+    inventory.packages.find((pkg) => pkg.package_id === id).enabled = enabled;
+    return true;
+  });
+  const pending = app.enablePlugin(app.packageByID("alpha"));
+  expect(app.busy).toBe(true);
+  expect(await app.enablePlugin(app.packageByID("alpha"))).toBe(false);
+  expect(service.loadAvailable).toHaveBeenCalledTimes(1);
+  finishCatalog();
+  expect(await pending).toBe(true);
+  expect(service.setEnabled.mock.calls).toEqual([["gamma", true], ["alpha", true]]);
+  expect(app.busy).toBe(false);
+});
+
+it("holds the same lock throughout orphan dependency cleanup", async () => {
+  const { service, inventory } = await setup();
+  inventory.packages[0].requires = ["beta"];
+  app.acceptInventory(structuredClone(inventory)); app.render();
+  service.uninstall.mockImplementation(async (packages) => {
+    expect(app.busy).toBe(true);
+    expect(await app.runOperation("Unrelated", async () => true)).toBe(false);
+    inventory.packages = inventory.packages.filter((pkg) => !packages.some((removed) => removed.package_id === pkg.package_id));
+    return true;
+  });
+  await click("uninstall-one");
+  expect(service.uninstall.mock.calls.map(([packages]) => packages[0].package_id)).toEqual(["alpha", "beta"]);
+  expect(app.busy).toBe(false);
+});
+
 it("drops a draft when an edit is reverted before the next redraw", async () => {
   await setup(); await app.setTab("configuration");
   setting("alpha").value = "17";

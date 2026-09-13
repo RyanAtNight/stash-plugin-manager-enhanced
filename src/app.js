@@ -32,6 +32,12 @@ const TAB_DEFINITIONS = [
 const PLUGIN_ID = "stash-plugin-manager-enhanced";
 const LAST_UPDATE_CHECK_SETTING = "lastUpdateCheck";
 const SEARCH_DELAY_MS = 250;
+const BUSY_ACTIONS = new Set([
+  "check-updates", "refresh-sources", "reload", "toggle-enabled", "retry",
+  "update-all", "update-selected", "install-selected", "update-one", "install-one",
+  "uninstall-one", "uninstall-selected", "add-source", "edit-source", "cancel-source",
+  "delete-source", "save-config", "reset-config",
+]);
 
 const SOURCE_SORT_OPTIONS = [
   ["name", "Name (A–Z)"],
@@ -510,6 +516,7 @@ export class EnhancedPluginManager {
   }
 
   async refresh({ checkUpdates = this.inventory?.checkedUpdates ?? false } = {}) {
+    if (this.busy) return false;
     this.busy = true;
     this.render();
     try {
@@ -1043,6 +1050,16 @@ export class EnhancedPluginManager {
       configuration: () => this.configurationHTML(),
     };
     this.root.innerHTML = `${this.headerHTML()}${this.tabsHTML()}${this.messageHTML()}${panels[this.activeTab]()}`;
+    this.updateBusyControls();
+  }
+
+  updateBusyControls() {
+    this.root?.setAttribute("aria-busy", String(this.busy));
+    if (!this.busy) return;
+    this.root?.querySelectorAll("button[data-action]").forEach((button) => {
+      if (BUSY_ACTIONS.has(button.dataset.action)) button.disabled = true;
+    });
+    this.root?.querySelectorAll("[data-source-form] button").forEach((button) => { button.disabled = true; });
   }
 
   packageByID(id) {
@@ -1061,9 +1078,29 @@ export class EnhancedPluginManager {
     return this.available?.packages.find((pkg) => `${pkg.sourceURL}|${pkg.package_id}` === key);
   }
 
-  async runOperation(label, fn, { checkUpdatesAfter = true, rememberNewInstalls = false } = {}) {
-    const installedBefore = new Set(this.inventory?.packages.map((pkg) => pkg.package_id) ?? []);
+  async withOperation(work) {
+    if (this.busy) return false;
     this.busy = true;
+    this.render();
+    try {
+      // Only the owning sequence receives this runner; unrelated actions must
+      // go through runOperation and cannot enter until the sequence finishes.
+      return await work((...args) => this.executeOperation(...args));
+    } catch (error) {
+      this.message = { type: "error", text: error instanceof Error ? error.message : String(error) };
+      return false;
+    } finally {
+      this.busy = false;
+      this.render();
+    }
+  }
+
+  runOperation(label, fn, options) {
+    return this.withOperation((run) => run(label, fn, options));
+  }
+
+  async executeOperation(label, fn, { checkUpdatesAfter = true, rememberNewInstalls = false } = {}) {
+    const installedBefore = new Set(this.inventory?.packages.map((pkg) => pkg.package_id) ?? []);
     this.message = { type: "info", text: `${label}…` };
     this.render();
     let succeeded = false;
@@ -1095,7 +1132,6 @@ export class EnhancedPluginManager {
     } catch (error) {
       this.message = { type: "error", text: error instanceof Error ? error.message : String(error) };
     } finally {
-      this.busy = false;
       this.render();
     }
     return succeeded;
@@ -1163,7 +1199,11 @@ export class EnhancedPluginManager {
     return { steps, unresolved: [...new Set(unresolved)] };
   }
 
-  async enablePlugin(pkg) {
+  enablePlugin(pkg) {
+    return this.withOperation((run) => this.enablePluginSteps(pkg, run));
+  }
+
+  async enablePluginSteps(pkg, run) {
     const installedByID = new Map(this.inventory.packages.map((candidate) => [candidate.package_id, candidate]));
     const checked = new Set();
     const hasMissingDependency = (candidate) => {
@@ -1198,7 +1238,7 @@ export class EnhancedPluginManager {
       if (!accepted) return false;
       for (const step of steps) {
         if (step.operation === "install") {
-          const installed = await this.runOperation(
+          const installed = await run(
             `Installing ${step.pkg.name}`,
             () => this.service.install([step.pkg]),
             { checkUpdatesAfter: false, rememberNewInstalls: true }
@@ -1212,7 +1252,7 @@ export class EnhancedPluginManager {
           }
           if (installedDependency.enabled) continue;
         }
-        const enabled = await this.runOperation(
+        const enabled = await run(
           `Enabling ${step.pkg.name}`,
           () => this.service.setEnabled(step.pkg.package_id, true),
           { checkUpdatesAfter: false }
@@ -1220,7 +1260,7 @@ export class EnhancedPluginManager {
         if (!enabled) return false;
       }
     }
-    return this.runOperation(`Enabling ${pkg.name}`, () => this.service.setEnabled(pkg.package_id, true));
+    return run(`Enabling ${pkg.name}`, () => this.service.setEnabled(pkg.package_id, true));
   }
 
   confirmUninstall(packages) {
@@ -1236,7 +1276,7 @@ export class EnhancedPluginManager {
     return this.confirm?.(`Uninstall ${names}? Stash will remove the package files.${warning}`) ?? false;
   }
 
-  async offerOrphanCleanup(dependencyIDs, operation) {
+  async offerOrphanCleanup(dependencyIDs, operation, run) {
     const queue = [...new Set(dependencyIDs)];
     const offered = new Set();
     while (queue.length) {
@@ -1262,13 +1302,13 @@ export class EnhancedPluginManager {
 
       const nestedDependencies = requiredPluginIDs(dependency);
       const succeeded = cleanupOperation === "uninstall"
-        ? await this.runOperation(`Uninstalling ${dependency.name}`, () => this.service.uninstall([dependency]))
-        : await this.runOperation(`Disabling ${dependency.name}`, () => this.service.setEnabled(dependency.package_id, false));
+        ? await run(`Uninstalling ${dependency.name}`, () => this.service.uninstall([dependency]))
+        : await run(`Disabling ${dependency.name}`, () => this.service.setEnabled(dependency.package_id, false));
       if (!succeeded) continue;
       if (cleanupOperation === operation) {
         queue.push(...nestedDependencies);
       } else {
-        await this.offerOrphanCleanup(nestedDependencies, cleanupOperation);
+        await this.offerOrphanCleanup(nestedDependencies, cleanupOperation, run);
       }
     }
   }
@@ -1277,6 +1317,7 @@ export class EnhancedPluginManager {
     const button = event.target.closest("[data-action]");
     if (!button) return;
     const action = button.dataset.action;
+    if (button.disabled || (this.busy && BUSY_ACTIONS.has(action))) return;
     if (action === "open-source" || action === "open-configuration" || action === "open-installed") {
       if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
       event.preventDefault();
@@ -1341,11 +1382,13 @@ export class EnhancedPluginManager {
         await this.enablePlugin(pkg);
         return;
       }
-      if (!this.confirmDisable(pkg)) return;
-      const dependencies = requiredPluginIDs(pkg);
-      const succeeded = await this.runOperation(`Disabling ${pkg.name}`, () => this.service.setEnabled(pkg.package_id, false));
-      if (succeeded) await this.offerOrphanCleanup(dependencies, "disable");
-      return;
+      return this.withOperation(async (run) => {
+        if (!this.confirmDisable(pkg)) return false;
+        const dependencies = requiredPluginIDs(pkg);
+        const succeeded = await run(`Disabling ${pkg.name}`, () => this.service.setEnabled(pkg.package_id, false));
+        if (succeeded) await this.offerOrphanCleanup(dependencies, "disable", run);
+        return succeeded;
+      });
     }
 
     const installedSelected = this.selectedPackages("installed");
@@ -1365,11 +1408,13 @@ export class EnhancedPluginManager {
     }
     if (action === "uninstall-one" || action === "uninstall-selected") {
       const packages = action === "uninstall-one" ? [this.packageByID(button.dataset.id)] : installedSelected;
-      if (!this.confirmUninstall(packages)) return;
-      const dependencies = this.requiredDependencyIDs(packages);
-      const succeeded = await this.runOperation(`Uninstalling ${plural(packages.length, "plugin")}`, () => this.service.uninstall(packages));
-      if (succeeded) await this.offerOrphanCleanup(dependencies, "uninstall");
-      return;
+      return this.withOperation(async (run) => {
+        if (!this.confirmUninstall(packages)) return false;
+        const dependencies = this.requiredDependencyIDs(packages);
+        const succeeded = await run(`Uninstalling ${plural(packages.length, "plugin")}`, () => this.service.uninstall(packages));
+        if (succeeded) await this.offerOrphanCleanup(dependencies, "uninstall", run);
+        return succeeded;
+      });
     }
     if (action === "add-source") {
       this.clearSourceAnchor();
@@ -1438,6 +1483,7 @@ export class EnhancedPluginManager {
       current.textContent = button.textContent;
       current.disabled = button.disabled;
     });
+    this.updateBusyControls();
   }
 
   onInput(event) {
@@ -1530,6 +1576,7 @@ export class EnhancedPluginManager {
   }
 
   async savePluginConfig(pluginID) {
+    if (this.busy) return false;
     this.captureConfigurationState();
     const submitted = new Map(this.configurationDrafts.get(pluginID));
     const current = { ...(this.inventory.pluginConfig[pluginID] ?? {}) };
@@ -1560,6 +1607,7 @@ export class EnhancedPluginManager {
   }
 
   async submitSourceForm(form) {
+    if (this.busy) return false;
     const values = Object.fromEntries(new FormData(form));
     const sourceURL = safeExternalUrl(values.url.trim());
     if (!sourceURL) {
