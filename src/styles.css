@@ -36,7 +36,11 @@
 .spme-summary { display:flex; gap:6px; flex-wrap:wrap; color:#b8c5cf; font-size:12px; }
 .spme-summary strong { font-weight:500; color:#e5edf3; }
 .spme-header-tools { grid-area:tools; display:grid; justify-items:end; gap:7px; }
-.spme-tabs { grid-area:tabs; display:grid; grid-template-columns:1fr 1fr; gap:4px; }
+.spme-tabs-area { grid-area:tabs; align-self:end; min-width:0; container:spme-tabs / inline-size; }
+.spme-tabs { display:grid; grid-template-columns:repeat(4,minmax(0,140px)); gap:4px; }
+@container spme-tabs (max-width:531px) {
+  .spme-tabs { grid-template-columns:repeat(2,minmax(0,140px)); }
+}
 #spme-root .spme-header button, #spme-root .spme-project-link { display:inline-flex; align-items:center; justify-content:center; gap:6px; font:400 13px Arial,sans-serif; line-height:normal; color:#e5edf3; cursor:pointer; background:transparent; border:1px solid transparent; border-radius:4px; padding:8px 10px; white-space:nowrap; text-decoration:none; }
 .spme-header svg { width:16px; height:16px; flex:none; }
 #spme-root .spme-header button:not(:disabled):hover, #spme-root .spme-project-link:hover { background:#2f4352; border-color:transparent; color:#e5edf3; }
@@ -52,11 +56,8 @@
 #spme-root .spme-view-toggle button[aria-pressed="true"]:active { background:#2f4352; box-shadow:none; cursor:default; }
 @container spme-header (max-width:660px) {
   .spme-header { grid-template-columns:minmax(0,1fr) auto; grid-template-areas:"identity tools" "tabs tabs"; }
-  .spme-tabs { grid-template-columns:repeat(4,minmax(0,1fr)); border-top:1px solid #496070; padding-top:10px; }
+  .spme-tabs-area { border-top:1px solid #496070; padding-top:10px; }
   .spme-header p { white-space:normal; overflow-wrap:anywhere; }
-}
-@container spme-header (max-width:510px) {
-  .spme-tabs { grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
 @media(pointer:coarse) {
   #spme-root .spme-header button, #spme-root .spme-project-link { min-height:44px; }

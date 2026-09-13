@@ -628,14 +628,14 @@ export class EnhancedPluginManager {
   }
 
   tabsHTML() {
-    return `<div class="spme-tabs" role="tablist" aria-label="Plugin manager sections">
+    return `<div class="spme-tabs-area"><div class="spme-tabs" role="tablist" aria-label="Plugin manager sections">
       ${TAB_DEFINITIONS.map(
         ([id, label]) => `<button type="button" role="tab" data-action="tab" data-tab="${id}"
           aria-selected="${this.activeTab === id}" class="${
             this.activeTab === id ? "active" : ""
           }">${headerIcon(HEADER_TAB_ICONS[id])}${label}</button>`
       ).join("")}
-    </div>`;
+    </div></div>`;
   }
 
   messageHTML() {

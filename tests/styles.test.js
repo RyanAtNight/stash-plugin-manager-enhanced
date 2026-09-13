@@ -13,7 +13,9 @@ describe("package view responsive styles", () => {
   it("moves section tabs below identity and utilities when the header narrows", () => {
     expect(css).toContain('grid-template-areas:"identity tabs tools"');
     expect(css).toMatch(/@container spme-header \(max-width:660px\)[\s\S]*grid-template-areas:"identity tools" "tabs tabs"/);
-    expect(css).toMatch(/@container spme-header \(max-width:510px\)[\s\S]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+    expect(css).toMatch(/@container spme-tabs \(max-width:531px\)[\s\S]*grid-template-columns:repeat\(2,minmax\(0,140px\)\)/);
+    expect(css).toContain('grid-template-columns:repeat(4,minmax(0,140px))');
+    expect(css).toMatch(/\.spme-tabs-area\s*\{[^}]*align-self:end/);
   });
 
   it("joins Cards and Table into a compact segmented control", () => {
