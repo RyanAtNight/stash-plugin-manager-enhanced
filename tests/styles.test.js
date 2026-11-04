@@ -51,7 +51,7 @@ describe("package view responsive styles", () => {
     expect(css).toMatch(/#spme-root\[data-active-tab="installed"\] \.spme-package-table th:nth-child\(3\)\s*\{\s*width:\s*auto/);
     expect(css).toMatch(/\.spme-columns-installed \.spme-col-description\s*\{\s*width:\s*auto/);
     expect(css).toMatch(/\.spme-columns-installed \.spme-col-last-commit,\s*\.spme-columns-installed \.spme-col-installed\s*\{\s*width:\s*7rem/);
-    expect(css).toMatch(/\.spme-columns-installed \.spme-col-actions\s*\{\s*width:\s*12rem/);
+    expect(css).toMatch(/\.spme-columns-installed \.spme-col-actions\s*\{\s*width:\s*13\.5rem/);
     expect(css).toMatch(/\.spme-columns-browse \.spme-col-actions\s*\{\s*width:\s*12\.8rem/);
   });
 
@@ -78,8 +78,8 @@ describe("package view responsive styles", () => {
     expect(css).toMatch(/#spme-root \.spme-repo-link\s*\{[^}]*background:\s*transparent[^}]*border-color:\s*#496070[^}]*color:\s*#e5edf3/);
     expect(css).toMatch(/\.spme-github-icon\s*\{[\s\S]*fill:\s*currentColor/);
     expect(css).toMatch(/#spme-root \.spme-repo-link:hover[\s\S]*text-decoration:\s*none/);
-    expect(css).toMatch(/#spme-root button\.spme-uninstall-action\s*\{[^}]*background:\s*transparent[^}]*border-color:\s*rgba\(220,82,96,\.55\)[^}]*color:\s*#ff9aa4/);
-    expect(css).toMatch(/#spme-root button\.spme-uninstall-action:not\(:disabled\):hover\s*\{[^}]*background:\s*var\(--spme-danger\)[^}]*color:\s*#fff/);
+    expect(css).toMatch(/#spme-root button\.spme-uninstall-action\s*\{[^}]*background:\s*transparent[^}]*border-color:\s*#496070[^}]*color:\s*#e08791/);
+    expect(css).toMatch(/#spme-root button\.spme-uninstall-action:not\(:disabled\):hover,\s*#spme-root button\.spme-uninstall-action:focus-visible\s*\{[^}]*background:\s*var\(--spme-danger\)[^}]*color:\s*#fff/);
   });
 
   it("styles Configure links as primary actions and highlights their target panel", () => {
@@ -163,8 +163,8 @@ describe("package view responsive styles", () => {
     expect(css).toMatch(/\.spme-source-table\s*\{\s*min-width:\s*62rem/);
     expect(css).toMatch(/\.spme-columns-sources \.spme-col-source-name\s*\{\s*width:\s*auto/);
     expect(css).toMatch(/\.spme-columns-sources \.spme-col-source-count\s*\{\s*width:\s*5\.5rem/);
-    expect(css).toMatch(/\.spme-columns-sources \.spme-col-source-checked\s*\{\s*width:\s*clamp\(9rem, 12%, 12rem\)/);
-    expect(css).toMatch(/\.spme-columns-sources \.spme-col-source-status\s*\{\s*width:\s*clamp\(10rem, 13%, 12\.5rem\)/);
+    expect(css).toMatch(/\.spme-columns-sources \.spme-col-source-checked\s*\{\s*width:\s*9rem/);
+    expect(css).toMatch(/\.spme-columns-sources \.spme-col-source-status\s*\{\s*width:\s*10\.5rem/);
     expect(css).toMatch(/\.spme-columns-sources \.spme-col-source-actions\s*\{\s*width:\s*14\.5rem/);
     expect(css).toMatch(/\.spme-source-row:target,[\s\S]*\.spme-source-row:focus\s*\{[\s\S]*outline:/);
     expect(css).toMatch(/\.spme-source-edit-row \.spme-source-form\s*\{[\s\S]*margin:\s*0/);
