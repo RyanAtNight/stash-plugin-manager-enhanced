@@ -53,6 +53,7 @@ Compared with Stash's stock Plugins page, the enhanced interface adds:
 - Search by name, ID, description, version, and source
 - Search updates after a 250 ms typing pause, preserving the search field and cursor during typing and held Backspace
 - Per-plugin last-commit dates with name, newest-commit, or oldest-commit sorting
+- Available updates show the installed version above the newer one (in amber), both in full, with release numbers ahead of muted commit IDs
 - Filter plugins for enabled, disabled, source, and updates-only
 - Remember the Installed Status, Sort, and Cards/Table preferences between visits
 - Visible installed/enabled/update counts
