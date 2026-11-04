@@ -246,6 +246,44 @@
 .spme-setting { display:grid; grid-template-columns:minmax(0,1fr) minmax(8rem,18rem); align-items:center; gap:1rem; padding:.75rem 0; border-bottom:1px solid var(--spme-border); }
 .spme-setting span { display:grid; }
 .spme-setting small { color:var(--spme-text-muted); }
+
+/* Configuration uses one editor, with short reading lines even on wide displays. */
+#spme-root .spme-config-workspace { display:grid; grid-template-columns:260px minmax(0,1fr); border:1px solid var(--spme-border); border-radius:.6rem; margin-top:1rem; }
+#spme-root .spme-config-sidebar { min-width:0; min-height:0; display:flex; flex-direction:column; align-self:start; position:sticky; top:var(--spme-config-sticky-top, 0px); max-height:calc(100dvh - var(--spme-config-sticky-top, 0px)); padding:1rem .75rem; background:var(--spme-panel-2); border-right:1px solid var(--spme-border); border-radius:0; }
+#spme-root .spme-config-sidebar .spme-toolbar { display:flex; flex-direction:column; align-items:stretch; margin:0 .25rem 1rem; }
+#spme-root .spme-config-sidebar .spme-toolbar input[type="search"] { min-width:0; width:100%; }
+#spme-root .spme-config-status { display:flex; margin-top:.4rem; }
+#spme-root .spme-config-status button { flex:1; min-width:0; padding:.45rem .35rem; border-radius:0; background:transparent; border-color:var(--spme-border); }
+#spme-root .spme-config-status button:first-child { border-radius:.35rem 0 0 .35rem; }
+#spme-root .spme-config-status button:last-child { border-radius:0 .35rem .35rem 0; }
+#spme-root .spme-config-status button[aria-pressed="true"] { background:#234e66; border-color:var(--spme-accent); }
+#spme-root .spme-config-list { gap:.2rem; min-height:0; overflow-y:auto; overscroll-behavior-y:contain; scrollbar-gutter:stable; align-content:start; }
+#spme-root .spme-config-sidebar .spme-toolbar { flex:0 0 auto; }
+#spme-root [data-config-detail] { scroll-margin-top:6rem; }
+#spme-root .spme-config-choice { display:block; width:100%; padding:.8rem .75rem; text-align:left; background:transparent; border:0; overflow-wrap:anywhere; }
+#spme-root .spme-config-choice small { display:block; color:var(--spme-text-muted); }
+#spme-root .spme-config-choice[aria-pressed="true"] { background:#234e66; box-shadow:inset 3px 0 var(--spme-accent); }
+#spme-root .spme-config-editor { min-width:0; padding:1.75rem; }
+#spme-root [data-config-detail] { width:100%; max-width:560px; }
+#spme-root .spme-config-editor .spme-plugin-config { background:transparent; border:0; }
+#spme-root .spme-config-editor .spme-plugin-config:target,
+#spme-root .spme-config-editor .spme-plugin-config:focus { box-shadow:none; outline:none; }
+#spme-root .spme-config-editor .spme-plugin-config > summary { padding:0 0 1rem; flex-wrap:wrap; cursor:default; }
+#spme-root .spme-config-editor .spme-plugin-config > summary > span:first-child { min-width:0; overflow-wrap:anywhere; }
+#spme-root .spme-config-editor .spme-config-body { padding:1rem 0 0; }
+#spme-root .spme-config-editor .spme-setting { grid-template-columns:minmax(0,1fr); gap:.5rem; padding:1rem 0; }
+#spme-root .spme-config-editor .spme-setting input:not([type="checkbox"]) { width:100%; min-width:0; }
+#spme-root .spme-config-editor .spme-setting-boolean { grid-template-columns:18px minmax(0,1fr); gap:.85rem; }
+#spme-root .spme-config-editor .spme-setting-boolean input { width:18px; height:18px; margin:0; accent-color:var(--spme-accent); }
+#spme-root .spme-config-editor .spme-setting small { overflow-wrap:anywhere; }
+@media (max-width:700px) {
+  #spme-root .spme-config-workspace { grid-template-columns:220px minmax(0,1fr); }
+  #spme-root .spme-config-editor { padding:1rem; }
+}
+@media (max-width:520px) {
+  #spme-root .spme-config-workspace { grid-template-columns:minmax(0,1fr); }
+  #spme-root .spme-config-sidebar { position:static; max-height: min(28rem, 65dvh); border-right:0; border-bottom:1px solid var(--spme-border); border-radius:.6rem .6rem 0 0; }
+}
 .spme-hook { background:var(--spme-panel-2); border-radius:.4rem; padding:.75rem; margin:.5rem 0; }
 .spme-alert, .spme-loading, .spme-empty { padding:1rem; border:1px solid var(--spme-border); border-radius:.5rem; margin:1rem 0; }
 .spme-alert { display:flex; align-items:center; gap:.75rem; }

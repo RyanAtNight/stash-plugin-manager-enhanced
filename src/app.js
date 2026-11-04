@@ -229,7 +229,7 @@ export class EnhancedPluginManager {
       installed: { query: "", enabled: installedEnabled, updatesOnly: false, dependency: "", sort: installedSort },
       browse: { query: "", source: "", sort: "last-commit" },
       sources: { sort: "packages-desc" },
-      configuration: { query: "", enabled: true },
+      configuration: { query: "", enabled: true, sort: "name" },
     };
     this.message = undefined;
     this.busy = false;
@@ -313,6 +313,8 @@ export class EnhancedPluginManager {
       ?? this.root.getBoundingClientRect().left;
     const available = Math.max(320, this.window.innerWidth - left - 16);
     this.root.style.setProperty("--spme-available-width", `${available}px`);
+    const navigationHeight = this.document.querySelector("nav.top-nav.fixed-top")?.getBoundingClientRect().height ?? 0;
+    this.root.style.setProperty("--spme-config-sticky-top", `${navigationHeight}px`);
   }
 
   focusSourceForm() {
@@ -501,6 +503,7 @@ export class EnhancedPluginManager {
       if (!pkg) return false;
       this.filters.configuration.query = "";
       this.filters.configuration.enabled = pkg.enabled === true;
+      this.selectedConfiguration = pkg.plugin.id;
       this.render();
       target = this.document.getElementById(anchorID);
     }
@@ -672,7 +675,7 @@ export class EnhancedPluginManager {
 
   toolbarHTML({ kind, count, selectedCount = 0, hiddenSelectedCount = 0, filters = "", sort = "" }) {
     const label = { installed: "installed plugins", browse: "available plugins", configuration: "plugin configuration" }[kind];
-    const placeholder = kind === "configuration" ? "Plugin name, ID, description, or setting" : "Name, ID, description, or source";
+    const placeholder = kind === "configuration" ? "Search plugins…" : "Name, ID, description, or source";
     return `<div class="spme-toolbar">
       <label class="spme-search"><span>Search ${label}</span><input type="search" data-filter="${kind}" aria-label="Search ${label}" placeholder="${placeholder}" value="${escapeHTML(
         this.filters[kind].query
@@ -1004,11 +1007,16 @@ export class EnhancedPluginManager {
       const text = [pkg.name, pkg.package_id, packageDescription(pkg), ...(pkg.plugin.settings ?? []).map((setting) => `${setting.name} ${setting.display_name} ${setting.description}`)].join(" ").toLowerCase();
       return !query || text.includes(query);
     });
-    const filters = `<label><span>Status</span><select data-filter-select="configuration-enabled" aria-label="Filter plugin configuration by enabled status"><option value="">All states</option><option value="true" ${this.filters.configuration.enabled === true ? "selected" : ""}>Enabled</option><option value="false" ${this.filters.configuration.enabled === false ? "selected" : ""}>Disabled</option></select></label>`;
-    return `<section class="spme-panel" role="tabpanel">
-      <div class="spme-actions spme-sticky"><button type="button" data-action="expand-config">Expand all</button><button type="button" data-action="collapse-config">Collapse all</button></div>
-      ${this.toolbarHTML({ kind: "configuration", count: packages.length, filters })}
-      <div class="spme-config-list" data-search-results>${packages.map((pkg) => this.pluginConfigCard(pkg)).join("") || '<p class="spme-empty">No plugin configuration matches these filters.</p>'}</div>
+    packages.sort((a, b) => (a.plugin.name || a.name).localeCompare(b.plugin.name || b.name, undefined, { sensitivity: "base", numeric: true }) * (this.filters.configuration.sort === "name-desc" ? -1 : 1));
+    const selected = packages.find((pkg) => pkg.plugin.id === this.selectedConfiguration) ?? packages[0];
+    this.selectedConfiguration = selected?.plugin.id;
+    const filters = `<div class="spme-config-status" role="group" aria-label="Filter plugin configuration by enabled status">${[[true, "Enabled"], [false, "Disabled"], [undefined, "All"]].map(([value, label]) => `<button type="button" data-action="filter-config-status" data-value="${value ?? ""}" aria-pressed="${this.filters.configuration.enabled === value}">${label}</button>`).join("")}</div>`;
+    return `<section class="spme-panel spme-config-workspace" role="tabpanel">
+      <aside class="spme-config-sidebar" aria-label="Plugin configuration navigation">
+        ${this.toolbarHTML({ kind: "configuration", count: packages.length, filters: `${filters}<label><span>Sort</span><select data-filter-select="configuration-sort" aria-label="Sort plugin configuration"><option value="name" ${this.filters.configuration.sort === "name" ? "selected" : ""}>Name (A–Z)</option><option value="name-desc" ${this.filters.configuration.sort === "name-desc" ? "selected" : ""}>Name (Z–A)</option></select></label>` })}
+        <div class="spme-config-list" data-search-results>${packages.map((pkg) => `<button type="button" class="spme-config-choice" data-action="select-config" data-id="${escapeHTML(pkg.plugin.id)}" aria-pressed="${pkg === selected}"><strong>${escapeHTML(pkg.plugin.name)}</strong><small>${pkg.enabled ? "Enabled" : "Disabled"} · ${(pkg.plugin.settings ?? []).length ? "Configurable" : "No settings"}</small></button>`).join("")}</div>
+      </aside>
+      <div class="spme-config-editor"><div data-config-detail>${selected ? this.pluginConfigCard(selected) : '<p class="spme-empty">No plugin configuration matches these filters.</p>'}</div></div>
     </section>`;
   }
 
@@ -1048,12 +1056,13 @@ export class EnhancedPluginManager {
         } else {
           input = `<input data-config-input data-plugin="${escapeHTML(plugin.id)}" data-setting="${escapeHTML(setting.name)}" data-setting-type="${escapeHTML(setting.type)}" aria-label="${escapeHTML(label)}" type="${setting.type === "NUMBER" ? "number" : "text"}" value="${escapeHTML(value ?? "")}">`;
         }
-        return `<label class="spme-setting"><span><strong>${escapeHTML(label)}</strong><small>${escapeHTML(setting.description || setting.name)}</small></span>${input}</label>`;
+        return `<label class="spme-setting${setting.type === "BOOLEAN" ? " spme-setting-boolean" : ""}">${setting.type === "BOOLEAN" ? input : ""}<span><strong>${escapeHTML(label)}</strong><small>${escapeHTML(setting.description || setting.name)}</small></span>${setting.type === "BOOLEAN" ? "" : input}</label>`;
       }).join("");
-    return `<article class="spme-config-extension-card" data-package-id="${escapeHTML(plugin.id)}"><details id="${configurationAnchorID(plugin.id)}" class="spme-plugin-config" data-plugin-id="${escapeHTML(plugin.id)}" tabindex="-1" ${this.expandedConfiguration.has(plugin.id) ? "open" : ""}><summary><span><strong>${escapeHTML(plugin.name)}</strong> <code>${escapeHTML(plugin.id)}</code></span><span class="spme-badges"><span class="spme-badge ${pkg.enabled ? "spme-enabled" : "spme-disabled"}">${pkg.enabled ? "Enabled" : "Disabled"}</span>${githubLink(pkg)}${this.installedReferenceHTML(pkg)}</span></summary><div class="spme-config-body">${plugin.description ? `<p>${escapeHTML(plugin.description)}</p>` : ""}${hooks ? `<section><h3>Hooks</h3>${hooks}</section>` : ""}${settings ? `<section><h3>Settings</h3>${settings}</section>` : '<p>No configurable settings.</p>'}<div class="spme-card-actions spme-plugin-extension-actions" data-spme-config-actions="${escapeHTML(plugin.id)}"></div><div class="spme-actions"><button type="button" data-action="save-config" data-id="${escapeHTML(plugin.id)}">Save changes</button><button type="button" data-action="reset-config" data-id="${escapeHTML(plugin.id)}">Reset stored settings</button></div><p class="spme-help">Stash plugin manifests do not declare filesystem or network permissions, compatibility ranges, or setting defaults. This page does not infer them.</p></div></details></article>`;
+    return `<article class="spme-config-extension-card" data-package-id="${escapeHTML(plugin.id)}"><details id="${configurationAnchorID(plugin.id)}" class="spme-plugin-config" data-plugin-id="${escapeHTML(plugin.id)}" tabindex="-1" open><summary><span><strong>${escapeHTML(plugin.name)}</strong> <code>${escapeHTML(plugin.id)}</code></span><span class="spme-badges"><span class="spme-badge ${pkg.enabled ? "spme-enabled" : "spme-disabled"}">${pkg.enabled ? "Enabled" : "Disabled"}</span>${githubLink(pkg)}${this.installedReferenceHTML(pkg)}</span></summary><div class="spme-config-body">${plugin.description ? `<p>${escapeHTML(plugin.description)}</p>` : ""}${hooks ? `<section><h3>Hooks</h3>${hooks}</section>` : ""}${settings ? `<section><h3>Settings</h3>${settings}</section>` : '<p>No configurable settings.</p>'}<div class="spme-card-actions spme-plugin-extension-actions" data-spme-config-actions="${escapeHTML(plugin.id)}"></div><div class="spme-actions"><button type="button" data-action="save-config" data-id="${escapeHTML(plugin.id)}">Save changes</button><button type="button" data-action="reset-config" data-id="${escapeHTML(plugin.id)}">Reset stored settings</button></div><p class="spme-help">Stash plugin manifests do not declare filesystem or network permissions, compatibility ranges, or setting defaults. This page does not infer them.</p></div></details></article>`;
   }
 
   render() {
+    const configurationScroll = this.root?.querySelector(".spme-config-list")?.scrollTop ?? 0;
     this.captureConfigurationState();
     this.cancelSearch();
     if (!this.root || !this.inventory) return;
@@ -1064,6 +1073,8 @@ export class EnhancedPluginManager {
       configuration: () => this.configurationHTML(),
     };
     this.root.innerHTML = `${this.headerHTML()}${this.messageHTML()}${panels[this.activeTab]()}`;
+    const configurationList = this.root.querySelector(".spme-config-list");
+    if (configurationList) configurationList.scrollTop = configurationScroll;
     this.updateBusyControls();
   }
 
@@ -1328,9 +1339,33 @@ export class EnhancedPluginManager {
   }
 
   async onClick(event) {
+    if (event.target.closest(".spme-plugin-config > summary") && !event.target.closest("a, button")) {
+      event.preventDefault();
+      return;
+    }
     const button = event.target.closest("[data-action]");
     if (!button) return;
     const action = button.dataset.action;
+    if (action === "select-config" || action === "filter-config-status") {
+      this.captureConfigurationState();
+      const url = this.window?.location?.href;
+      if (url) {
+        if (action === "select-config") {
+          const nextURL = configurationAnchorHref(url, button.dataset.id);
+          const currentURL = `${this.window.location.pathname}${this.window.location.search}${this.window.location.hash}`;
+          if (nextURL !== currentURL) this.window.history.pushState({}, "", nextURL);
+        } else this.window.history.replaceState({}, "", withoutPluginManagerConfigurationAnchor(url));
+      }
+      if (action === "select-config") this.selectedConfiguration = button.dataset.id;
+      else this.filters.configuration.enabled = button.dataset.value === "" ? undefined : button.dataset.value === "true";
+      this.render();
+      this.root.querySelector(action === "select-config" ? '.spme-config-choice[aria-pressed="true"]' : '.spme-config-status [aria-pressed="true"]')?.focus({ preventScroll: true });
+      if (action === "select-config") {
+        const detail = this.root.querySelector("[data-config-detail]");
+        if (detail?.getBoundingClientRect().top < 80) detail.scrollIntoView?.({ block: "start", behavior: "auto" });
+      }
+      return;
+    }
     if (button.disabled || (this.busy && BUSY_ACTIONS.has(action))) return;
     if (action === "open-source" || action === "open-configuration" || action === "open-installed") {
       if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
@@ -1485,6 +1520,9 @@ export class EnhancedPluginManager {
     template.innerHTML = this[`${kind}HTML`]();
     const next = template.content;
     this.root.querySelector("[data-search-results]").innerHTML = next.querySelector("[data-search-results]").innerHTML;
+    if (kind === "configuration") {
+      this.root.querySelector("[data-config-detail]").innerHTML = next.querySelector("[data-config-detail]").innerHTML;
+    }
     const count = this.root.querySelector(".spme-result-count");
     count.textContent = next.querySelector(".spme-result-count").textContent;
     const selected = this.root.querySelector(".spme-selected-count");
@@ -1526,6 +1564,13 @@ export class EnhancedPluginManager {
 
   onChange(event) {
     const target = event.target;
+    if (target.dataset.filterSelect === "configuration-sort") {
+      this.filters.configuration.sort = target.value === "name-desc" ? "name-desc" : "name";
+      this.render();
+      this.root.querySelector(".spme-config-list").scrollTop = 0;
+      this.root.querySelector('[data-filter-select="configuration-sort"]').focus({ preventScroll: true });
+      return;
+    }
     if (target.matches("[data-config-input]")) {
       this.captureConfigurationState();
       return;

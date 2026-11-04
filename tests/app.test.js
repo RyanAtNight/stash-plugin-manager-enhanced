@@ -1528,7 +1528,7 @@ describe("EnhancedPluginManager", () => {
     expect(service.saveSources.mock.calls[0][0][0]).toEqual(expect.objectContaining({ name: "Community edited" }));
   });
 
-  it("collapses configuration by plugin and shows hooks and settings on demand", async () => {
+  it("selects one configuration editor with inline checkboxes and status filters", async () => {
     const { app } = await mountApp();
     app.inventory.packages.push({
       ...app.inventory.packages[0],
@@ -1543,13 +1543,29 @@ describe("EnhancedPluginManager", () => {
     });
     await app.setTab("configuration");
 
-    expect(document.querySelector('[data-filter-select="configuration-enabled"]').value).toBe("true");
+    expect(document.querySelector('[data-action="filter-config-status"][aria-pressed="true"]').dataset.value).toBe("true");
     expect(document.querySelector('[data-plugin-id="disabled-config"]')).toBeNull();
     const details = document.querySelector("details.spme-plugin-config");
     expect(details).not.toBeNull();
-    expect(details?.open).toBe(false);
+    expect(details?.open).toBe(true);
     expect(details?.textContent).toContain("Scene.Update.Post");
     expect(details?.querySelector('input[type="checkbox"]')).not.toBeNull();
+    expect(details.querySelector('.spme-setting-boolean').firstElementChild.type).toBe("checkbox");
+    document.querySelector('[data-action="filter-config-status"][data-value="false"]').click();
+    expect(document.querySelector('[data-plugin-id="disabled-config"]')).not.toBeNull();
+    expect(document.querySelector('[data-action="select-config"][data-id="alpha"]')).toBeNull();
+    document.querySelector('[data-action="filter-config-status"][data-value=""]').click();
+    expect(document.querySelectorAll('[data-action="select-config"]')).toHaveLength(2);
+    expect(document.querySelectorAll('.spme-plugin-config')).toHaveLength(1);
+    const sort = document.querySelector('[data-filter-select="configuration-sort"]');
+    sort.value = "name-desc";
+    sort.dispatchEvent(new Event("change", { bubbles: true }));
+    expect([...document.querySelectorAll('[data-action="select-config"]')].map(button => button.dataset.id)).toEqual(["disabled-config", "alpha"]);
+    expect(document.querySelector('[data-plugin-id="disabled-config"]')).not.toBeNull();
+    document.querySelector('.spme-config-list').scrollTop = 100;
+    document.querySelector('[data-action="select-config"][data-id="alpha"]').click();
+    expect(document.querySelector('.spme-config-list').scrollTop).toBe(100);
+    expect(document.querySelector('[data-plugin-id="alpha"]')).not.toBeNull();
   });
 
   it("reveals a disabled plugin when its Configure link targets the filtered Configuration page", async () => {
@@ -1570,10 +1586,27 @@ describe("EnhancedPluginManager", () => {
     document.querySelector('[data-package-id="disabled-config"] [data-action="open-configuration"]').click();
 
     await vi.waitFor(() => expect(app.activeTab).toBe("configuration"));
-    expect(document.querySelector('[data-filter-select="configuration-enabled"]').value).toBe("false");
+    expect(document.querySelector('[data-action="filter-config-status"][aria-pressed="true"]').dataset.value).toBe("false");
     const panel = document.getElementById(configurationAnchorID("disabled-config"));
     expect(panel?.open).toBe(true);
     expect(document.activeElement).toBe(panel);
+  });
+
+  it("records sidebar selection in the URL and restores it after navigation and remount", async () => {
+    const { app } = await mountApp();
+    app.inventory.packages.push({ ...app.inventory.packages[0], package_id: "second", name: "Second", plugin: { ...app.inventory.packages[0].plugin, id: "second", name: "Second" } });
+    await app.setTab("configuration");
+    document.querySelector('[data-action="select-config"][data-id="second"]').click();
+    const selectedURL = window.location.href;
+    expect(window.location.hash).toBe(`#${configurationAnchorID("second")}`);
+    await app.setTab("installed");
+    window.history.replaceState({}, "", selectedURL);
+    await app.syncFromURL();
+    expect(document.querySelector('[data-action="select-config"][aria-pressed="true"]').dataset.id).toBe("second");
+    app.unmount();
+    app.selectedConfiguration = undefined;
+    await app.mount();
+    expect(document.querySelector('[data-action="select-config"][aria-pressed="true"]').dataset.id).toBe("second");
   });
 
   it("removes a blank numeric setting instead of coercing it to zero", async () => {

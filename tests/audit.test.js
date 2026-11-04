@@ -115,7 +115,7 @@ it("drops a draft when an edit is reverted before the next redraw", async () => 
   expect(setting("alpha").value).toBe("1");
 });
 
-it("retains configuration drafts and expanded panels through filtering and navigation", async () => {
+it("retains configuration drafts through selection, filtering and navigation", async () => {
   await setup();
   await app.setTab("configuration");
   app.message = { type: "info", text: "Earlier operation" }; app.render();
@@ -132,6 +132,7 @@ it("retains configuration drafts and expanded panels through filtering and navig
   await app.setTab("installed");
   app.filters.configuration.query = "";
   await app.setTab("configuration");
+  document.querySelector('[data-action="select-config"][data-id="alpha"]').click();
   expect(setting("alpha").value).toBe("17");
   expect(document.querySelector('[data-plugin-id="alpha"]').open).toBe(true);
 });
@@ -139,16 +140,22 @@ it("retains configuration drafts and expanded panels through filtering and navig
 it("keeps other drafts on save and retains failed drafts until saved or reset", async () => {
   const { service, inventory } = await setup();
   await app.setTab("configuration");
-  setting("alpha").value = "17"; setting("beta").value = "23";
+  setting("alpha").value = "17";
+  document.querySelector('[data-action="select-config"][data-id="beta"]').click();
+  setting("beta").value = "23";
+  document.querySelector('[data-action="select-config"][data-id="alpha"]').click();
   service.configurePlugin.mockRejectedValueOnce(new Error("offline"));
   await app.savePluginConfig("alpha");
   expect(setting("alpha").value).toBe("17");
   expect(app.inventory.pluginConfig.alpha.limit).toBe(1);
   await app.savePluginConfig("alpha");
+  document.querySelector('[data-action="select-config"][data-id="beta"]').click();
   expect(setting("beta").value).toBe("23");
   inventory.pluginConfig.alpha.limit = 99;
   await app.refresh({ checkUpdates: false });
+  document.querySelector('[data-action="select-config"][data-id="alpha"]').click();
   expect(setting("alpha").value).toBe("99");
+  document.querySelector('[data-action="select-config"][data-id="beta"]').click();
   expect(setting("beta").value).toBe("23");
   service.configurePlugin.mockRejectedValueOnce(new Error("offline"));
   await app.onClick({ target: document.querySelector('[data-action="reset-config"][data-id="beta"]') });
