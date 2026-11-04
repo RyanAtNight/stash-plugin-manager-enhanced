@@ -54,6 +54,11 @@ describe("package view responsive styles", () => {
     expect(css).toMatch(/\.spme-plugin-table:has\(\[data-action="update-one"\]\) \.spme-columns-installed \.spme-col-actions\s*\{\s*width:\s*18rem/);
   });
 
+  it("tints the active tab and keeps Manage secondary", () => {
+    expect(css).toMatch(/#spme-root \.spme-tabs button\.active,[^{]*\{[^}]*background:\s*rgba\(25,153,214,\.22\)[^}]*box-shadow:\s*inset 0 -2px 0 #48aff0/);
+    expect(css).toMatch(/#spme-root \.spme-config-link\.spme-manage-link\s*\{\s*background:\s*#2f4352/);
+  });
+
   it("gives Installed actions a compact fixed width independent of Browse", () => {
     expect(css).toMatch(/#spme-root\[data-active-tab="installed"\] \.spme-package-table th:nth-child\(3\)\s*\{\s*width:\s*auto/);
     expect(css).toMatch(/\.spme-columns-installed \.spme-col-description\s*\{\s*width:\s*auto/);

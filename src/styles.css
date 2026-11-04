@@ -48,7 +48,8 @@
 #spme-root .spme-project-link:hover { border-color:#496070; }
 #spme-root .spme-project-link { border-color:#496070; }
 #spme-root .spme-tabs button { background:#2f4352; justify-content:center; }
-#spme-root .spme-tabs button.active, #spme-root .spme-tabs button.active:not(:disabled):hover { background:#1999d6; color:#fff; }
+/* Active tab: a tint with an accent underline, so solid blue stays reserved for primary actions (Ryan, 2026-11-04). */
+#spme-root .spme-tabs button.active, #spme-root .spme-tabs button.active:not(:disabled):hover { background:rgba(25,153,214,.22); box-shadow:inset 0 -2px 0 #48aff0; color:#fff; }
 .spme-view-toggle { display:inline-flex; gap:0; padding:2px; border:1px solid #496070; border-radius:5px; }
 #spme-root .spme-view-toggle button { padding:5px 8px; border-color:transparent; }
 #spme-root .spme-view-toggle button { color:#b8c5cf; }
@@ -140,9 +141,9 @@
 #spme-root button.danger { background:var(--spme-danger); }
 #spme-root button.danger:not(:disabled):hover { background:#b94350; border-color:#ac3e4a; }
 #spme-root button.danger:not(:disabled):active { background:#a33a46; border-color:#963640; box-shadow:0 0 0 .2rem rgba(220,82,96,.5); }
-#spme-root button.spme-secondary, #spme-root .spme-manage-link { background:#2f4352; border-color:#496070; color:#e5edf3; }
-#spme-root button.spme-secondary:not(:disabled):hover, #spme-root .spme-manage-link:hover { background:#3a5263; border-color:#5d7a8e; color:#fff; }
-#spme-root button.spme-secondary:not(:disabled):active, #spme-root .spme-manage-link:active { background:#41596b; border-color:#5d7a8e; color:#fff; }
+#spme-root button.spme-secondary, #spme-root .spme-config-link.spme-manage-link { background:#2f4352; border-color:#496070; color:#e5edf3; }
+#spme-root button.spme-secondary:not(:disabled):hover, #spme-root .spme-config-link.spme-manage-link:hover { background:#3a5263; border-color:#5d7a8e; color:#fff; }
+#spme-root button.spme-secondary:not(:disabled):active, #spme-root .spme-config-link.spme-manage-link:active { background:#41596b; border-color:#5d7a8e; color:#fff; }
 #spme-root button.subtle { background:transparent; border-color:var(--spme-danger); color:#ff9aa4; }
 #spme-root button.subtle:not(:disabled):hover { background:rgba(220,82,96,.14); border-color:#b94350; color:#ffb0b8; }
 #spme-root button.subtle:not(:disabled):active { background:rgba(220,82,96,.25); border-color:#a33a46; box-shadow:0 0 0 .2rem rgba(220,82,96,.5); }
