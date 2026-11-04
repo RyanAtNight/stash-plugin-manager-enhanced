@@ -365,7 +365,7 @@ export class EnhancedPluginManager {
     return `<button type="button" class="danger spme-icon-action spme-uninstall-action" data-action="uninstall-one" data-id="${escapeHTML(pkg.package_id)}" aria-label="${escapeHTML(label)}" title="${escapeHTML(label)}">${TRASH_ICON}</button>`;
   }
 
-  packageActionsHTML(pkg, installed, selectKey, presentation) {
+  packageActionsHTML(pkg, installed, selectKey) {
     const repository = githubLink(pkg);
     const configure = this.configurationReferenceHTML(pkg);
     if (!installed) {
@@ -374,7 +374,8 @@ export class EnhancedPluginManager {
     const controls = pkg.runtimeOnly
       ? [this.enableToggleHTML(pkg), repository, configure]
       : [this.enableToggleHTML(pkg), repository, this.updateActionHTML(pkg), this.uninstallActionHTML(pkg), configure];
-    return (presentation === "cards" ? controls.reverse() : controls).join("");
+    // One order in every view (Ryan, 2026-11-03): the enable switch is always last, on the right edge.
+    return controls.reverse().join("");
   }
 
   dependencyStatusHTML(pkg, installed) {
@@ -848,7 +849,7 @@ export class EnhancedPluginManager {
     const capabilities = installed && pkg.capabilities?.length
       ? `<details class="spme-capabilities"><summary>Capabilities</summary><ul>${pkg.capabilities.map((item) => `<li>${escapeHTML(item)}</li>`).join("")}</ul></details>`
       : "";
-    const actions = this.packageActionsHTML(pkg, installed, selectKey, "cards");
+    const actions = this.packageActionsHTML(pkg, installed, selectKey);
     return `<article${installed ? ` id="${installedAnchorID(pkg.package_id)}" tabindex="-1"` : ""} class="spme-package-card${installed ? " spme-installed-target" : ""}" data-package-id="${escapeHTML(pkg.package_id)}">
       <label class="spme-select"><input type="checkbox" data-select-package="${installed ? "installed" : "available"}" data-key="${escapeHTML(selectKey)}" aria-label="Select ${escapeHTML(pkg.name)}" ${selected ? "checked" : ""} ${pkg.runtimeOnly ? 'disabled title="Runtime-only plugins are not available for package operations."' : ""}></label>
       <div class="spme-package-main">
@@ -892,7 +893,7 @@ export class EnhancedPluginManager {
     const version = installed && pkg.source_package
       ? `${escapeHTML(pkg.version || "Unknown")} → ${escapeHTML(pkg.source_package.version || "Unknown")}`
       : escapeHTML(pkg.version || "Unknown");
-    const actions = this.packageActionsHTML(pkg, installed, selectKey, "table");
+    const actions = this.packageActionsHTML(pkg, installed, selectKey);
     const capabilities = installed && pkg.capabilities?.length
       ? `<details class="spme-table-capabilities"><summary>Capabilities</summary><ul>${pkg.capabilities.map((item) => `<li>${escapeHTML(item)}</li>`).join("")}</ul></details>`
       : "";

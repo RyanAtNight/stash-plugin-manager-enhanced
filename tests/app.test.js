@@ -294,15 +294,11 @@ describe("EnhancedPluginManager", () => {
 
       const actionOrder = (packageID) => [...document.querySelector(`[data-package-id="${packageID}"] .spme-card-actions, [data-package-id="${packageID}"] .spme-table-actions`).children]
         .map((action) => action.dataset.action || (action.querySelector(".spme-github-icon") ? "github" : "unknown"));
-      const expected = app.viewMode === "cards"
-        ? {
-            current: ["open-configuration", "uninstall-one", "github", "toggle-enabled"],
-            update: ["open-configuration", "uninstall-one", "update-one", "github", "toggle-enabled"],
-          }
-        : {
-            current: ["toggle-enabled", "github", "uninstall-one", "open-configuration"],
-            update: ["toggle-enabled", "github", "update-one", "uninstall-one", "open-configuration"],
-          };
+      // Cards and Table share one order, with the enable switch last.
+      const expected = {
+        current: ["open-configuration", "uninstall-one", "github", "toggle-enabled"],
+        update: ["open-configuration", "uninstall-one", "update-one", "github", "toggle-enabled"],
+      };
       expect(actionOrder("current-plugin")).toEqual(expected.current);
       expect(actionOrder("alpha")).toEqual(expected.update);
     };

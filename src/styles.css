@@ -243,6 +243,8 @@
 .spme-table-actions { display:flex; justify-content:flex-end; align-items:center; flex-wrap:nowrap; gap:.35rem; }
 .spme-package-table .spme-badges,
 .spme-package-table .spme-table-actions { justify-content:flex-start; }
+/* Plugin rows end with the enable switch on the right edge, as in the cards. */
+.spme-plugin-table .spme-table-actions { justify-content:flex-end; }
 .spme-table-actions > * { flex:0 0 auto; }
 .spme-installed-target { scroll-margin-top:5rem; }
 .spme-installed-target:target,
@@ -349,8 +351,7 @@
   .spme-table-description { white-space:normal; overflow:visible; }
   .spme-package-table .spme-badges { justify-content:flex-start; }
   /* Same order and right edge as the card footers: switch outermost. */
-  #spme-root[data-active-tab="installed"] .spme-plugin-table .spme-table-actions { flex-direction:row-reverse; justify-content:flex-start; }
-  #spme-root[data-active-tab="browse"] .spme-plugin-table .spme-table-actions { justify-content:flex-end; }
+  #spme-root .spme-plugin-table .spme-table-actions { justify-content:flex-end; }
   .spme-plugin-table { min-width:0; }
   .spme-plugin-table td[data-label="Actions"] { position:static; background:transparent; box-shadow:none; }
   .spme-source-table { min-width:0; }
