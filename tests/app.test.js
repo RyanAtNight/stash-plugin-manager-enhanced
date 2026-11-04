@@ -252,6 +252,28 @@ describe("EnhancedPluginManager", () => {
     expect(JSON.parse(window.localStorage.getItem("spme.installDates"))).toEqual({ beta: now - 60_000 });
   });
 
+  it("shows the newer version only when an update is available", async () => {
+    const { app } = await mountApp();
+    const template = app.inventory.packages[0];
+    app.inventory.packages.push({
+      ...template,
+      package_id: "current-plugin",
+      name: "Current Plugin",
+      status: "current",
+      source_package: { version: "1.0.0", date: template.date },
+      plugin: { ...template.plugin, id: "current-plugin", name: "Current Plugin" },
+    });
+    for (const view of ["cards", "table"]) {
+      app.viewMode = view;
+      app.render();
+      const versionOf = (id) => [...document.querySelectorAll(`[data-package-id="${id}"] dd, [data-package-id="${id}"] td[data-label="Version"]`)]
+        .map((el) => el.textContent).find((text) => text.includes("1."));
+      expect(versionOf("alpha")).toContain("→");
+      expect(versionOf("alpha")).toContain("1.1.0");
+      expect(versionOf("current-plugin")).not.toContain("→");
+    }
+  });
+
   it("shows per-plugin Update actions only when an update is known", async () => {
     const { app } = await mountApp();
     const template = app.inventory.packages[0];

@@ -106,6 +106,14 @@ function findCoreSections(documentRef) {
   );
 }
 
+// The installed version, plus the newer one only when an update is actually available
+// (a checked source returns the same version for current plugins).
+function versionHTML(pkg, installed) {
+  const current = escapeHTML(pkg.version || "Unknown");
+  if (!installed || pkg.status !== "update" || !pkg.source_package) return current;
+  return `${current} → ${escapeHTML(pkg.source_package.version || "Unknown")}`;
+}
+
 // Long source URLs wrap after "/" so path segments like "index.yml" stay whole.
 function urlWithBreaks(url) {
   return escapeHTML(url).replace(/\/(?!\/)/g, "/<wbr>");
@@ -848,9 +856,7 @@ export class EnhancedPluginManager {
             ? '<span class="spme-badge spme-status-current">Current</span>'
             : "";
     const dependencyStatus = this.dependencyStatusHTML(pkg, installed);
-    const version = installed && pkg.source_package
-      ? `${escapeHTML(pkg.version || "Unknown")} → ${escapeHTML(pkg.source_package.version || "Unknown")}`
-      : escapeHTML(pkg.version || "Unknown");
+    const version = versionHTML(pkg, installed);
     const capabilities = installed && pkg.capabilities?.length
       ? `<details class="spme-capabilities"><summary>Capabilities</summary><ul>${pkg.capabilities.map((item) => `<li>${escapeHTML(item)}</li>`).join("")}</ul></details>`
       : "";
@@ -895,9 +901,7 @@ export class EnhancedPluginManager {
             ? '<span class="spme-badge spme-status-current">Current</span>'
             : "";
     const dependencyStatus = this.dependencyStatusHTML(pkg, installed);
-    const version = installed && pkg.source_package
-      ? `${escapeHTML(pkg.version || "Unknown")} → ${escapeHTML(pkg.source_package.version || "Unknown")}`
-      : escapeHTML(pkg.version || "Unknown");
+    const version = versionHTML(pkg, installed);
     const actions = this.packageActionsHTML(pkg, installed, selectKey);
     const capabilities = installed && pkg.capabilities?.length
       ? `<details class="spme-table-capabilities"><summary>Capabilities</summary><ul>${pkg.capabilities.map((item) => `<li>${escapeHTML(item)}</li>`).join("")}</ul></details>`
