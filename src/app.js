@@ -958,13 +958,13 @@ export class EnhancedPluginManager {
       const inferredTrust = sourceTrust(source.url);
       const sourceLink = safeExternalUrl(source.url);
       const sourceURL = sourceLink
-        ? `<a href="${escapeHTML(sourceLink)}" target="_blank" rel="noopener noreferrer">${urlWithBreaks(source.url)} ↗</a>`
+        ? `<a href="${escapeHTML(sourceLink)}" target="_blank" rel="noopener noreferrer">${urlWithBreaks(source.url)}\u00a0↗</a>`
         : `<code>${escapeHTML(source.url)}</code>`;
       const githubURL = deriveSourceGithubUrl(source.url);
       const repository = githubURL
         ? githubRepositoryLink(githubURL, source.name || "Unnamed source")
         : "";
-      const browseAction = `<button type="button" data-action="browse-source" data-source-url="${escapeHTML(source.url)}">Browse</button>`;
+      const browseAction = `<button type="button" class="spme-secondary" data-action="browse-source" data-source-url="${escapeHTML(source.url)}">Browse</button>`;
       const deleteAction = sourceDeleteAction(source, entry.index);
       return { ...entry, inferredTrust, sourceURL, repository, browseAction, deleteAction };
     });

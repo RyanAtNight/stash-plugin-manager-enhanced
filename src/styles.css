@@ -31,7 +31,7 @@
 .spme-header { display:grid; grid-template-columns:minmax(155px,max-content) minmax(235px,1fr) auto; grid-template-areas:"identity tabs tools"; gap:14px; align-items:center; padding:12px; background:#243847; color:#e5edf3; border:1px solid #496070; border-radius:8px; overflow:hidden; font-family:Arial,sans-serif; line-height:normal; }
 .spme-header, .spme-header * { box-sizing:border-box; }
 .spme-header-identity { grid-area:identity; min-width:0; display:grid; gap:7px; }
-#spme-root .spme-header h1 { margin:0; padding:0; font-size:18px; font-weight:500; line-height:normal; }
+#spme-root .spme-header h1 { margin:0; padding:0; font-size:18px; font-weight:600; line-height:normal; }
 .spme-header p { margin:0; color:#b8c5cf; font-size:12px; white-space:nowrap; }
 .spme-summary { display:flex; gap:4px 12px; flex-wrap:wrap; color:#b8c5cf; font-size:12px; }
 .spme-summary strong { font-weight:500; color:#e5edf3; }
@@ -105,11 +105,12 @@
 /* Badge colours carry one meaning each: green = good state, amber = needs attention, red = problem,
    blue = official source, grey = neutral origin. */
 .spme-badge { display:inline-flex; align-items:center; border:1px solid var(--spme-border); border-radius:99px; padding:2px 8px; font-size:12px; font-weight:500; line-height:1.3; white-space:nowrap; color:#c9d5dd; }
-.spme-status-current { border-color:rgba(56,178,109,.75); color:#82e2aa; }
+.spme-status-current { border-color:rgba(56,178,109,.7); color:#9cefc0; }
 .spme-trust-official { border-color:rgba(25,153,214,.8); color:#8ed8ff; }
 .spme-status-update { border-color:var(--spme-warning); color:#ffc376; }
 .spme-trust-community, .spme-runtime-only { border-color:rgba(255,255,255,.22); color:#c9d5dd; }
-.spme-status-error, .spme-trust-unverified { border-color:var(--spme-danger); color:#ff9aa4; }
+.spme-status-error { border-color:var(--spme-danger); color:#ff9aa4; }
+.spme-trust-unverified { border-style:dashed; border-color:rgba(255,255,255,.34); color:#c9d5dd; }
 .spme-badge.spme-enabled { border-color:rgba(56,178,109,.75); background:rgba(56,178,109,.12); color:#82e2aa; }
 #spme-root button.spme-status-dependency { padding:2px 8px; background:transparent; border-color:#b07cff; border-radius:99px; color:#d1afff; font-size:12px; font-weight:500; line-height:1.3; cursor:pointer; }
 #spme-root button.spme-status-dependency:not(:disabled):hover { background:rgba(176,124,255,.16); border-color:#c29aff; color:#e0c7ff; }
@@ -172,7 +173,18 @@
 .spme-package-table { width:100%; border-collapse:collapse; table-layout:fixed; }
 /* Below ~1200px of table width the columns scroll inside the table instead of squeezing descriptions into towers. */
 .spme-plugin-table { min-width:1260px; }
-.spme-plugin-table td[data-label="Actions"], .spme-plugin-table th:last-child { position:sticky; right:0; z-index:1; background:var(--spme-panel); box-shadow:inset 1px 0 0 rgba(255,255,255,.2), -10px 0 12px -6px rgba(0,0,0,.8); }
+.spme-plugin-table td[data-label="Actions"], .spme-plugin-table th:last-child { position:sticky; right:0; z-index:1; background:var(--spme-panel); box-shadow:inset 1px 0 0 rgba(255,255,255,.2); }
+.spme-plugin-table td[data-label="Actions"]::after, .spme-plugin-table th:last-child::after { content:""; position:absolute; top:0; bottom:0; left:-16px; width:16px; background:linear-gradient(to left, rgba(0,0,0,.5), transparent); opacity:0; pointer-events:none; animation:spme-pinned-edge linear both; animation-timeline:scroll(nearest inline); }
+@keyframes spme-pinned-edge { from { opacity:1; } 97% { opacity:1; } to { opacity:0; } }
+@media (min-width:1101px) {
+  /* Fixed icon slots: settings, delete, update, GitHub and the switch keep their own column from row to row. */
+  #spme-root[data-active-tab="installed"] .spme-plugin-table .spme-table-actions { display:grid; grid-template-columns:2.15rem 2.15rem auto 2.15rem 3.8rem; justify-content:end; column-gap:.35rem; }
+  #spme-root[data-active-tab="installed"] .spme-plugin-table .spme-table-actions > [data-action="open-configuration"] { grid-area:1 / 1; }
+  #spme-root[data-active-tab="installed"] .spme-plugin-table .spme-table-actions > [data-action="uninstall-one"] { grid-area:1 / 2; }
+  #spme-root[data-active-tab="installed"] .spme-plugin-table .spme-table-actions > [data-action="update-one"] { grid-area:1 / 3; }
+  #spme-root[data-active-tab="installed"] .spme-plugin-table .spme-table-actions > .spme-repo-link { grid-area:1 / 4; }
+  #spme-root[data-active-tab="installed"] .spme-plugin-table .spme-table-actions > .spme-enable-toggle { grid-area:1 / 5; }
+}
 .spme-plugin-table th:last-child { background:var(--spme-panel-2); }
 .spme-package-table th { background:var(--spme-panel-2); color:var(--spme-text-muted); font-size:12px; font-weight:600; letter-spacing:.03em; text-transform:uppercase; text-align:left; white-space:nowrap; }
 .spme-package-table th, .spme-package-table td { padding:.75rem .6rem; border-bottom:1px solid var(--spme-border); vertical-align:middle; overflow-wrap:break-word; }
@@ -203,6 +215,8 @@
 .spme-columns-installed .spme-col-source { width:10%; }
 .spme-columns-installed .spme-col-status { width:9.5rem; }
 .spme-columns-installed .spme-col-actions { width:13.5rem; }
+/* Rows with an Update button need room for it beside the icons and switch. */
+.spme-plugin-table:has([data-action="update-one"]) .spme-columns-installed .spme-col-actions { width:18rem; }
 .spme-columns-browse .spme-col-select { width:3%; }
 .spme-columns-browse .spme-col-plugin { width:15%; }
 .spme-columns-browse .spme-col-description { width:auto; }
@@ -230,7 +244,7 @@
 .spme-source-table-status .spme-source-error { margin-top:.5rem; }
 #spme-root[data-active-tab="sources"] .spme-card-actions,
 #spme-root[data-active-tab="sources"] .spme-table-actions { align-items:stretch; }
-#spme-root[data-active-tab="sources"] .spme-repo-link { width:2.15rem; height:2.15rem; }
+#spme-root[data-active-tab="sources"] .spme-repo-link { flex:0 0 2.4rem; width:2.4rem; height:auto; min-height:2.15rem; }
 #spme-root[data-active-tab="sources"] button.spme-source-delete-action { height:auto; }
 .spme-source-table .spme-table-actions { flex-wrap:nowrap; }
 .spme-source-row { scroll-margin-top:5rem; }
@@ -294,7 +308,7 @@
 #spme-root .spme-config-status button { flex:1; min-width:0; padding:.45rem .35rem; border-radius:0; background:transparent; border-color:var(--spme-border); }
 #spme-root .spme-config-status button:first-child { border-radius:.35rem 0 0 .35rem; }
 #spme-root .spme-config-status button:last-child { border-radius:0 .35rem .35rem 0; }
-#spme-root .spme-config-status button[aria-pressed="true"] { background:#234e66; border-color:var(--spme-accent); }
+#spme-root .spme-config-status button[aria-pressed="true"] { background:#2a5d7a; border-color:var(--spme-accent); color:#fff; font-weight:600; }
 #spme-root .spme-config-list { position:relative; padding-bottom:1rem; -webkit-mask-image:linear-gradient(to bottom, #000 calc(100% - 2rem), transparent); mask-image:linear-gradient(to bottom, #000 calc(100% - 2rem), transparent); scrollbar-width:thin; scrollbar-color:#5d7a8e transparent; gap:.2rem; min-height:0; overflow-y:auto; overscroll-behavior-y:contain; scrollbar-gutter:stable; align-content:start; }
 #spme-root .spme-config-sidebar .spme-toolbar { flex:0 0 auto; }
 #spme-root [data-config-detail] { scroll-margin-top:6rem; }
@@ -307,7 +321,7 @@
 #spme-root .spme-config-editor .spme-plugin-config > summary code { margin-left:.35rem; color:#9fb0bc; font-size:12px; }
 #spme-root .spme-config-editor .spme-config-body h3 { margin:1.25rem 0 .25rem; color:var(--spme-text-muted); font-size:12px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; }
 #spme-root .spme-config-editor .spme-config-body > .spme-actions { margin-top:1.25rem; }
-#spme-root .spme-config-editor .spme-help { margin-top:.75rem; color:#8fa1ae; font-size:12px; line-height:1.45; }
+#spme-root .spme-config-editor .spme-help { margin-top:.75rem; color:#a3b3bf; font-size:12px; line-height:1.45; }
 #spme-root .spme-config-editor .spme-plugin-config { background:transparent; border:0; }
 #spme-root .spme-config-editor .spme-plugin-config:target,
 #spme-root .spme-config-editor .spme-plugin-config:focus { box-shadow:none; outline:none; }
@@ -358,6 +372,7 @@
   #spme-root .spme-plugin-table .spme-table-actions { justify-content:flex-end; }
   .spme-plugin-table { min-width:0; }
   .spme-plugin-table td[data-label="Actions"] { position:static; background:transparent; box-shadow:none; }
+  .spme-plugin-table td[data-label="Actions"]::after { content:none; }
   .spme-source-table { min-width:0; }
   .spme-source-table tr { grid-template-columns:1fr; }
   .spme-source-table td { grid-column:1; }
@@ -382,10 +397,20 @@
   #spme-root { padding:0 .6rem; }
   .spme-header-container { margin-bottom:.5rem; }
   .spme-header { padding:10px; gap:10px; }
+  #spme-root .spme-header h1 { font-size:17px; }
   .spme-sticky { padding:.45rem; }
   .spme-toolbar { margin:.5rem 0; gap:.4rem; }
   .spme-select input, .spme-table-select input { width:18px; height:18px; margin:0; accent-color:var(--spme-accent); }
-  .spme-select, .spme-package-table .spme-table-select { padding:.2rem .2rem 0 0; }
+  .spme-select, .spme-package-table .spme-table-select { padding:.2rem 0 0 0; }
+  .spme-package-card { padding:.75rem .75rem .5rem; column-gap:.6rem; }
+  .spme-package-table tr { column-gap:.6rem; padding:.75rem; }
+  .spme-package-table td[data-label="Plugin"]::before, .spme-package-table td[data-label="Description"]::before { content:none; }
+  #spme-root[data-active-tab="installed"] .spme-toolbar, #spme-root[data-active-tab="browse"] .spme-toolbar { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); align-items:end; }
+  #spme-root[data-active-tab="installed"] .spme-toolbar > :is(.spme-search, .spme-selected-count, .spme-sort-control),
+  #spme-root[data-active-tab="browse"] .spme-toolbar > :is(.spme-search, .spme-selected-count, .spme-sort-control) { grid-column:1 / -1; }
+  #spme-root[data-active-tab="installed"] .spme-toolbar select, #spme-root[data-active-tab="browse"] .spme-toolbar select { width:100%; max-width:none; }
+  #spme-root[data-active-tab="installed"] .spme-toolbar .spme-sort-control, #spme-root[data-active-tab="browse"] .spme-toolbar .spme-sort-control { margin-left:0 !important; }
+  #spme-root[data-active-tab="installed"] .spme-toolbar .spme-result-count, #spme-root[data-active-tab="browse"] .spme-toolbar .spme-result-count { margin-left:0; }
   .spme-toolbar input[type="search"] { min-width:0; width:100%; }
   .spme-toolbar .spme-search { width:100%; }
   .spme-package-table td { grid-template-columns:1fr; gap:.1rem; padding:.3rem 0; }
@@ -402,8 +427,7 @@
   #spme-root .spme-table-actions > button:not(.spme-icon-action):not(.spme-enable-toggle) { min-height:2.75rem; padding-left:1.25rem; padding-right:1.25rem; }
   /* Comfortable tap targets; glyphs stay the same size. */
   #spme-root .spme-icon-action, #spme-root[data-active-tab="sources"] .spme-repo-link { flex-basis:2.75rem; width:2.75rem; height:2.75rem; }
-  .spme-package-card dl { grid-template-columns:repeat(2, minmax(0,1fr)); }
-  #spme-root[data-active-tab="browse"] .spme-package-card dl { grid-template-columns:repeat(3, minmax(0,1fr)); gap:.6rem .75rem; }
+  .spme-package-card dl { grid-template-columns:repeat(2, minmax(0,1fr)); gap:.7rem 1.15rem; }
   .spme-source-table .spme-table-actions { flex-wrap:wrap; }
   #spme-root .spme-source-table .spme-table-actions > button:not(.spme-icon-action) { padding-left:.9rem; padding-right:.9rem; }
 }

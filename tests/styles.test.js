@@ -44,7 +44,14 @@ describe("package view responsive styles", () => {
   it("aligns Browse GitHub and Install controls without resizing Installed actions", () => {
     expect(css).toMatch(/#spme-root\[data-active-tab="browse"\] \.spme-card-actions > \.spme-repo-link,[\s\S]*#spme-root\[data-active-tab="browse"\] \.spme-table-actions > button\[data-action="install-one"\]\s*\{\s*height:\s*2\.15rem/);
     expect(css).toMatch(/#spme-root\[data-active-tab="browse"\] \.spme-table-actions\s*\{[^}]*align-items:\s*center/);
-    expect(css).not.toMatch(/#spme-root\[data-active-tab="installed"\][^{]*install-one/);
+    expect(css).not.toMatch(/#spme-root\[data-active-tab="installed"\][^{]*"install-one"/);
+  });
+
+  it("keeps each Installed table action in its own slot and makes room for Update buttons", () => {
+    expect(css).toMatch(/#spme-root\[data-active-tab="installed"\] \.spme-plugin-table \.spme-table-actions\s*\{[^}]*display:\s*grid/);
+    expect(css).toMatch(/\[data-action="uninstall-one"\]\s*\{\s*grid-area:\s*1 \/ 2/);
+    expect(css).toMatch(/\.spme-enable-toggle\s*\{\s*grid-area:\s*1 \/ 5/);
+    expect(css).toMatch(/\.spme-plugin-table:has\(\[data-action="update-one"\]\) \.spme-columns-installed \.spme-col-actions\s*\{\s*width:\s*18rem/);
   });
 
   it("gives Installed actions a compact fixed width independent of Browse", () => {
@@ -173,9 +180,9 @@ describe("package view responsive styles", () => {
     expect(mobile).toMatch(/\.spme-source-table\s*\{\s*min-width:\s*0/);
   });
 
-  it("keeps Sources GitHub actions square while the neighboring controls stretch", () => {
+  it("stretches the Sources GitHub action to the height of its neighboring controls", () => {
     expect(css).toMatch(/#spme-root\[data-active-tab="sources"\] \.spme-card-actions,[\s\S]*#spme-root\[data-active-tab="sources"\] \.spme-table-actions\s*\{\s*align-items:\s*stretch/);
-    expect(css).toMatch(/#spme-root\[data-active-tab="sources"\] \.spme-repo-link\s*\{[^}]*width:\s*2\.15rem[^}]*height:\s*2\.15rem/);
+    expect(css).toMatch(/#spme-root\[data-active-tab="sources"\] \.spme-repo-link\s*\{[^}]*width:\s*2\.4rem[^}]*height:\s*auto/);
   });
 
   it("stretches the Sources trash action to match its neighboring buttons", () => {
