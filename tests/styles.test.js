@@ -26,6 +26,14 @@ describe("package view responsive styles", () => {
     expect(css).toMatch(/\.spme-view-toggle-placeholder\s*\{\s*visibility:hidden/);
   });
 
+  it("stacks an update's versions in the badge colour with a hanging arrow", () => {
+    expect(css).toMatch(/\.spme-version-pair \{[^}]*flex-direction:column/);
+    expect(css).toMatch(/\.spme-version-next \{[^}]*color:#ffc376/);
+    expect(css).toMatch(/\.spme-version-arrow \{[^}]*position:absolute;[^}]*right:100%/);
+    expect(css).toContain(".spme-package-card dd:has(> .spme-version-pair) { overflow:visible; }");
+    expect(css).toMatch(/\.spme-package-card \.spme-version-arrow \{ position:static;/);
+  });
+
   it("wraps table descriptions instead of truncating them", () => {
     const desktop = css.slice(0, css.indexOf("@media (max-width: 1100px)"));
     expect(desktop).toMatch(/\.spme-table-description\s*\{[\s\S]*white-space:\s*normal[\s\S]*overflow:\s*visible[\s\S]*text-overflow:\s*clip/);

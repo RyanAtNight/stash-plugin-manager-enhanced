@@ -206,6 +206,18 @@
 .spme-package-table td[data-label="Version"], .spme-package-table td[data-label="Last commit"], .spme-package-table td[data-label="Installed"],
 .spme-package-table td[data-label="Packages"], .spme-package-table td[data-label="Enabled"], .spme-nowrap { white-space:nowrap; }
 .spme-package-table td code { overflow-wrap:anywhere; }
+/* Versions: the release number leads, the commit ID is muted. An update stacks installed over newer (amber, like its badge),
+   both starting at the same x with the arrow hanging in the gutter; a too-long version wraps before its commit ID. */
+.spme-version-num, .spme-version-hash { display:inline-block; white-space:nowrap; font-variant-numeric:tabular-nums; }
+.spme-version-hash { max-width:100%; overflow-wrap:anywhere; white-space:normal; opacity:.7; }
+.spme-version-pair { display:flex; flex-direction:column; align-items:flex-start; gap:2px; line-height:1.35; white-space:normal; }
+.spme-version-line { position:relative; max-width:100%; }
+.spme-version-next { color:#ffc376; }
+.spme-version-next .spme-version-num { font-weight:600; }
+.spme-version-arrow { position:absolute; z-index:1; right:100%; top:0; margin-right:.2em; font-size:12px; line-height:inherit; }
+.spme-package-card dl div { align-content:start; }
+/* Stash clips dd overflow; the hanging arrow needs to show. */
+.spme-package-card dd:has(> .spme-version-pair) { overflow:visible; }
 .spme-source-table-name a { word-break:normal; overflow-wrap:break-word; }
 .spme-package-table tbody tr:last-child td { border-bottom:0; }
 .spme-package-table th:nth-child(1) { width:3%; }
@@ -451,6 +463,8 @@
   .spme-package-table td:not([data-label="Plugin"]):not([data-label="Description"]) { grid-template-columns:7.5rem minmax(0,1fr); align-items:center; gap:.5rem; }
   .spme-package-table.spme-source-table td[data-label="Source"] { grid-template-columns:1fr; }
   .spme-package-table td::before { margin-top:0; }
+  /* Phone cards have no gutter left of the version, so the arrow sits inline. */
+  .spme-package-card .spme-version-arrow { position:static; margin-right:.25em; }
   .spme-table-actions { padding-top:.35rem; }
   /* Toolbar buttons form an even two-column grid instead of ragged rows. */
   .spme-panel > .spme-actions.spme-sticky { display:grid; grid-template-columns:1fr 1fr; align-items:stretch; }

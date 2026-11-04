@@ -271,7 +271,23 @@ describe("EnhancedPluginManager", () => {
       expect(versionOf("alpha")).toContain("→");
       expect(versionOf("alpha")).toContain("1.1.0");
       expect(versionOf("current-plugin")).not.toContain("→");
+      // Two lines inside one value: installed first, newer second, with a spoken label and a decorative arrow.
+      const pair = document.querySelector(`[data-package-id="alpha"] .spme-version-pair`);
+      const lines = pair.querySelectorAll(":scope > .spme-version-line");
+      expect(lines).toHaveLength(2);
+      expect(lines[1].classList.contains("spme-version-next")).toBe(true);
+      expect(lines[1].textContent).toContain("update available");
+      expect(lines[1].querySelector(".spme-version-arrow").getAttribute("aria-hidden")).toBe("true");
     }
+  });
+
+  it("splits a version into release number and muted commit ID", async () => {
+    const { app } = await mountApp();
+    app.inventory.packages[0].version = "0.43.0-d997037";
+    app.render();
+    const card = document.querySelector(`[data-package-id="${app.inventory.packages[0].package_id}"]`);
+    expect(card.querySelector(".spme-version-num").textContent).toBe("0.43.0");
+    expect(card.querySelector(".spme-version-hash").textContent).toBe("-d997037");
   });
 
   it("shows per-plugin Update actions only when an update is known", async () => {

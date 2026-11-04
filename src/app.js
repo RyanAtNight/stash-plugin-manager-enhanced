@@ -108,10 +108,22 @@ function findCoreSections(documentRef) {
 
 // The installed version, plus the newer one only when an update is actually available
 // (a checked source returns the same version for current plugins).
+// An update shows two lines: installed version, then the newer one in the update colour.
 function versionHTML(pkg, installed) {
-  const current = escapeHTML(pkg.version || "Unknown");
+  const current = versionTextHTML(pkg.version);
   if (!installed || pkg.status !== "update" || !pkg.source_package) return current;
-  return `${current} → ${escapeHTML(pkg.source_package.version || "Unknown")}`;
+  return `<span class="spme-version-pair"><span class="spme-version-line">${current}</span>`
+    + `<span class="spme-version-line spme-version-next"><span class="visually-hidden">, update available: </span>`
+    + `<span class="spme-version-arrow" aria-hidden="true">→</span>${versionTextHTML(pkg.source_package.version)}</span></span>`;
+}
+
+// "0.44.1-5e2a9c0": the release number leads and the commit ID is muted. Each part stays whole;
+// a long version may wrap between them instead of spilling into the next column.
+function versionTextHTML(version) {
+  const text = version || "Unknown";
+  const match = /^(.+?)(-[0-9a-f]{6,40})$/i.exec(text);
+  if (!match) return `<span class="spme-version-num">${escapeHTML(text)}</span>`;
+  return `<span class="spme-version-num">${escapeHTML(match[1])}</span><span class="spme-version-hash">${escapeHTML(match[2])}</span>`;
 }
 
 // Long source URLs wrap after "/" so path segments like "index.yml" stay whole.
