@@ -112,7 +112,7 @@ function findCoreSections(documentRef) {
 function versionHTML(pkg, installed) {
   const current = versionTextHTML(pkg.version);
   if (!installed || pkg.status !== "update" || !pkg.source_package) return current;
-  return `<span class="spme-version-pair"><span class="spme-version-line">${current}</span>`
+  return `<span class="spme-version-pair"><span class="spme-version-line">${current}<span class="spme-version-arrow spme-version-arrow-end" aria-hidden="true">→</span></span>`
     + `<span class="spme-version-line spme-version-next"><span class="visually-hidden">, update available: </span>`
     + `<span class="spme-version-arrow" aria-hidden="true">→</span>${versionTextHTML(pkg.source_package.version)}</span></span>`;
 }

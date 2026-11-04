@@ -31,7 +31,10 @@ describe("package view responsive styles", () => {
     expect(css).toMatch(/\.spme-version-next \{[^}]*color:#ffc376/);
     expect(css).toMatch(/\.spme-version-arrow \{[^}]*position:absolute;[^}]*right:100%/);
     expect(css).toContain(".spme-package-card dd:has(> .spme-version-pair) { overflow:visible; }");
-    expect(css).toMatch(/\.spme-package-card \.spme-version-arrow \{ position:static;/);
+    // Phone cards have no gutter: the arrow trails the installed version instead.
+    expect(css).toContain(".spme-package-card .spme-version-next .spme-version-arrow { display:none; }");
+    expect(css).toContain(".spme-package-card .spme-version-arrow-end { display:inline; }");
+    expect(css).toMatch(/td\[data-label="Description"\] \{ padding-right:1\.1rem; \}/);
   });
 
   it("wraps table descriptions instead of truncating them", () => {
