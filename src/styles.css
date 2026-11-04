@@ -76,7 +76,7 @@
 .spme-toolbar .spme-search { flex:1 1 15rem; max-width:25rem; min-width:0; }
 .spme-toolbar input[type="search"] { width:100%; min-width:0; }
 .spme-toolbar select[data-filter-select="installed-dependency"] { max-width:15rem; }
-.spme-toolbar input, .spme-toolbar select, .spme-source-form input, .spme-setting input:not([type="checkbox"]) { background:#182831; color:inherit; border:1px solid var(--spme-border); border-radius:.35rem; padding:.5rem .65rem; }
+.spme-toolbar input, .spme-toolbar select, .spme-source-form input, .spme-setting input:not([type="checkbox"]) { background:#182831; color:inherit; border:1px solid rgba(255,255,255,.22); border-radius:.35rem; padding:.5rem .65rem; }
 .spme-toolbar select {
   appearance:none;
   background-color:#182831;
@@ -97,7 +97,13 @@
 .spme-package-card, .spme-source-card, .spme-plugin-config, .spme-source-form { background:var(--spme-panel); border:1px solid var(--spme-border); border-radius:.6rem; }
 .spme-package-card { display:grid; grid-template-columns:auto minmax(0,1fr); gap:.5rem 1rem; padding:.85rem 1rem .55rem; }
 .spme-select { padding-top:.3rem; }
-.spme-select input, .spme-table-select input { width:16px; height:16px; margin:0; accent-color:var(--spme-accent); }
+.spme-toolbar input:focus, .spme-toolbar select:focus, .spme-source-form input:focus, .spme-setting input:not([type="checkbox"]):focus { border-color:#48aff0; box-shadow:0 0 0 2px rgba(72,175,240,.25); outline:0; }
+/* Selection checkboxes: a clear outline on the blue-grey rows, filled accent when checked. */
+#spme-root :is(.spme-select, .spme-table-select, .spme-check) input[type="checkbox"] { appearance:none; -webkit-appearance:none; flex:none; width:16px; height:16px; margin:0; padding:0; border:1.5px solid #8394a1; border-radius:3px; background:#182831; cursor:pointer; }
+#spme-root :is(.spme-select, .spme-table-select, .spme-check) input[type="checkbox"]:checked { border-color:var(--spme-accent); background:var(--spme-accent) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M3.5 8.5l3 3 6-7' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/></svg>") center / 12px no-repeat; }
+#spme-root :is(.spme-select, .spme-table-select, .spme-check) input[type="checkbox"]:hover:not(:disabled) { border-color:#a9bac6; }
+#spme-root :is(.spme-select, .spme-table-select, .spme-check) input[type="checkbox"]:focus-visible { outline:2px solid #48aff0; outline-offset:2px; }
+#spme-root :is(.spme-select, .spme-table-select, .spme-check) input[type="checkbox"]:disabled { opacity:.4; cursor:not-allowed; }
 .spme-package-title { display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; }
 .spme-package-title h2, .spme-source-card h2 { margin:0; font-size:1.15rem; font-weight:600; }
 .spme-package-title code, .spme-plugin-config code, .spme-package-table td code { color:#9fb0bc; font-size:12.5px; }
@@ -187,6 +193,12 @@
   #spme-root[data-active-tab="installed"] .spme-plugin-table .spme-table-actions > .spme-enable-toggle { grid-area:1 / 5; }
 }
 .spme-plugin-table th:last-child { background:var(--spme-panel-2); padding-left:.9rem; }
+.spme-package-table th:last-child { text-align:right; }
+/* Table names clearly outrank descriptions; long IDs end in an ellipsis (full ID on hover) instead of breaking mid-word. */
+.spme-plugin-table td[data-label="Plugin"] strong { font-size:15px; color:#fff; }
+@media (min-width:1101px) {
+  .spme-plugin-table .spme-table-plugin code { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; overflow-wrap:normal; }
+}
 .spme-package-table th { background:var(--spme-panel-2); color:var(--spme-text-muted); font-size:12px; font-weight:600; letter-spacing:.03em; text-transform:uppercase; text-align:left; white-space:nowrap; }
 .spme-package-table th, .spme-package-table td { padding:.75rem .6rem; border-bottom:1px solid var(--spme-border); vertical-align:middle; overflow-wrap:break-word; }
 /* Versions, dates and counts never break; IDs and URLs may break anywhere as a last resort. */
@@ -305,7 +317,7 @@
 /* Configuration uses one editor, with short reading lines even on wide displays. */
 #spme-root .spme-config-workspace { display:grid; grid-template-columns:260px minmax(0,1fr); border:1px solid var(--spme-border); border-radius:.6rem; margin-top:1rem; }
 #spme-root .spme-config-sidebar { min-width:0; min-height:0; display:flex; flex-direction:column; align-self:start; position:sticky; top:var(--spme-config-sticky-top, 0px); max-height:calc(100dvh - var(--spme-config-sticky-top, 0px)); padding:1rem .75rem; background:var(--spme-panel-2); border-right:1px solid var(--spme-border); border-radius:0; }
-#spme-root .spme-config-sidebar .spme-toolbar { display:flex; flex-direction:column; align-items:stretch; margin:0 .25rem 1rem; }
+#spme-root .spme-config-sidebar .spme-toolbar { display:flex; flex-direction:column; align-items:stretch; margin:0 0 1rem; }
 #spme-root .spme-config-sidebar .spme-toolbar input[type="search"] { min-width:0; width:100%; }
 #spme-root .spme-config-sidebar .spme-toolbar .spme-search { flex:0 0 auto; max-width:none; }
 #spme-root .spme-config-sidebar .spme-result-count { margin-left:0; }
@@ -406,7 +418,20 @@
   #spme-root .spme-header h1 { font-size:17px; }
   .spme-sticky { padding:.45rem; }
   .spme-toolbar { margin:.5rem 0; gap:.4rem; }
-  .spme-select input, .spme-table-select input { width:18px; height:18px; margin:0; accent-color:var(--spme-accent); }
+  #spme-root :is(.spme-select, .spme-table-select, .spme-check) input[type="checkbox"] { width:18px; height:18px; }
+  .spme-tabs { grid-template-columns:repeat(2, minmax(0,1fr)); }
+  .spme-toolbar .spme-search { max-width:none; }
+  /* Only the title row makes room for the checkbox; description, metadata and actions use the full card width. */
+  .spme-package-card { position:relative; grid-template-columns:minmax(0,1fr); }
+  #spme-root .spme-package-card > .spme-select { position:absolute; top:calc(.75rem + 1px); left:.75rem; padding:0; }
+  .spme-package-card .spme-package-title > div:first-child { padding-left:28px; }
+  .spme-package-card > .spme-card-actions { grid-column:1; }
+  .spme-plugin-table tr { position:relative; grid-template-columns:minmax(0,1fr); }
+  .spme-plugin-table td { grid-column:1; }
+  #spme-root .spme-plugin-table .spme-table-select { position:absolute; grid-area:auto; top:calc(.75rem + 1px); left:.75rem; padding:0; }
+  .spme-plugin-table .spme-table-plugin { padding-left:28px; }
+  .spme-plugin-table td[data-label="Plugin"] strong { font-size:16px; line-height:1.3; }
+  .spme-source-table td[data-label="Source"]::before { content:none; }
   .spme-select, .spme-package-table .spme-table-select { padding:.2rem 0 0 0; }
   .spme-package-card { padding:.75rem .75rem .5rem; column-gap:.6rem; }
   .spme-package-title { gap:.45rem; }

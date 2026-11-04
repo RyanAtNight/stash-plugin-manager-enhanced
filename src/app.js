@@ -904,7 +904,7 @@ export class EnhancedPluginManager {
       : "";
     return `<tr${installed ? ` id="${installedAnchorID(pkg.package_id)}" tabindex="-1"` : ""} class="${installed ? "spme-installed-target" : ""}" data-package-id="${escapeHTML(pkg.package_id)}">
       <td class="spme-table-select"><input type="checkbox" data-select-package="${installed ? "installed" : "available"}" data-key="${escapeHTML(selectKey)}" aria-label="Select ${escapeHTML(pkg.name)}" ${selected ? "checked" : ""} ${pkg.runtimeOnly ? 'disabled title="Runtime-only plugins are not available for package operations."' : ""}></td>
-      <td data-label="Plugin"><div class="spme-table-plugin"><strong>${escapeHTML(pkg.name)}</strong><code>${escapeHTML(pkg.package_id)}</code>${capabilities}</div></td>
+      <td data-label="Plugin"><div class="spme-table-plugin"><strong>${escapeHTML(pkg.name)}</strong><code title="${escapeHTML(pkg.package_id)}">${escapeHTML(pkg.package_id)}</code>${capabilities}</div></td>
       <td data-label="Description" class="spme-table-description">${escapeHTML(packageDescription(pkg))}</td>
       <td data-label="Version">${version}</td>
       <td data-label="Last commit">${packageCommitDateHTML(pkg)}</td>
