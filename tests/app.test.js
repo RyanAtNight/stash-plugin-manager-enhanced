@@ -468,7 +468,12 @@ describe("EnhancedPluginManager", () => {
     await app.setTab("configuration");
 
     expect(document.querySelector("#spme-root").dataset.activeTab).toBe("configuration");
-    expect(document.querySelector(".spme-view-toggle")).toBeNull();
+    // The display-mode control keeps its space but is hidden and inert, so the header doesn't move.
+    expect(document.querySelector('.spme-view-toggle:not(.spme-view-toggle-placeholder)')).toBeNull();
+    const placeholder = document.querySelector(".spme-view-toggle-placeholder");
+    expect(placeholder?.getAttribute("aria-hidden")).toBe("true");
+    expect(placeholder?.hasAttribute("inert")).toBe(true);
+    expect(placeholder?.querySelector("[data-action]")).toBeNull();
   });
 
   it("persists the selected plugin-manager subtab in the URL and restores it on mount", async () => {
@@ -758,7 +763,7 @@ describe("EnhancedPluginManager", () => {
 
     const status = document.querySelector(".spme-update-check-status");
     const time = status?.querySelector("time");
-    expect(status?.textContent).toBe("2 hours ago");
+    expect(status?.textContent).toBe("Checked 2 hours ago");
     expect(time?.textContent).toBe("2 hours ago");
     expect(time?.getAttribute("datetime")).toBe(new Date(checkedAt).toISOString());
   });
@@ -779,7 +784,7 @@ describe("EnhancedPluginManager", () => {
     await app.mount();
 
     const status = document.querySelector(".spme-update-check-status");
-    expect(status?.textContent).toBe("5 hours ago");
+    expect(status?.textContent).toBe("Checked 5 hours ago");
     expect(status?.querySelector("time")?.getAttribute("datetime")).toBe(new Date(checkedAt).toISOString());
     expect(window.localStorage.getItem("spme.lastUpdateCheck")).toBe(String(checkedAt));
   });
@@ -800,7 +805,7 @@ describe("EnhancedPluginManager", () => {
     const app = new EnhancedPluginManager(service, { confirm: () => true, now: () => now });
     await app.mount();
 
-    expect(document.querySelector(".spme-update-check-status")?.textContent).toBe("1 hour ago");
+    expect(document.querySelector(".spme-update-check-status")?.textContent).toBe("Checked 1 hour ago");
     expect(window.localStorage.getItem("spme.lastUpdateCheck")).toBe(String(newer));
   });
 
@@ -822,7 +827,7 @@ describe("EnhancedPluginManager", () => {
         lastUpdateCheck: checkedAt,
       })
     );
-    expect(document.querySelector(".spme-update-check-status")?.textContent).toBe("3 hours ago");
+    expect(document.querySelector(".spme-update-check-status")?.textContent).toBe("Checked 3 hours ago");
   });
 
   it("ignores an out-of-range stored update check timestamp", async () => {
@@ -840,7 +845,7 @@ describe("EnhancedPluginManager", () => {
     document.querySelector('[data-action="check-updates"]').click();
 
     await vi.waitFor(() => expect(service.loadInstalled).toHaveBeenLastCalledWith({ checkUpdates: true }));
-    await vi.waitFor(() => expect(document.querySelector(".spme-update-check-status")?.textContent).toBe("just now"));
+    await vi.waitFor(() => expect(document.querySelector(".spme-update-check-status")?.textContent).toBe("Checked just now"));
     expect(window.localStorage.getItem("spme.lastUpdateCheck")).toBe(String(now));
     await vi.waitFor(() =>
       expect(service.configurePlugin).toHaveBeenCalledWith("stash-plugin-manager-enhanced", {

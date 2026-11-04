@@ -656,7 +656,8 @@ export class EnhancedPluginManager {
           <button type="button" data-action="set-view" data-view-mode="cards" aria-pressed="${this.viewMode === "cards"}">Cards</button>
           <button type="button" data-action="set-view" data-view-mode="table" aria-pressed="${this.viewMode === "table"}">Table</button>
         </div>`
-      : "";
+      // Same footprint, hidden and inert, so switching tabs never moves the header controls.
+      : '<div class="spme-view-toggle spme-view-toggle-placeholder" aria-hidden="true" inert><button type="button" tabindex="-1" disabled>Cards</button><button type="button" tabindex="-1" disabled>Table</button></div>';
     return `<div class="spme-header-container"><header class="spme-header">
       <div class="spme-header-identity"><h1>Plugin Manager Enhanced</h1><p>Version ${escapeHTML(DISPLAY_VERSION)}</p>
         <div class="spme-summary" aria-label="Plugin summary">
@@ -721,7 +722,7 @@ export class EnhancedPluginManager {
   updateCheckStatusHTML() {
     if (!this.lastUpdateCheck) return '<span class="spme-update-check-status">Updates never checked</span>';
     const date = new Date(this.lastUpdateCheck);
-    return `<span class="spme-update-check-status"><time datetime="${date.toISOString()}" title="${escapeHTML(date.toLocaleString())}">${escapeHTML(relativeTimeAgo(this.lastUpdateCheck, this.now()))}</time></span>`;
+    return `<span class="spme-update-check-status">Checked <time datetime="${date.toISOString()}" title="${escapeHTML(date.toLocaleString())}">${escapeHTML(relativeTimeAgo(this.lastUpdateCheck, this.now()))}</time></span>`;
   }
 
   serverLastUpdateCheck(inventory = this.inventory) {
@@ -815,7 +816,7 @@ export class EnhancedPluginManager {
         <button type="button" class="danger" data-action="uninstall-selected" ${
           !selected.length || this.busy ? "disabled" : ""
         }>Uninstall selected (${selected.length})</button>
-        <button type="button" data-action="reload">Reload plugin definitions</button>
+        <button type="button" class="spme-secondary" data-action="reload">Reload plugin definitions</button>
       </div>
       ${this.toolbarHTML({ kind: "installed", count: packages.length, selectedCount: selected.length, hiddenSelectedCount, filters, sort: this.sortControlHTML("installed") })}
       <div data-search-results>
@@ -969,7 +970,7 @@ export class EnhancedPluginManager {
         ${health?.error ? sourceErrorHTML(health.error) : ""}
         ${editing
           ? this.sourceFormHTML(source, { editing: true })
-          : `<div class="spme-card-actions">${repository}${browseAction}<button type="button" data-action="edit-source" data-index="${index}">Edit</button>${deleteAction}</div>`}
+          : `<div class="spme-card-actions">${repository}${browseAction}<button type="button" class="spme-secondary" data-action="edit-source" data-index="${index}">Edit</button>${deleteAction}</div>`}
       </article>`;
     }).join("");
     const tableRows = entries.map(({ source, index, health, installed, enabled, inferredTrust, sourceURL, repository, browseAction, deleteAction }) => {
@@ -980,9 +981,9 @@ export class EnhancedPluginManager {
         <td data-label="Packages">${health?.packageCount ?? 0}</td>
         <td data-label="Installed">${installed.length}</td>
         <td data-label="Enabled">${enabled}</td>
-        <td data-label="Last checked">${escapeHTML(formatDate(health?.checkedAt))}</td>
+        <td data-label="Last checked">${formatDate(health?.checkedAt).split(/(?<=,) /).map((part) => `<span class="spme-nowrap">${escapeHTML(part)}</span>`).join(" ")}</td>
         <td data-label="Status"><div class="spme-source-table-status"><div class="spme-badges">${trustBadge(inferredTrust)}${healthStatus}</div>${health?.error ? sourceErrorHTML(health.error) : ""}</div></td>
-        <td data-label="Actions"><div class="spme-table-actions">${repository}${browseAction}<button type="button" data-action="edit-source" data-index="${index}">Edit</button>${deleteAction}</div></td>
+        <td data-label="Actions"><div class="spme-table-actions">${repository}${browseAction}<button type="button" class="spme-secondary" data-action="edit-source" data-index="${index}">Edit</button>${deleteAction}</div></td>
       </tr>`;
       return editing ? `${row}<tr class="spme-source-edit-row"><td colspan="7">${this.sourceFormHTML(source, { editing: true })}</td></tr>` : row;
     }).join("");
@@ -992,7 +993,7 @@ export class EnhancedPluginManager {
       : "";
     const sortOptions = SOURCE_SORT_OPTIONS.map(([value, label]) => `<option value="${value}" ${this.filters.sources.sort === value ? "selected" : ""}>${label}</option>`).join("");
     return `<section class="spme-panel" role="tabpanel">
-      <div class="spme-actions spme-sticky"><button type="button" data-action="refresh-sources">Check all sources</button><button type="button" data-action="add-source" aria-expanded="${this.addingSource}" ${this.addingSource ? "disabled" : ""}>Add plugin source</button></div>
+      <div class="spme-actions spme-sticky"><button type="button" data-action="refresh-sources">Check all sources</button><button type="button" class="spme-secondary" data-action="add-source" aria-expanded="${this.addingSource}" ${this.addingSource ? "disabled" : ""}>Add plugin source</button></div>
       <div class="spme-toolbar"><label><span>Sort</span><select data-filter-select="sources-sort" aria-label="Sort plugin sources">${sortOptions}</select></label><span class="spme-result-count">${plural(entries.length, "source")}</span></div>
       ${addCard}
       ${entries.length ? (this.viewMode === "table" ? table : `<div class="spme-source-grid">${cards}</div>`) : '<p class="spme-empty">No plugin sources configured.</p>'}
@@ -1058,7 +1059,7 @@ export class EnhancedPluginManager {
         }
         return `<label class="spme-setting${setting.type === "BOOLEAN" ? " spme-setting-boolean" : ""}">${setting.type === "BOOLEAN" ? input : ""}<span><strong>${escapeHTML(label)}</strong><small>${escapeHTML(setting.description || setting.name)}</small></span>${setting.type === "BOOLEAN" ? "" : input}</label>`;
       }).join("");
-    return `<article class="spme-config-extension-card" data-package-id="${escapeHTML(plugin.id)}"><details id="${configurationAnchorID(plugin.id)}" class="spme-plugin-config" data-plugin-id="${escapeHTML(plugin.id)}" tabindex="-1" open><summary><span><strong>${escapeHTML(plugin.name)}</strong> <code>${escapeHTML(plugin.id)}</code></span><span class="spme-badges"><span class="spme-badge ${pkg.enabled ? "spme-enabled" : "spme-disabled"}">${pkg.enabled ? "Enabled" : "Disabled"}</span>${githubLink(pkg)}${this.installedReferenceHTML(pkg)}</span></summary><div class="spme-config-body">${plugin.description ? `<p>${escapeHTML(plugin.description)}</p>` : ""}${hooks ? `<section><h3>Hooks</h3>${hooks}</section>` : ""}${settings ? `<section><h3>Settings</h3>${settings}</section>` : '<p>No configurable settings.</p>'}<div class="spme-card-actions spme-plugin-extension-actions" data-spme-config-actions="${escapeHTML(plugin.id)}"></div><div class="spme-actions"><button type="button" data-action="save-config" data-id="${escapeHTML(plugin.id)}">Save changes</button><button type="button" data-action="reset-config" data-id="${escapeHTML(plugin.id)}">Reset stored settings</button></div><p class="spme-help">Stash plugin manifests do not declare filesystem or network permissions, compatibility ranges, or setting defaults. This page does not infer them.</p></div></details></article>`;
+    return `<article class="spme-config-extension-card" data-package-id="${escapeHTML(plugin.id)}"><details id="${configurationAnchorID(plugin.id)}" class="spme-plugin-config" data-plugin-id="${escapeHTML(plugin.id)}" tabindex="-1" open><summary><span><strong>${escapeHTML(plugin.name)}</strong> <code>${escapeHTML(plugin.id)}</code></span><span class="spme-badges"><span class="spme-badge ${pkg.enabled ? "spme-enabled" : "spme-disabled"}">${pkg.enabled ? "Enabled" : "Disabled"}</span>${githubLink(pkg)}${this.installedReferenceHTML(pkg)}</span></summary><div class="spme-config-body">${plugin.description ? `<p>${escapeHTML(plugin.description)}</p>` : ""}${hooks ? `<section><h3>Hooks</h3>${hooks}</section>` : ""}${settings ? `<section><h3>Settings</h3>${settings}</section>` : '<p>No configurable settings.</p>'}<div class="spme-card-actions spme-plugin-extension-actions" data-spme-config-actions="${escapeHTML(plugin.id)}"></div><div class="spme-actions"><button type="button" data-action="save-config" data-id="${escapeHTML(plugin.id)}">Save changes</button><button type="button" class="spme-secondary" data-action="reset-config" data-id="${escapeHTML(plugin.id)}">Reset stored settings</button></div><p class="spme-help">Stash plugin manifests do not declare filesystem or network permissions, compatibility ranges, or setting defaults. This page does not infer them.</p></div></details></article>`;
   }
 
   render() {
@@ -1074,7 +1075,13 @@ export class EnhancedPluginManager {
     };
     this.root.innerHTML = `${this.headerHTML()}${this.messageHTML()}${panels[this.activeTab]()}`;
     const configurationList = this.root.querySelector(".spme-config-list");
-    if (configurationList) configurationList.scrollTop = configurationScroll;
+    if (configurationList) {
+      configurationList.scrollTop = configurationScroll;
+      const chosen = configurationList.querySelector('.spme-config-choice[aria-pressed="true"]');
+      if (chosen && configurationScroll === 0 && chosen.offsetTop + chosen.offsetHeight > configurationList.clientHeight) {
+        configurationList.scrollTop = chosen.offsetTop - configurationList.clientHeight / 3;
+      }
+    }
     this.updateBusyControls();
   }
 

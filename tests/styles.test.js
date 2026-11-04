@@ -21,8 +21,9 @@ describe("package view responsive styles", () => {
   it("joins Cards and Table into a compact segmented control", () => {
     expect(css).toMatch(/\.spme-view-toggle\s*\{[^}]*gap:\s*0(?:;|\s)/);
     expect(css).toMatch(/#spme-root \.spme-view-toggle button\s*\{[^}]*border-color:\s*transparent/);
-    expect(css).toMatch(/#spme-root \.spme-view-toggle button\[aria-pressed="true"\]\s*\{[^}]*background:#2f4352/);
-    expect(css).toMatch(/#spme-root \.spme-view-toggle button\[aria-pressed="true"\]:hover,\s*#spme-root \.spme-view-toggle button\[aria-pressed="true"\]:active\s*\{[^}]*background:#2f4352[^}]*box-shadow:\s*none[^}]*cursor:\s*default/);
+    expect(css).toMatch(/#spme-root \.spme-view-toggle button\[aria-pressed="true"\]\s*\{[^}]*background:#3a5568[^}]*color:#fff/);
+    expect(css).toMatch(/#spme-root \.spme-view-toggle button\[aria-pressed="true"\]:hover,\s*#spme-root \.spme-view-toggle button\[aria-pressed="true"\]:active\s*\{[^}]*background:#3a5568[^}]*cursor:\s*default/);
+    expect(css).toMatch(/\.spme-view-toggle-placeholder\s*\{\s*visibility:hidden/);
   });
 
   it("wraps table descriptions instead of truncating them", () => {
@@ -49,8 +50,8 @@ describe("package view responsive styles", () => {
   it("gives Installed actions a compact fixed width independent of Browse", () => {
     expect(css).toMatch(/#spme-root\[data-active-tab="installed"\] \.spme-package-table th:nth-child\(3\)\s*\{\s*width:\s*auto/);
     expect(css).toMatch(/\.spme-columns-installed \.spme-col-description\s*\{\s*width:\s*auto/);
-    expect(css).toMatch(/\.spme-columns-installed \.spme-col-last-commit,\s*\.spme-columns-installed \.spme-col-installed\s*\{\s*width:\s*8%/);
-    expect(css).toMatch(/\.spme-columns-installed \.spme-col-actions\s*\{\s*width:\s*13\.5rem/);
+    expect(css).toMatch(/\.spme-columns-installed \.spme-col-last-commit,\s*\.spme-columns-installed \.spme-col-installed\s*\{\s*width:\s*7rem/);
+    expect(css).toMatch(/\.spme-columns-installed \.spme-col-actions\s*\{\s*width:\s*12rem/);
     expect(css).toMatch(/\.spme-columns-browse \.spme-col-actions\s*\{\s*width:\s*12\.8rem/);
   });
 
@@ -69,15 +70,16 @@ describe("package view responsive styles", () => {
   });
 
   it("aligns the Installed result count with the Updates only control", () => {
-    expect(css).toMatch(/\.spme-check \+ \.spme-result-count\s*\{[^}]*display:\s*inline-flex[^}]*align-items:\s*center[^}]*padding-bottom:\s*\.55rem/);
+    expect(css).toMatch(/\.spme-check, \.spme-result-count, \.spme-selected-count\s*\{[^}]*display:inline-flex[^}]*align-items:center[^}]*min-height:calc\(1\.5em \+ 1rem \+ 2px\)/);
   });
 
   it("styles repository links as icon buttons rather than underlined text links", () => {
     expect(css).toMatch(/#spme-root \.spme-repo-link\s*\{[\s\S]*display:\s*inline-flex[\s\S]*text-decoration:\s*none/);
-    expect(css).toMatch(/#spme-root \.spme-repo-link\s*\{[^}]*background:\s*#fff[^}]*border-color:\s*#fff[^}]*color:\s*#24292f/);
+    expect(css).toMatch(/#spme-root \.spme-repo-link\s*\{[^}]*background:\s*transparent[^}]*border-color:\s*#496070[^}]*color:\s*#e5edf3/);
     expect(css).toMatch(/\.spme-github-icon\s*\{[\s\S]*fill:\s*currentColor/);
     expect(css).toMatch(/#spme-root \.spme-repo-link:hover[\s\S]*text-decoration:\s*none/);
-    expect(css).toMatch(/#spme-root button\.spme-uninstall-action\s*\{[^}]*background:\s*var\(--spme-danger\)[^}]*border-color:\s*var\(--spme-danger\)[^}]*color:\s*#fff/);
+    expect(css).toMatch(/#spme-root button\.spme-uninstall-action\s*\{[^}]*background:\s*transparent[^}]*border-color:\s*rgba\(220,82,96,\.55\)[^}]*color:\s*#ff9aa4/);
+    expect(css).toMatch(/#spme-root button\.spme-uninstall-action:not\(:disabled\):hover\s*\{[^}]*background:\s*var\(--spme-danger\)[^}]*color:\s*#fff/);
   });
 
   it("styles Configure links as primary actions and highlights their target panel", () => {
@@ -116,7 +118,7 @@ describe("package view responsive styles", () => {
   });
 
   it("keeps clickable dependency status badges compact and purple", () => {
-    expect(css).toMatch(/#spme-root button\.spme-status-dependency\s*\{[^}]*padding:\s*\.2rem \.5rem[^}]*background:\s*transparent[^}]*border-color:\s*#b07cff[^}]*color:\s*#d1afff[^}]*cursor:\s*pointer/);
+    expect(css).toMatch(/#spme-root button\.spme-status-dependency\s*\{[^}]*padding:\s*2px 8px[^}]*background:\s*transparent[^}]*border-color:\s*#b07cff[^}]*color:\s*#d1afff[^}]*cursor:\s*pointer/);
     expect(css).toMatch(/#spme-root button\.spme-status-dependency:not\(:disabled\):hover\s*\{[^}]*background:\s*rgba\(176,124,255,\.16\)[^}]*border-color:\s*#c29aff/);
   });
 
@@ -125,7 +127,7 @@ describe("package view responsive styles", () => {
     expect(rule).toMatch(/display:\s*inline-flex/);
     expect(rule).toMatch(/align-self:\s*stretch/);
     expect(rule).toMatch(/align-items:\s*center/);
-    expect(rule).toMatch(/margin-right:\s*\.5rem/);
+    expect(rule).toMatch(/margin:\s*0 \.65rem 0 \.2rem/);
     expect(rule).toMatch(/background:\s*transparent/);
     expect(rule).toMatch(/border:\s*0/);
     expect(rule).toMatch(/border-radius:\s*0/);
@@ -159,11 +161,11 @@ describe("package view responsive styles", () => {
 
   it("sizes and highlights the Sources table without affecting package tables", () => {
     expect(css).toMatch(/\.spme-source-table\s*\{\s*min-width:\s*62rem/);
-    expect(css).toMatch(/\.spme-columns-sources \.spme-col-source-name\s*\{\s*width:\s*27%/);
-    expect(css).toMatch(/\.spme-columns-sources \.spme-col-source-count\s*\{\s*width:\s*6%/);
-    expect(css).toMatch(/\.spme-columns-sources \.spme-col-source-checked\s*\{\s*width:\s*13%/);
-    expect(css).toMatch(/\.spme-columns-sources \.spme-col-source-status\s*\{\s*width:\s*16%/);
-    expect(css).toMatch(/\.spme-columns-sources \.spme-col-source-actions\s*\{\s*width:\s*26%/);
+    expect(css).toMatch(/\.spme-columns-sources \.spme-col-source-name\s*\{\s*width:\s*auto/);
+    expect(css).toMatch(/\.spme-columns-sources \.spme-col-source-count\s*\{\s*width:\s*5\.5rem/);
+    expect(css).toMatch(/\.spme-columns-sources \.spme-col-source-checked\s*\{\s*width:\s*9rem/);
+    expect(css).toMatch(/\.spme-columns-sources \.spme-col-source-status\s*\{\s*width:\s*10rem/);
+    expect(css).toMatch(/\.spme-columns-sources \.spme-col-source-actions\s*\{\s*width:\s*14\.5rem/);
     expect(css).toMatch(/\.spme-source-row:target,[\s\S]*\.spme-source-row:focus\s*\{[\s\S]*outline:/);
     expect(css).toMatch(/\.spme-source-edit-row \.spme-source-form\s*\{[\s\S]*margin:\s*0/);
     const mobile = css.slice(css.indexOf("@media (max-width: 1100px)"));
