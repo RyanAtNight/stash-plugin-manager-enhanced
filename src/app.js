@@ -864,7 +864,7 @@ export class EnhancedPluginManager {
   packageTable(packages, installed) {
     if (!packages.length) return `<p class="spme-empty">No ${installed ? "installed" : "available"} plugins match these filters.</p>`;
     return `<div class="spme-table-scroll" tabindex="0" aria-label="${installed ? "Installed" : "Available"} plugin table">
-      <table class="spme-package-table">
+      <table class="spme-package-table spme-plugin-table">
         <colgroup class="spme-columns-${installed ? "installed" : "browse"}">
           <col class="spme-col-select"><col class="spme-col-plugin"><col class="spme-col-description"><col class="spme-col-version"><col class="spme-col-last-commit">${installed ? '<col class="spme-col-installed">' : ""}<col class="spme-col-source"><col class="spme-col-status"><col class="spme-col-actions">
         </colgroup>
@@ -981,7 +981,7 @@ export class EnhancedPluginManager {
         <td data-label="Packages">${health?.packageCount ?? 0}</td>
         <td data-label="Installed">${installed.length}</td>
         <td data-label="Enabled">${enabled}</td>
-        <td data-label="Last checked">${formatDate(health?.checkedAt).split(/(?<=,) /).map((part) => `<span class="spme-nowrap">${escapeHTML(part)}</span>`).join(" ")}</td>
+        <td data-label="Last checked"><span>${formatDate(health?.checkedAt).split(/(?<=,) /).map((part) => `<span class="spme-nowrap">${escapeHTML(part)}</span>`).join(" ")}</span></td>
         <td data-label="Status"><div class="spme-source-table-status"><div class="spme-badges">${trustBadge(inferredTrust)}${healthStatus}</div>${health?.error ? sourceErrorHTML(health.error) : ""}</div></td>
         <td data-label="Actions"><div class="spme-table-actions">${repository}${browseAction}<button type="button" class="spme-secondary" data-action="edit-source" data-index="${index}">Edit</button>${deleteAction}</div></td>
       </tr>`;

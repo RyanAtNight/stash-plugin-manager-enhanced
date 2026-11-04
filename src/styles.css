@@ -72,7 +72,7 @@
 .spme-toolbar { margin:1rem 0; }
 .spme-update-check-status { align-self:stretch; display:inline-flex; align-items:center; gap:.3em; margin:0 .65rem 0 .2rem; padding:0; border:0; border-radius:0; background:transparent; color:var(--spme-text-muted); font-size:.85rem; white-space:nowrap; }
 .spme-toolbar label, .spme-source-form label { display:flex; flex-direction:column; gap:.25rem; margin:0; }
-.spme-toolbar label > span, .spme-source-form label > span { font-size:.82rem; color:var(--spme-text-muted); }
+.spme-toolbar label > span, .spme-source-form label > span { font-size:12px; color:var(--spme-text-muted); }
 .spme-toolbar .spme-search { flex:1 1 15rem; max-width:25rem; min-width:0; }
 .spme-toolbar input[type="search"] { width:100%; min-width:0; }
 .spme-toolbar select[data-filter-select="installed-dependency"] { max-width:15rem; }
@@ -95,11 +95,11 @@
 .spme-list, .spme-config-list, .spme-source-grid { display:grid; gap:.75rem; }
 .spme-load-more { display:flex; justify-content:center; padding:1.25rem; }
 .spme-package-card, .spme-source-card, .spme-plugin-config, .spme-source-form { background:var(--spme-panel); border:1px solid var(--spme-border); border-radius:.6rem; }
-.spme-package-card { display:grid; grid-template-columns:auto minmax(0,1fr); gap:1rem; padding:1rem; }
+.spme-package-card { display:grid; grid-template-columns:auto minmax(0,1fr); gap:.6rem 1rem; padding:1rem 1rem .75rem; }
 .spme-select { padding-top:.3rem; }
 .spme-package-title { display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; }
 .spme-package-title h2, .spme-source-card h2 { margin:0; font-size:1.15rem; }
-.spme-package-title code, .spme-plugin-config code, .spme-package-table td code { color:#9fb0bc; font-size:.8rem; }
+.spme-package-title code, .spme-plugin-config code, .spme-package-table td code { color:#9fb0bc; font-size:12px; }
 .spme-package-main > p { max-width:110ch; }
 .spme-badges { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:.35rem; }
 /* Badge colours carry one meaning each: green = good state, amber = needs attention, red = problem,
@@ -113,11 +113,12 @@
 #spme-root button.spme-status-dependency { padding:2px 8px; background:transparent; border-color:#b07cff; border-radius:99px; color:#d1afff; font-size:12px; font-weight:500; line-height:1.3; cursor:pointer; }
 #spme-root button.spme-status-dependency:not(:disabled):hover { background:rgba(176,124,255,.16); border-color:#c29aff; color:#e0c7ff; }
 #spme-root button.spme-status-dependency:not(:disabled):active { background:rgba(176,124,255,.26); border-color:#cdb0ff; color:#fff; }
-.spme-package-card dl, .spme-source-card dl { display:flex; flex-wrap:wrap; gap:.6rem 1.5rem; margin:0; }
+/* Fixed metadata tracks so Version / Last commit / Installed / Source line up from card to card. */
+.spme-package-card dl, .spme-source-card dl { display:grid; grid-template-columns:repeat(auto-fill, minmax(8.5rem, 10.5rem)); gap:.6rem 1.25rem; margin:0; }
 .spme-package-card dl div, .spme-source-card dl div { display:grid; }
-.spme-package-card dt, .spme-source-card dt { font-size:.75rem; font-weight:600; letter-spacing:.03em; text-transform:uppercase; color:var(--spme-text-muted); }
+.spme-package-card dt, .spme-source-card dt { font-size:12px; font-weight:600; letter-spacing:.03em; text-transform:uppercase; color:var(--spme-text-muted); }
 .spme-package-card dd, .spme-source-card dd { margin:0; }
-.spme-card-actions { grid-column:2; display:flex; flex-direction:row; justify-content:flex-end; align-items:center; flex-wrap:wrap; gap:.4rem; margin-top:-.25rem; padding-top:.6rem; border-top:1px solid rgba(255,255,255,.07); }
+.spme-card-actions { grid-column:2; display:flex; flex-direction:row; justify-content:flex-end; align-items:center; flex-wrap:wrap; gap:.4rem; padding-top:.5rem; border-top:1px solid rgba(255,255,255,.07); }
 .spme-plugin-extension-actions:empty { display:none; }
 #spme-root[data-active-tab="configuration"] .spme-plugin-extension-actions { grid-column:auto; justify-content:flex-start; padding-top:0; border-top:0; }
 #spme-root[data-active-tab="configuration"] .spme-plugin-extension-actions > * { margin-left:0; }
@@ -162,13 +163,17 @@
 .spme-trash-icon { stroke:currentColor; }
 .spme-external-icon { flex:0 0 auto; font-size:.95em; line-height:1; }
 
-.spme-capabilities { margin-top:.75rem; }
+.spme-capabilities { margin-top:.5rem; }
 .spme-table-scroll { border:1px solid var(--spme-border); border-radius:.6rem; overflow-x:auto; background:var(--spme-panel); }
 .spme-package-table { width:100%; border-collapse:collapse; table-layout:fixed; }
-.spme-package-table th { background:var(--spme-panel-2); color:var(--spme-text-muted); font-size:.75rem; font-weight:600; letter-spacing:.03em; text-transform:uppercase; text-align:left; white-space:nowrap; }
+/* Below ~1200px of table width the columns scroll inside the table instead of squeezing descriptions into towers. */
+.spme-plugin-table { min-width:1200px; }
+.spme-plugin-table td[data-label="Actions"], .spme-plugin-table th:last-child { position:sticky; right:0; z-index:1; background:var(--spme-panel); box-shadow:-10px 0 10px -10px rgba(0,0,0,.6); }
+.spme-plugin-table th:last-child { background:var(--spme-panel-2); }
+.spme-package-table th { background:var(--spme-panel-2); color:var(--spme-text-muted); font-size:12px; font-weight:600; letter-spacing:.03em; text-transform:uppercase; text-align:left; white-space:nowrap; }
 .spme-package-table th, .spme-package-table td { padding:.75rem .6rem; border-bottom:1px solid var(--spme-border); vertical-align:middle; overflow-wrap:break-word; }
-/* Dates and counts never break; versions break only at their hyphen; IDs and URLs may break anywhere as a last resort. */
-.spme-package-table td[data-label="Last commit"], .spme-package-table td[data-label="Installed"],
+/* Versions, dates and counts never break; IDs and URLs may break anywhere as a last resort. */
+.spme-package-table td[data-label="Version"], .spme-package-table td[data-label="Last commit"], .spme-package-table td[data-label="Installed"],
 .spme-package-table td[data-label="Packages"], .spme-package-table td[data-label="Enabled"], .spme-nowrap { white-space:nowrap; }
 .spme-package-table td code, .spme-source-table-name a { overflow-wrap:anywhere; }
 .spme-package-table tbody tr:last-child td { border-bottom:0; }
@@ -186,19 +191,19 @@
 .spme-columns-installed .spme-col-select { width:3%; }
 .spme-columns-installed .spme-col-plugin { width:14%; }
 .spme-columns-installed .spme-col-description { width:auto; }
-.spme-columns-installed .spme-col-version { width:9%; }
+.spme-columns-installed .spme-col-version { width:8.5rem; }
 .spme-columns-installed .spme-col-last-commit,
 .spme-columns-installed .spme-col-installed { width:7rem; }
 .spme-columns-installed .spme-col-source { width:11%; }
-.spme-columns-installed .spme-col-status { width:10%; }
+.spme-columns-installed .spme-col-status { width:9.5rem; }
 .spme-columns-installed .spme-col-actions { width:12rem; }
 .spme-columns-browse .spme-col-select { width:3%; }
 .spme-columns-browse .spme-col-plugin { width:15%; }
 .spme-columns-browse .spme-col-description { width:auto; }
-.spme-columns-browse .spme-col-version { width:10%; }
+.spme-columns-browse .spme-col-version { width:8.5rem; }
 .spme-columns-browse .spme-col-last-commit { width:11%; }
 .spme-columns-browse .spme-col-source { width:12%; }
-.spme-columns-browse .spme-col-status { width:13%; }
+.spme-columns-browse .spme-col-status { width:9.5rem; }
 .spme-columns-browse .spme-col-actions { width:12.8rem; }
 #spme-root[data-active-tab="browse"] .spme-card-actions > .spme-repo-link,
 #spme-root[data-active-tab="browse"] .spme-card-actions > button[data-action="install-one"],
@@ -209,8 +214,8 @@
 .spme-source-table { min-width:62rem; }
 .spme-columns-sources .spme-col-source-name { width:auto; }
 .spme-columns-sources .spme-col-source-count { width:5.5rem; }
-.spme-columns-sources .spme-col-source-checked { width:9rem; }
-.spme-columns-sources .spme-col-source-status { width:10rem; }
+.spme-columns-sources .spme-col-source-checked { width:clamp(9rem, 12%, 12rem); }
+.spme-columns-sources .spme-col-source-status { width:clamp(10rem, 13%, 12.5rem); }
 .spme-columns-sources .spme-col-source-actions { width:14.5rem; }
 .spme-source-table-name { display:grid; gap:.25rem; min-width:0; }
 .spme-source-table-name small { color:var(--spme-text-muted); }
@@ -280,7 +285,7 @@
 #spme-root .spme-config-status button:first-child { border-radius:.35rem 0 0 .35rem; }
 #spme-root .spme-config-status button:last-child { border-radius:0 .35rem .35rem 0; }
 #spme-root .spme-config-status button[aria-pressed="true"] { background:#234e66; border-color:var(--spme-accent); }
-#spme-root .spme-config-list { position:relative; gap:.2rem; min-height:0; overflow-y:auto; overscroll-behavior-y:contain; scrollbar-gutter:stable; align-content:start; }
+#spme-root .spme-config-list { position:relative; padding-bottom:.5rem; scrollbar-width:thin; scrollbar-color:#5d7a8e transparent; gap:.2rem; min-height:0; overflow-y:auto; overscroll-behavior-y:contain; scrollbar-gutter:stable; align-content:start; }
 #spme-root .spme-config-sidebar .spme-toolbar { flex:0 0 auto; }
 #spme-root [data-config-detail] { scroll-margin-top:6rem; }
 #spme-root .spme-config-choice { display:block; width:100%; padding:.8rem .75rem; text-align:left; background:transparent; border:0; overflow-wrap:anywhere; }
@@ -289,10 +294,10 @@
 #spme-root .spme-config-editor { min-width:0; padding:1.75rem; }
 #spme-root [data-config-detail] { width:100%; max-width:760px; }
 #spme-root .spme-config-editor .spme-plugin-config > summary strong { font-size:1.25rem; font-weight:600; }
-#spme-root .spme-config-editor .spme-plugin-config > summary code { margin-left:.35rem; color:#9fb0bc; font-size:.8rem; }
-#spme-root .spme-config-editor .spme-config-body h3 { margin:1.25rem 0 .25rem; color:var(--spme-text-muted); font-size:.75rem; font-weight:600; letter-spacing:.06em; text-transform:uppercase; }
+#spme-root .spme-config-editor .spme-plugin-config > summary code { margin-left:.35rem; color:#9fb0bc; font-size:12px; }
+#spme-root .spme-config-editor .spme-config-body h3 { margin:1.25rem 0 .25rem; color:var(--spme-text-muted); font-size:12px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; }
 #spme-root .spme-config-editor .spme-config-body > .spme-actions { margin-top:1.25rem; }
-#spme-root .spme-config-editor .spme-help { margin-top:.75rem; font-size:.8rem; }
+#spme-root .spme-config-editor .spme-help { margin-top:.75rem; font-size:12.5px; line-height:1.5; }
 #spme-root .spme-config-editor .spme-plugin-config { background:transparent; border:0; }
 #spme-root .spme-config-editor .spme-plugin-config:target,
 #spme-root .spme-config-editor .spme-plugin-config:focus { box-shadow:none; outline:none; }
@@ -331,12 +336,16 @@
   .spme-package-table tbody { display:grid; gap:.75rem; }
   .spme-package-table tr { display:grid; grid-template-columns:auto minmax(0,1fr); gap:0 .8rem; padding:.8rem; border:1px solid var(--spme-border); border-radius:.6rem; background:var(--spme-panel); }
   .spme-package-table td { grid-column:2; display:grid; grid-template-columns:minmax(6.5rem,28%) minmax(0,1fr); gap:.5rem; align-items:start; padding:.4rem 0; border:0; }
-  .spme-package-table td::before { content:attr(data-label); color:var(--spme-text-muted); font-size:.72rem; font-weight:600; text-transform:uppercase; }
+  .spme-package-table td::before { content:attr(data-label); color:var(--spme-text-muted); font-size:12px; font-weight:600; letter-spacing:.03em; text-transform:uppercase; }
   .spme-package-table .spme-table-select { grid-column:1; grid-row:1; display:block; padding-top:.45rem; }
   .spme-package-table .spme-table-select::before { content:none; }
   .spme-package-table td[data-label="Plugin"] { grid-row:1; }
   .spme-table-description { white-space:normal; overflow:visible; }
-  .spme-table-actions, .spme-package-table .spme-badges { justify-content:flex-start; }
+  .spme-package-table .spme-badges { justify-content:flex-start; }
+  /* Same order and right edge as the card footers: switch outermost. */
+  .spme-plugin-table .spme-table-actions { flex-direction:row-reverse; justify-content:flex-start; }
+  .spme-plugin-table { min-width:0; }
+  .spme-plugin-table td[data-label="Actions"] { position:static; background:transparent; box-shadow:none; }
   .spme-source-table { min-width:0; }
   .spme-source-table tr { grid-template-columns:1fr; }
   .spme-source-table td { grid-column:1; }
@@ -362,10 +371,18 @@
   .spme-toolbar input[type="search"] { min-width:0; width:100%; }
   .spme-toolbar .spme-search { width:100%; }
   .spme-package-table td { grid-template-columns:1fr; gap:.1rem; padding:.3rem 0; }
+  /* Short values sit beside their label; long ones (name, description, source URL) stack. */
+  .spme-package-table td:not([data-label="Plugin"]):not([data-label="Description"]) { grid-template-columns:7.5rem minmax(0,1fr); align-items:center; gap:.5rem; }
+  .spme-package-table.spme-source-table td[data-label="Source"] { grid-template-columns:1fr; }
   .spme-package-table td::before { margin-top:0; }
   .spme-table-actions { padding-top:.35rem; }
   /* Toolbar buttons form an even two-column grid instead of ragged rows. */
-  .spme-panel > .spme-actions.spme-sticky { display:grid; grid-template-columns:1fr 1fr; }
+  .spme-panel > .spme-actions.spme-sticky { display:grid; grid-template-columns:1fr 1fr; align-items:stretch; }
+  .spme-panel > .spme-actions.spme-sticky > button { padding:.5rem .4rem; font-size:13px; }
   .spme-panel > .spme-actions.spme-sticky .spme-update-check-status { margin:0; justify-content:center; }
-  #spme-root .spme-card-actions > button:not(.spme-icon-action):not(.spme-enable-toggle) { min-height:2.5rem; padding-left:1.25rem; padding-right:1.25rem; }
+  #spme-root .spme-card-actions > button:not(.spme-icon-action):not(.spme-enable-toggle),
+  #spme-root .spme-table-actions > button:not(.spme-icon-action):not(.spme-enable-toggle) { min-height:2.75rem; padding-left:1.25rem; padding-right:1.25rem; }
+  /* Comfortable tap targets; glyphs stay the same size. */
+  #spme-root .spme-icon-action, #spme-root[data-active-tab="sources"] .spme-repo-link { flex-basis:2.75rem; width:2.75rem; height:2.75rem; }
+  .spme-package-card dl { grid-template-columns:repeat(2, minmax(0,1fr)); }
 }
