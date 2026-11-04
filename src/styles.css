@@ -385,4 +385,6 @@
   /* Comfortable tap targets; glyphs stay the same size. */
   #spme-root .spme-icon-action, #spme-root[data-active-tab="sources"] .spme-repo-link { flex-basis:2.75rem; width:2.75rem; height:2.75rem; }
   .spme-package-card dl { grid-template-columns:repeat(2, minmax(0,1fr)); }
+  .spme-source-table .spme-table-actions { flex-wrap:wrap; }
+  #spme-root .spme-source-table .spme-table-actions > button:not(.spme-icon-action) { padding-left:.9rem; padding-right:.9rem; }
 }
