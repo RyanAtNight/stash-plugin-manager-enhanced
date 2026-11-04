@@ -6,6 +6,8 @@ A client-side Stash UI plugin that enhances **Settings → Plugins** in place wi
 
 ![Browse available plugins in Table view, sorted by Last commit (newest)](docs/images/browse-table.png)
 
+![Configuration: a searchable plugin list beside the selected plugin's settings](docs/images/configuration.png)
+
 ## Installation
 
 1. Open **Settings → Plugins** in Stash.
@@ -45,7 +47,9 @@ Compared with Stash's stock Plugins page, the enhanced interface adds:
 
 - Separate **Installed**, **Browse**, **Sources**, and **Configuration** views
 - Browse renders 50 packages initially with progressive **Load more** controls
-- Responsive, wider Cards and Table layouts with full plugin descriptions
+- Responsive, wider Cards and Table layouts with full plugin descriptions, from phone width to wide desktops
+- Wide tables keep a readable minimum width and scroll inside their frame, with the Actions column pinned to the right edge
+- The same action order in every view: settings, delete, update, GitHub, then the enable switch on the right edge
 - Search by name, ID, description, version, and source
 - Search updates after a 250 ms typing pause, preserving the search field and cursor during typing and held Backspace
 - Per-plugin last-commit dates with name, newest-commit, or oldest-commit sorting
@@ -57,7 +61,7 @@ Compared with Stash's stock Plugins page, the enhanced interface adds:
 - Source health, package counts, trust labels, last-check time, and repository-root GitHub links
 - Add, edit, and delete package sources directly from the Sources view
 - Installed and Browse source labels link to stable, URL-addressable cards in **Sources**, including refresh and browser-history restoration
-- Collapsible plugin configuration page with expand/collapse all
+- Two-pane **Configuration** page: a searchable plugin list (Enabled, Disabled or All; sorted by name) beside the selected plugin's settings, with links to its repository and its Installed entry
 - Explicit hook names and trigger events
 - Manifest-derived capability summaries
 - Accessible selection labels and contextual search labels
