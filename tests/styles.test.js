@@ -86,7 +86,7 @@ describe("package view responsive styles", () => {
     expect(css).toMatch(/#spme-root \.spme-repo-link\s*\{[^}]*background:\s*transparent[^}]*border-color:\s*#496070[^}]*color:\s*#e5edf3/);
     expect(css).toMatch(/\.spme-github-icon\s*\{[\s\S]*fill:\s*currentColor/);
     expect(css).toMatch(/#spme-root \.spme-repo-link:hover[\s\S]*text-decoration:\s*none/);
-    expect(css).toMatch(/#spme-root button\.spme-uninstall-action\s*\{[^}]*background:\s*transparent[^}]*border-color:\s*#496070[^}]*color:\s*#e08791/);
+    expect(css).toMatch(/#spme-root button\.spme-uninstall-action\s*\{[^}]*background:\s*transparent[^}]*border-color:\s*#496070[^}]*color:\s*#b9c6cf/);
     expect(css).toMatch(/#spme-root button\.spme-uninstall-action:not\(:disabled\):hover,\s*#spme-root button\.spme-uninstall-action:focus-visible\s*\{[^}]*background:\s*var\(--spme-danger\)[^}]*color:\s*#fff/);
   });
 
