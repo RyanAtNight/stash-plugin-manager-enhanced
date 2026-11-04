@@ -1080,7 +1080,8 @@ export class EnhancedPluginManager {
       configurationList.scrollTop = configurationScroll;
       const chosen = configurationList.querySelector('.spme-config-choice[aria-pressed="true"]');
       if (chosen && configurationScroll === 0 && chosen.offsetTop + chosen.offsetHeight > configurationList.clientHeight) {
-        configurationList.scrollTop = chosen.offsetTop - configurationList.clientHeight / 3;
+        // Start at a row boundary, with the previous plugin fully visible above the selection.
+        configurationList.scrollTop = (chosen.previousElementSibling ?? chosen).offsetTop;
       }
     }
     this.updateBusyControls();

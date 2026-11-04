@@ -50,7 +50,7 @@ describe("package view responsive styles", () => {
   it("gives Installed actions a compact fixed width independent of Browse", () => {
     expect(css).toMatch(/#spme-root\[data-active-tab="installed"\] \.spme-package-table th:nth-child\(3\)\s*\{\s*width:\s*auto/);
     expect(css).toMatch(/\.spme-columns-installed \.spme-col-description\s*\{\s*width:\s*auto/);
-    expect(css).toMatch(/\.spme-columns-installed \.spme-col-last-commit,\s*\.spme-columns-installed \.spme-col-installed\s*\{\s*width:\s*7rem/);
+    expect(css).toMatch(/\.spme-columns-installed \.spme-col-last-commit,\s*\.spme-columns-installed \.spme-col-installed\s*\{\s*width:\s*6\.6rem/);
     expect(css).toMatch(/\.spme-columns-installed \.spme-col-actions\s*\{\s*width:\s*13\.5rem/);
     expect(css).toMatch(/\.spme-columns-browse \.spme-col-actions\s*\{\s*width:\s*12\.8rem/);
   });
@@ -163,8 +163,8 @@ describe("package view responsive styles", () => {
     expect(css).toMatch(/\.spme-source-table\s*\{\s*min-width:\s*62rem/);
     expect(css).toMatch(/\.spme-columns-sources \.spme-col-source-name\s*\{\s*width:\s*auto/);
     expect(css).toMatch(/\.spme-columns-sources \.spme-col-source-count\s*\{\s*width:\s*5\.5rem/);
-    expect(css).toMatch(/\.spme-columns-sources \.spme-col-source-checked\s*\{\s*width:\s*9rem/);
-    expect(css).toMatch(/\.spme-columns-sources \.spme-col-source-status\s*\{\s*width:\s*10\.5rem/);
+    expect(css).toMatch(/\.spme-columns-sources \.spme-col-source-checked\s*\{\s*width:\s*12\.25rem/);
+    expect(css).toMatch(/\.spme-columns-sources \.spme-col-source-status\s*\{\s*width:\s*12\.25rem/);
     expect(css).toMatch(/\.spme-columns-sources \.spme-col-source-actions\s*\{\s*width:\s*14\.5rem/);
     expect(css).toMatch(/\.spme-source-row:target,[\s\S]*\.spme-source-row:focus\s*\{[\s\S]*outline:/);
     expect(css).toMatch(/\.spme-source-edit-row \.spme-source-form\s*\{[\s\S]*margin:\s*0/);
