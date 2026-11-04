@@ -210,19 +210,20 @@
    both starting at the same x with the arrow hanging in the gutter; a too-long version wraps before its commit ID. */
 .spme-version-num, .spme-version-hash { display:inline-block; white-space:nowrap; font-variant-numeric:tabular-nums; }
 .spme-version-hash { max-width:100%; overflow-wrap:anywhere; white-space:normal; opacity:.78; }
-.spme-version-pair { display:flex; flex-direction:column; align-items:flex-start; gap:2px; line-height:1.35; white-space:normal; }
+.spme-version-pair { display:flex; flex-direction:column; align-items:flex-start; gap:3px; line-height:1.25; white-space:normal; }
 .spme-version-line { position:relative; max-width:100%; }
 .spme-version-next { color:#ffc376; }
 .spme-version-next .spme-version-num { font-weight:600; }
-.spme-version-next .spme-version-hash { opacity:.88; }
+.spme-version-next .spme-version-hash { opacity:.82; }
 .spme-version-arrow { position:absolute; z-index:1; right:100%; top:0; margin-right:.3em; font-size:13px; font-weight:600; line-height:inherit; }
 /* A trailing arrow after the installed version, used only where there is no gutter (phone cards). */
 .spme-version-arrow-end { display:none; position:static; margin:0 0 0 .3em; color:#ffc376; }
+/* Cards have no gutter beside the value (the checkbox strip is there), so the arrow trails the installed version. */
+.spme-package-card .spme-version-next .spme-version-arrow { display:none; }
+.spme-package-card .spme-version-arrow-end { display:inline; }
 /* Keep description text clear of the hanging arrow in the Version column's gutter. */
 @media (min-width:1101px) { .spme-plugin-table td[data-label="Description"] { padding-right:1.1rem; } }
 .spme-package-card dl div { align-content:start; }
-/* Stash clips dd overflow; the hanging arrow needs to show. */
-.spme-package-card dd:has(> .spme-version-pair) { overflow:visible; }
 .spme-source-table-name a { word-break:normal; overflow-wrap:break-word; }
 .spme-package-table tbody tr:last-child td { border-bottom:0; }
 .spme-package-table th:nth-child(1) { width:3%; }
@@ -468,10 +469,7 @@
   .spme-package-table td:not([data-label="Plugin"]):not([data-label="Description"]) { grid-template-columns:7.5rem minmax(0,1fr); align-items:center; gap:.5rem; }
   .spme-package-table.spme-source-table td[data-label="Source"] { grid-template-columns:1fr; }
   .spme-package-table td::before { margin-top:0; }
-  /* Phone cards have no gutter left of the version, so the arrow sits inline. */
-  .spme-package-card .spme-version-next .spme-version-arrow { display:none; }
-  .spme-package-card .spme-version-arrow-end { display:inline; }
-  /* Two-line versions: the label sits beside the installed (first) line. */
+    /* Two-line versions: the label sits beside the installed (first) line. */
   .spme-package-table td[data-label="Version"]:has(.spme-version-pair) { align-items:start; }
   .spme-package-table td[data-label="Version"]:has(.spme-version-pair)::before { padding-top:2px; }
   .spme-table-actions { padding-top:.35rem; }

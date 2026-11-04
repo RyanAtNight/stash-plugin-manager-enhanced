@@ -286,8 +286,8 @@ describe("EnhancedPluginManager", () => {
     app.inventory.packages[0].version = "0.43.0-d997037";
     app.render();
     const card = document.querySelector(`[data-package-id="${app.inventory.packages[0].package_id}"]`);
-    expect(card.querySelector(".spme-version-num").textContent).toBe("0.43.0");
-    expect(card.querySelector(".spme-version-hash").textContent).toBe("-d997037");
+    expect(card.querySelector(".spme-version-num").textContent).toBe("0.43.0-");
+    expect(card.querySelector(".spme-version-hash").firstChild.textContent).toBe("d997037");
   });
 
   it("shows per-plugin Update actions only when an update is known", async () => {

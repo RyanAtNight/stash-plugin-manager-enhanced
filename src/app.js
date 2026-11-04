@@ -110,20 +110,22 @@ function findCoreSections(documentRef) {
 // (a checked source returns the same version for current plugins).
 // An update shows two lines: installed version, then the newer one in the update colour.
 function versionHTML(pkg, installed) {
-  const current = versionTextHTML(pkg.version);
-  if (!installed || pkg.status !== "update" || !pkg.source_package) return current;
-  return `<span class="spme-version-pair"><span class="spme-version-line">${current}<span class="spme-version-arrow spme-version-arrow-end" aria-hidden="true">→</span></span>`
+  if (!installed || pkg.status !== "update" || !pkg.source_package) return versionTextHTML(pkg.version);
+  // Cards show the arrow after the installed version (kept on its last piece so it never wraps alone);
+  // tables hang it left of the newer version.
+  const trailingArrow = '<span class="spme-version-arrow spme-version-arrow-end" aria-hidden="true">→</span>';
+  return `<span class="spme-version-pair"><span class="spme-version-line">${versionTextHTML(pkg.version, trailingArrow)}</span>`
     + `<span class="spme-version-line spme-version-next"><span class="visually-hidden">, update available: </span>`
     + `<span class="spme-version-arrow" aria-hidden="true">→</span>${versionTextHTML(pkg.source_package.version)}</span></span>`;
 }
 
 // "0.44.1-5e2a9c0": the release number leads and the commit ID is muted. Each part stays whole;
-// a long version may wrap between them instead of spilling into the next column.
-function versionTextHTML(version) {
+// a long version may wrap after the hyphen ("12.10.3-" / "6d1e4b7") instead of spilling into the next column.
+function versionTextHTML(version, suffixHTML = "") {
   const text = version || "Unknown";
-  const match = /^(.+?)(-[0-9a-f]{6,40})$/i.exec(text);
-  if (!match) return `<span class="spme-version-num">${escapeHTML(text)}</span>`;
-  return `<span class="spme-version-num">${escapeHTML(match[1])}</span><span class="spme-version-hash">${escapeHTML(match[2])}</span>`;
+  const match = /^(.+?-)([0-9a-f]{6,40})$/i.exec(text);
+  if (!match) return `<span class="spme-version-num">${escapeHTML(text)}${suffixHTML}</span>`;
+  return `<span class="spme-version-num">${escapeHTML(match[1])}</span><span class="spme-version-hash">${escapeHTML(match[2])}${suffixHTML}</span>`;
 }
 
 // Long source URLs wrap after "/" so path segments like "index.yml" stay whole.
