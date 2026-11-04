@@ -37,7 +37,7 @@ describe("package view responsive styles", () => {
 
   it("content-sizes the Browse Actions column and gives reclaimed width to Description", () => {
     expect(css).toMatch(/\.spme-columns-browse \.spme-col-description\s*\{\s*width:\s*auto/);
-    expect(css).toMatch(/\.spme-columns-browse \.spme-col-actions\s*\{\s*width:\s*12\.8rem/);
+    expect(css).toMatch(/\.spme-columns-browse \.spme-col-actions\s*\{\s*width:\s*8\.75rem/);
     expect(css).toMatch(/data-active-tab="browse"[\s\S]*\.spme-table-actions\s*\{[\s\S]*flex-wrap:\s*nowrap/);
   });
 
@@ -50,9 +50,10 @@ describe("package view responsive styles", () => {
   it("gives Installed actions a compact fixed width independent of Browse", () => {
     expect(css).toMatch(/#spme-root\[data-active-tab="installed"\] \.spme-package-table th:nth-child\(3\)\s*\{\s*width:\s*auto/);
     expect(css).toMatch(/\.spme-columns-installed \.spme-col-description\s*\{\s*width:\s*auto/);
-    expect(css).toMatch(/\.spme-columns-installed \.spme-col-last-commit,\s*\.spme-columns-installed \.spme-col-installed\s*\{\s*width:\s*6\.6rem/);
+    expect(css).toMatch(/\.spme-columns-installed \.spme-col-last-commit\s*\{\s*width:\s*7\.4rem/);
+    expect(css).toMatch(/\.spme-columns-installed \.spme-col-installed\s*\{\s*width:\s*6\.8rem/);
     expect(css).toMatch(/\.spme-columns-installed \.spme-col-actions\s*\{\s*width:\s*13\.5rem/);
-    expect(css).toMatch(/\.spme-columns-browse \.spme-col-actions\s*\{\s*width:\s*12\.8rem/);
+    expect(css).toMatch(/\.spme-columns-browse \.spme-col-actions\s*\{\s*width:\s*8\.75rem/);
   });
 
   it("gives toolbar dropdowns the same visible indicator as Stash's Language select", () => {

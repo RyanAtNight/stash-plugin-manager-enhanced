@@ -99,8 +99,8 @@
 .spme-select { padding-top:.3rem; }
 .spme-package-title { display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; }
 .spme-package-title h2, .spme-source-card h2 { margin:0; font-size:1.15rem; font-weight:600; }
-.spme-package-title code, .spme-plugin-config code, .spme-package-table td code { color:#9fb0bc; font-size:12px; }
-.spme-package-main > p { max-width:110ch; margin:.3rem 0 .65rem; }
+.spme-package-title code, .spme-plugin-config code, .spme-package-table td code { color:#9fb0bc; font-size:12.5px; }
+.spme-package-main > p { max-width:110ch; margin:.3rem 0 .4rem; }
 .spme-badges { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:.35rem; }
 /* Badge colours carry one meaning each: green = good state, amber = needs attention, red = problem,
    blue = official source, grey = neutral origin. */
@@ -117,9 +117,9 @@
 /* Fixed metadata tracks so Version / Last commit / Installed / Source line up from card to card. */
 .spme-package-card dl, .spme-source-card dl { display:grid; grid-template-columns:repeat(auto-fill, minmax(8.5rem, 10.5rem)); gap:.6rem 1.25rem; margin:0; }
 .spme-package-card dl div, .spme-source-card dl div { display:grid; }
-.spme-package-card dt, .spme-source-card dt { font-size:12px; font-weight:600; letter-spacing:.03em; text-transform:uppercase; color:var(--spme-text-muted); }
+.spme-package-card dt, .spme-source-card dt { font-size:12px; font-weight:600; letter-spacing:.03em; text-transform:uppercase; color:#93a5b2; }
 .spme-package-card dd, .spme-source-card dd { margin:0; }
-.spme-card-actions { grid-column:2; display:flex; flex-direction:row; justify-content:flex-end; align-items:center; flex-wrap:wrap; gap:.4rem; padding-top:.45rem; border-top:1px solid rgba(255,255,255,.07); }
+.spme-card-actions { grid-column:2; display:flex; flex-direction:row; justify-content:flex-end; align-items:center; flex-wrap:wrap; gap:.4rem; padding-top:.3rem; border-top:1px solid rgba(255,255,255,.07); }
 .spme-plugin-extension-actions:empty { display:none; }
 #spme-root[data-active-tab="configuration"] .spme-plugin-extension-actions { grid-column:auto; justify-content:flex-start; padding-top:0; border-top:0; }
 #spme-root[data-active-tab="configuration"] .spme-plugin-extension-actions > * { margin-left:0; }
@@ -172,14 +172,15 @@
 .spme-package-table { width:100%; border-collapse:collapse; table-layout:fixed; }
 /* Below ~1200px of table width the columns scroll inside the table instead of squeezing descriptions into towers. */
 .spme-plugin-table { min-width:1260px; }
-.spme-plugin-table td[data-label="Actions"], .spme-plugin-table th:last-child { position:sticky; right:0; z-index:1; background:var(--spme-panel); box-shadow:inset 1px 0 0 rgba(255,255,255,.18), -8px 0 10px -6px rgba(0,0,0,.7); }
+.spme-plugin-table td[data-label="Actions"], .spme-plugin-table th:last-child { position:sticky; right:0; z-index:1; background:var(--spme-panel); box-shadow:inset 1px 0 0 rgba(255,255,255,.2), -10px 0 12px -6px rgba(0,0,0,.8); }
 .spme-plugin-table th:last-child { background:var(--spme-panel-2); }
 .spme-package-table th { background:var(--spme-panel-2); color:var(--spme-text-muted); font-size:12px; font-weight:600; letter-spacing:.03em; text-transform:uppercase; text-align:left; white-space:nowrap; }
 .spme-package-table th, .spme-package-table td { padding:.75rem .6rem; border-bottom:1px solid var(--spme-border); vertical-align:middle; overflow-wrap:break-word; }
 /* Versions, dates and counts never break; IDs and URLs may break anywhere as a last resort. */
 .spme-package-table td[data-label="Version"], .spme-package-table td[data-label="Last commit"], .spme-package-table td[data-label="Installed"],
 .spme-package-table td[data-label="Packages"], .spme-package-table td[data-label="Enabled"], .spme-nowrap { white-space:nowrap; }
-.spme-package-table td code, .spme-source-table-name a { overflow-wrap:anywhere; }
+.spme-package-table td code { overflow-wrap:anywhere; }
+.spme-source-table-name a { word-break:normal; overflow-wrap:break-word; }
 .spme-package-table tbody tr:last-child td { border-bottom:0; }
 .spme-package-table th:nth-child(1) { width:3%; }
 .spme-package-table th:nth-child(2) { width:15%; }
@@ -196,8 +197,9 @@
 .spme-columns-installed .spme-col-plugin { width:14%; }
 .spme-columns-installed .spme-col-description { width:auto; }
 .spme-columns-installed .spme-col-version { width:8.5rem; }
-.spme-columns-installed .spme-col-last-commit,
-.spme-columns-installed .spme-col-installed { width:6.6rem; }
+.spme-columns-installed .spme-col-last-commit { width:7.4rem; }
+.spme-columns-installed .spme-col-installed { width:6.8rem; }
+.spme-package-table td { font-variant-numeric:tabular-nums; }
 .spme-columns-installed .spme-col-source { width:10%; }
 .spme-columns-installed .spme-col-status { width:9.5rem; }
 .spme-columns-installed .spme-col-actions { width:13.5rem; }
@@ -208,7 +210,7 @@
 .spme-columns-browse .spme-col-last-commit { width:11%; }
 .spme-columns-browse .spme-col-source { width:12%; }
 .spme-columns-browse .spme-col-status { width:9.5rem; }
-.spme-columns-browse .spme-col-actions { width:12.8rem; }
+.spme-columns-browse .spme-col-actions { width:8.75rem; }
 #spme-root[data-active-tab="browse"] .spme-card-actions > .spme-repo-link,
 #spme-root[data-active-tab="browse"] .spme-card-actions > button[data-action="install-one"],
 #spme-root[data-active-tab="browse"] .spme-table-actions > .spme-repo-link,
@@ -305,7 +307,7 @@
 #spme-root .spme-config-editor .spme-plugin-config > summary code { margin-left:.35rem; color:#9fb0bc; font-size:12px; }
 #spme-root .spme-config-editor .spme-config-body h3 { margin:1.25rem 0 .25rem; color:var(--spme-text-muted); font-size:12px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; }
 #spme-root .spme-config-editor .spme-config-body > .spme-actions { margin-top:1.25rem; }
-#spme-root .spme-config-editor .spme-help { margin-top:.75rem; font-size:12.5px; line-height:1.5; }
+#spme-root .spme-config-editor .spme-help { margin-top:.75rem; color:#8fa1ae; font-size:12px; line-height:1.45; }
 #spme-root .spme-config-editor .spme-plugin-config { background:transparent; border:0; }
 #spme-root .spme-config-editor .spme-plugin-config:target,
 #spme-root .spme-config-editor .spme-plugin-config:focus { box-shadow:none; outline:none; }
@@ -324,7 +326,7 @@
 @media (max-width:520px) {
   #spme-root .spme-config-workspace { grid-template-columns:minmax(0,1fr); }
   /* The filters stay full height; the plugin list itself scrolls and always shows about four rows. */
-  #spme-root .spme-config-list { max-height:16rem; }
+  #spme-root .spme-config-list { max-height:11.5rem; }
   #spme-root .spme-config-sidebar { position:static; max-height:none; border-right:0; border-bottom:1px solid var(--spme-border); border-radius:.6rem .6rem 0 0; }
 }
 .spme-hook { background:var(--spme-panel-2); border-radius:.4rem; padding:.75rem; margin:.5rem 0; }
@@ -378,9 +380,12 @@
 
 @media (max-width: 560px) {
   #spme-root { padding:0 .6rem; }
-  .spme-header-container { margin-bottom:.6rem; }
-  .spme-sticky { padding:.5rem; }
-  .spme-toolbar { margin:.6rem 0; gap:.45rem; }
+  .spme-header-container { margin-bottom:.5rem; }
+  .spme-header { padding:10px; gap:10px; }
+  .spme-sticky { padding:.45rem; }
+  .spme-toolbar { margin:.5rem 0; gap:.4rem; }
+  .spme-select input, .spme-table-select input { width:18px; height:18px; margin:0; accent-color:var(--spme-accent); }
+  .spme-select, .spme-package-table .spme-table-select { padding:.2rem .2rem 0 0; }
   .spme-toolbar input[type="search"] { min-width:0; width:100%; }
   .spme-toolbar .spme-search { width:100%; }
   .spme-package-table td { grid-template-columns:1fr; gap:.1rem; padding:.3rem 0; }
